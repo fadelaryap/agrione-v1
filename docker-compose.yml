@@ -57,9 +57,10 @@ services:
       - "3000:3000"
     environment:
       # NEXT_PUBLIC_API_URL bisa di-set via .env file
-      # Untuk production dengan IP: http://YOUR_VPS_IP:8000
-      # Untuk development: http://localhost:8000
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      # Harus include /api di akhir (e.g., https://agrione.agrihub.id/api atau http://localhost:8000/api)
+      # Untuk production dengan domain: https://agrione.agrihub.id/api
+      # Untuk development: http://localhost:8000/api
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api}
       JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
     depends_on:
       - backend

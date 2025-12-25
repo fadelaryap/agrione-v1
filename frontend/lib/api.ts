@@ -1,9 +1,10 @@
 import axios from 'axios'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+// NEXT_PUBLIC_API_URL should include /api (e.g., https://agrione.agrihub.id/api)
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
 
 export const api = axios.create({
-  baseURL: `${API_URL}/api`,
+  baseURL: API_URL, // API_URL already includes /api
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
@@ -25,7 +26,7 @@ if (typeof window !== 'undefined') {
     
     // If no token in cookie, fetch from API
     try {
-      const response = await fetch(`${API_URL}/api/csrf`, {
+      const response = await fetch(`${API_URL}/csrf`, {
         method: 'GET',
         credentials: 'include',
       })

@@ -38,6 +38,7 @@ JWT_SECRET=your-super-secret-jwt-key-change-in-production
 CSRF_SECRET=your-csrf-secret-key-change-in-production
 
 # Update ke HTTPS domain (PENTING!)
+# NEXT_PUBLIC_API_URL harus include /api di akhir
 CORS_ORIGIN=https://agrione.agrihub.id
 NEXT_PUBLIC_API_URL=https://agrione.agrihub.id/api
 ```

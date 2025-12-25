@@ -51,7 +51,7 @@ else
     echo -e "${GREEN}✅ Added CORS_ORIGIN${NC}"
 fi
 
-# Update NEXT_PUBLIC_API_URL
+# Update NEXT_PUBLIC_API_URL (harus include /api karena baseURL di api.ts tidak tambah /api lagi)
 if grep -q "^NEXT_PUBLIC_API_URL=" .env; then
     sed -i "s|^NEXT_PUBLIC_API_URL=.*|NEXT_PUBLIC_API_URL=https://$DOMAIN/api|" .env
     echo -e "${GREEN}✅ Updated NEXT_PUBLIC_API_URL${NC}"
