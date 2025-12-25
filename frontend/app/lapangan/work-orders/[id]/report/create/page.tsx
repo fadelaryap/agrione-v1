@@ -107,6 +107,32 @@ export default function CreateReportPage() {
   // Start camera
   const startCamera = async () => {
     try {
+      // Check if mediaDevices is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        const errorMsg = 'Kamera tidak didukung di browser ini atau akses kamera tidak tersedia.'
+        alert(errorMsg)
+        console.error('MediaDevices API not available')
+        return
+      }
+
+      // Check if we're on HTTPS or localhost (required for Safari)
+      const isSecure = window.location.protocol === 'https:' || 
+                      window.location.hostname === 'localhost' || 
+                      window.location.hostname === '127.0.0.1'
+      
+      if (!isSecure) {
+        const errorMsg = '⚠️ Akses kamera memerlukan HTTPS!\n\n' +
+                        'Semua browser modern memerlukan HTTPS untuk akses kamera.\n\n' +
+                        'Solusi:\n' +
+                        '1. Setup HTTPS dengan IP address (self-signed certificate) - Bisa pakai IP saja!\n' +
+                        '2. Atau setup HTTPS dengan domain + Let\'s Encrypt (lebih profesional)\n' +
+                        '3. Atau akses via localhost untuk development\n\n' +
+                        'Lihat panduan: HTTPS-WITH-IP.md'
+        alert(errorMsg)
+        console.error('Camera access requires HTTPS (browser security requirement)')
+        return
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment' }, // Use back camera on mobile
         audio: false,
@@ -115,9 +141,32 @@ export default function CreateReportPage() {
       if (videoRef.current) {
         videoRef.current.srcObject = stream
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error accessing camera:', err)
-      alert('Failed to access camera. Please allow camera permission.')
+      
+      let errorMsg = 'Gagal mengakses kamera.\n\n'
+      
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        errorMsg += 'Izin kamera ditolak. Silakan:\n' +
+                   '1. Klik ikon kamera di address bar Safari\n' +
+                   '2. Pilih "Izinkan" untuk akses kamera\n' +
+                   '3. Refresh halaman dan coba lagi\n\n' +
+                   'Atau gunakan browser Chrome/Firefox untuk pengalaman yang lebih baik.'
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        errorMsg += 'Tidak ada kamera yang terdeteksi. Pastikan kamera terhubung dan tidak digunakan aplikasi lain.'
+      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+        errorMsg += 'Kamera sedang digunakan oleh aplikasi lain. Tutup aplikasi lain yang menggunakan kamera.'
+      } else if (err.name === 'OverconstrainedError' || err.name === 'ConstraintNotSatisfiedError') {
+        errorMsg += 'Kamera tidak mendukung mode yang diminta. Coba gunakan kamera lain.'
+      } else {
+        errorMsg += 'Error: ' + (err.message || 'Unknown error') + '\n\n' +
+                  'Tips:\n' +
+                  '- Semua browser modern memerlukan HTTPS untuk akses kamera\n' +
+                  '- Setup HTTPS dengan IP address (self-signed certificate) - Lihat HTTPS-WITH-IP.md\n' +
+                  '- Pastikan izin kamera sudah diberikan di browser settings'
+      }
+      
+      alert(errorMsg)
     }
   }
 
@@ -158,6 +207,32 @@ export default function CreateReportPage() {
   // Start video recording
   const startVideoRecording = async () => {
     try {
+      // Check if mediaDevices is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        const errorMsg = 'Kamera tidak didukung di browser ini atau akses kamera tidak tersedia.'
+        alert(errorMsg)
+        console.error('MediaDevices API not available')
+        return
+      }
+
+      // Check if we're on HTTPS or localhost (required for Safari)
+      const isSecure = window.location.protocol === 'https:' || 
+                      window.location.hostname === 'localhost' || 
+                      window.location.hostname === '127.0.0.1'
+      
+      if (!isSecure) {
+        const errorMsg = '⚠️ Akses kamera memerlukan HTTPS!\n\n' +
+                        'Semua browser modern memerlukan HTTPS untuk akses kamera.\n\n' +
+                        'Solusi:\n' +
+                        '1. Setup HTTPS dengan IP address (self-signed certificate) - Bisa pakai IP saja!\n' +
+                        '2. Atau setup HTTPS dengan domain + Let\'s Encrypt (lebih profesional)\n' +
+                        '3. Atau akses via localhost untuk development\n\n' +
+                        'Lihat panduan: HTTPS-WITH-IP.md'
+        alert(errorMsg)
+        console.error('Camera access requires HTTPS (browser security requirement)')
+        return
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment' },
         audio: true,
@@ -189,9 +264,30 @@ export default function CreateReportPage() {
 
       mediaRecorder.start()
       setIsCapturing(true)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error accessing camera for video:', err)
-      alert('Failed to access camera. Please allow camera permission.')
+      
+      let errorMsg = 'Gagal mengakses kamera untuk video.\n\n'
+      
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        errorMsg += 'Izin kamera ditolak. Silakan:\n' +
+                   '1. Klik ikon kamera di address bar Safari\n' +
+                   '2. Pilih "Izinkan" untuk akses kamera\n' +
+                   '3. Refresh halaman dan coba lagi\n\n' +
+                   'Atau gunakan browser Chrome/Firefox untuk pengalaman yang lebih baik.'
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        errorMsg += 'Tidak ada kamera yang terdeteksi. Pastikan kamera terhubung dan tidak digunakan aplikasi lain.'
+      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+        errorMsg += 'Kamera sedang digunakan oleh aplikasi lain. Tutup aplikasi lain yang menggunakan kamera.'
+      } else {
+        errorMsg += 'Error: ' + (err.message || 'Unknown error') + '\n\n' +
+                  'Tips:\n' +
+                  '- Semua browser modern memerlukan HTTPS untuk akses kamera\n' +
+                  '- Setup HTTPS dengan IP address (self-signed certificate) - Lihat HTTPS-WITH-IP.md\n' +
+                  '- Pastikan izin kamera sudah diberikan di browser settings'
+      }
+      
+      alert(errorMsg)
     }
   }
 

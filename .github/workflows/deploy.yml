@@ -82,6 +82,15 @@ jobs:
             VPS_IP=$(hostname -I | awk '{print $1}')
             echo "🌐 VPS IP: $VPS_IP"
             
+            # Check if domain is configured (via .env or use IP)
+            if [ -f .env ] && grep -q "CORS_ORIGIN=https://" .env; then
+              DOMAIN=$(grep "CORS_ORIGIN=https://" .env | cut -d'=' -f2 | sed 's|https://||')
+              echo "🌐 Domain detected: $DOMAIN"
+            else
+              DOMAIN=""
+              echo "🌐 Using IP address: $VPS_IP"
+            fi
+            
             # Create .env file if it doesn't exist
             if [ ! -f .env ]; then
               echo "📝 Creating .env file..."
