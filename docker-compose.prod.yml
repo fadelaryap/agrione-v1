@@ -38,6 +38,9 @@ services:
       # CORS_ORIGIN harus di-set dengan IP VPS:port frontend
       # Contoh: http://123.456.789.0:3000
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      # GCS Configuration
+      GCS_BUCKET_NAME: ${GCS_BUCKET_NAME:-}
+      GOOGLE_APPLICATION_CREDENTIALS: /opt/gcs-credentials.json
     depends_on:
       postgres:
         condition: service_healthy
@@ -45,6 +48,9 @@ services:
       - agrione_network
     volumes:
       - ./backend:/app
+      # Mount GCS credentials file (path di VPS -> path di container)
+      # File harus ada di: /opt/agrione/gcs-credentials.json (di VPS)
+      - /opt/agrione/gcs-credentials.json:/opt/gcs-credentials.json:ro
     command: go run main.go
     restart: always
 

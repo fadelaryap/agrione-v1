@@ -39,6 +39,9 @@ services:
       # Untuk production dengan IP: http://YOUR_VPS_IP:3000
       # Untuk development: http://localhost:3000
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      # GCS Configuration
+      GCS_BUCKET_NAME: ${GCS_BUCKET_NAME:-}
+      GOOGLE_APPLICATION_CREDENTIALS: ${GOOGLE_APPLICATION_CREDENTIALS:-}
     depends_on:
       postgres:
         condition: service_healthy

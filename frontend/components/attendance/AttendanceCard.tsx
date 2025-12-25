@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Camera, CheckCircle, Clock, Sun, Moon, X, AlertCircle } from 'lucide-react'
-import { attendanceAPI, Attendance } from '@/lib/api'
+import { attendanceAPI, uploadAPI, Attendance } from '@/lib/api'
 import { format } from 'date-fns'
 
 interface AttendanceCardProps {

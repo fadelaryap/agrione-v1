@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { authAPI, User, workOrdersAPI, WorkOrder, fieldReportsAPI, FieldReport } from '@/lib/api'
+import { authAPI, User, workOrdersAPI, WorkOrder, fieldReportsAPI, FieldReport, uploadAPI } from '@/lib/api'
 import { Camera, Video, MapPin, ArrowLeft, X } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 
@@ -111,35 +111,26 @@ export default function CreateReportPage() {
 
     setSubmitting(true)
     try {
-      // Convert media files to base64 for now (in production, upload to GCS)
+      // Upload media files to GCS
       const mediaUrls: any[] = []
       
       for (const file of mediaFiles) {
         try {
-          const base64 = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader()
-            reader.onload = () => {
-              const result = reader.result as string
-              // Remove data:image/jpeg;base64, prefix if present
-              const base64Data = result.includes(',') ? result.split(',')[1] : result
-              resolve(base64Data)
-            }
-            reader.onerror = reject
-            reader.readAsDataURL(file)
-          })
-
+          // Upload to GCS
+          const url = await uploadAPI.uploadFile(file)
+          
           mediaUrls.push({
             filename: file.name,
             type: file.type.startsWith('image/') ? 'image' : 'video',
             size: file.size,
-            data: base64, // Base64 data (in production, this would be GCS URL)
+            url: url, // GCS URL
             uploaded_at: new Date().toISOString(),
-            // In production, you would upload to GCS and store the URL here:
-            // url: `https://storage.googleapis.com/your-bucket/${file.name}`
           })
         } catch (err) {
-          console.error('Failed to convert file to base64:', err)
-          // Continue with other files
+          console.error('Failed to upload file to GCS:', err)
+          alert(`Gagal upload file ${file.name}. Silakan coba lagi.`)
+          setSubmitting(false)
+          return
         }
       }
 

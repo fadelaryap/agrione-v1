@@ -396,6 +396,30 @@ export const fieldReportsAPI = {
   },
 }
 
+export const uploadAPI = {
+  uploadFile: async (file: File): Promise<string> => {
+    // Convert file to base64
+    const base64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const result = reader.result as string
+        // Remove data:image/jpeg;base64, prefix if present
+        const base64Data = result.includes(',') ? result.split(',')[1] : result
+        resolve(base64Data)
+      }
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+
+    const response = await api.post<{ url: string; filename: string }>('/upload', {
+      file: base64,
+      filename: file.name,
+      filetype: file.type,
+    })
+    return response.data.url
+  },
+}
+
 export const attendanceAPI = {
   getTodayAttendance: async (): Promise<Attendance[]> => {
     const response = await api.get<Attendance[]>('/attendance/today')
