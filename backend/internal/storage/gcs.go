@@ -3,7 +3,6 @@ package storage
 import (
 	"context"
 	"fmt"
-	"io"
 	"os"
 	"time"
 
@@ -41,32 +40,6 @@ func NewGCSClient(bucketName string, credentialsPath string) (*GCSClient, error)
 		client:     client,
 		bucketName: bucketName,
 	}, nil
-}
-
-func (g *GCSClient) UploadFile(ctx context.Context, fileData []byte, fileName string, contentType string) (string, error) {
-	// Generate unique filename with timestamp
-	timestamp := time.Now().Unix()
-	objectName := fmt.Sprintf("%s/%d_%s", time.Now().Format("2006/01/02"), timestamp, fileName)
-	
-	obj := g.client.Bucket(g.bucketName).Object(objectName)
-	writer := obj.NewWriter(ctx)
-	writer.ContentType = contentType
-	
-	// Set public read access (optional, adjust based on your needs)
-	writer.ACL = []storage.ACLRule{{Entity: storage.AllUsers, Role: storage.RoleReader}}
-	
-	if _, err := writer.Write(fileData); err != nil {
-		writer.Close()
-		return "", fmt.Errorf("failed to write to GCS: %w", err)
-	}
-	
-	if err := writer.Close(); err != nil {
-		return "", fmt.Errorf("failed to close GCS writer: %w", err)
-	}
-	
-	// Return public URL
-	url := fmt.Sprintf("https://storage.googleapis.com/%s/%s", g.bucketName, objectName)
-	return url, nil
 }
 
 // GenerateSignedURL generates a signed URL for direct upload from frontend
