@@ -83,15 +83,15 @@ jobs:
             # Create .env file if it doesn't exist
             if [ ! -f .env ]; then
               echo "📝 Creating .env file..."
-              cat > .env << EOF
+              cat > .env << 'ENVEOF'
 POSTGRES_USER=agrione
 POSTGRES_PASSWORD=agrione123
 POSTGRES_DB=agrione_db
-JWT_SECRET=\${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
-CSRF_SECRET=\${CSRF_SECRET:-your-csrf-secret-key-change-in-production}
-CORS_ORIGIN=http://$VPS_IP:3000
-NEXT_PUBLIC_API_URL=http://$VPS_IP:8000
-EOF
+JWT_SECRET=your-super-secret-jwt-key-change-in-production
+CSRF_SECRET=your-csrf-secret-key-change-in-production
+ENVEOF
+              echo "CORS_ORIGIN=http://$VPS_IP:3000" >> .env
+              echo "NEXT_PUBLIC_API_URL=http://$VPS_IP:8000" >> .env
             else
               echo "📝 Updating .env file with VPS IP..."
               # Update CORS_ORIGIN and NEXT_PUBLIC_API_URL if they exist, or add them
