@@ -27,7 +27,7 @@ echo ""
 
 # Check Container Status
 echo -e "${YELLOW}🐳 Container Status:${NC}"
-cd /opt/agrione-v1 2>/dev/null || cd ~/agrione-v1 2>/dev/null || { echo -e "${RED}❌ Project directory not found${NC}"; exit 1; }
+cd /opt/agrione/agrione-v1 2>/dev/null || cd /opt/agrione-v1 2>/dev/null || cd ~/agrione-v1 2>/dev/null || { echo -e "${RED}❌ Project directory not found${NC}"; exit 1; }
 
 docker compose ps
 

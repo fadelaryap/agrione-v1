@@ -22,7 +22,7 @@ GitHub Actions menjalankan commands via SSH, jadi logs tersimpan di VPS.
 
 ```bash
 # Check apakah deployment berhasil
-cd /opt/agrione-v1
+cd /opt/agrione/agrione-v1
 
 # Check git log untuk melihat kapan terakhir update
 git log --oneline -10

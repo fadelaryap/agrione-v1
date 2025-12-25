@@ -64,7 +64,7 @@ else
 fi
 
 echo -e "${BLUE}📁 Step 5: Setting up project directory...${NC}"
-PROJECT_DIR="/opt/agrione-v1"
+PROJECT_DIR="/opt/agrione/agrione-v1"
 
 if [ ! -d "$PROJECT_DIR" ]; then
     sudo mkdir -p "$PROJECT_DIR"

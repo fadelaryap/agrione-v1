@@ -24,8 +24,19 @@ if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/
     exit 1
 fi
 
-# Navigate to project directory
-PROJECT_DIR="${PROJECT_DIR:-~/agrione-v1}"
+# Find project directory
+PROJECT_DIR=""
+if [ -d /opt/agrione/agrione-v1 ]; then
+    PROJECT_DIR=/opt/agrione/agrione-v1
+elif [ -d ~/agrione-v1 ]; then
+    PROJECT_DIR=~/agrione-v1
+elif [ -d /opt/agrione-v1 ]; then
+    PROJECT_DIR=/opt/agrione-v1
+else
+    echo -e "${RED}❌ Project directory not found!${NC}"
+    echo "   Please clone repository to /opt/agrione/agrione-v1, ~/agrione-v1, or /opt/agrione-v1"
+    exit 1
+fi
 if [ ! -d "$PROJECT_DIR" ]; then
     echo -e "${YELLOW}⚠️  Project directory not found at $PROJECT_DIR${NC}"
     echo -e "${YELLOW}   Please set PROJECT_DIR environment variable or clone the repository first.${NC}"

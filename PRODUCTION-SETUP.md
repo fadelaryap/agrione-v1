@@ -17,7 +17,7 @@ Panduan setup untuk production menggunakan IP address (tanpa domain).
 ### 1. Buat File `.env` di Root Project
 
 ```bash
-cd /opt/agrione-v1
+cd /opt/agrione/agrione-v1
 nano .env
 ```
 
@@ -71,7 +71,7 @@ sudo ufw enable
 ## 🚀 Deploy
 
 ```bash
-cd /opt/agrione-v1
+cd /opt/agrione/agrione-v1
 
 # Pastikan .env sudah di-set dengan benar
 cat .env
@@ -84,7 +84,6 @@ docker compose up -d
 # Check status
 docker compose ps
 docker compose logs
-```
 
 ---
 

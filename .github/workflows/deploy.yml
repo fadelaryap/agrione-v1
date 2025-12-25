@@ -36,13 +36,15 @@ jobs:
             
             # Find project directory
             PROJECT_DIR=""
-            if [ -d ~/agrione-v1 ]; then
+            if [ -d /opt/agrione/agrione-v1 ]; then
+              PROJECT_DIR=/opt/agrione/agrione-v1
+            elif [ -d ~/agrione-v1 ]; then
               PROJECT_DIR=~/agrione-v1
             elif [ -d /opt/agrione-v1 ]; then
               PROJECT_DIR=/opt/agrione-v1
             else
               echo "❌ Project directory not found!"
-              echo "   Please clone repository to ~/agrione-v1 or /opt/agrione-v1"
+              echo "   Please clone repository to /opt/agrione/agrione-v1, ~/agrione-v1, or /opt/agrione-v1"
               exit 1
             fi
             
