@@ -16,8 +16,10 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
   const [showForm, setShowForm] = useState<'pagi' | 'sore' | null>(null)
   
   // Form state
-  const [selfieImage, setSelfieImage] = useState<string | null>(null)
-  const [backCameraImage, setBackCameraImage] = useState<string | null>(null)
+  const [selfieImage, setSelfieImage] = useState<string | null>(null) // Preview URL (data URL)
+  const [selfieFile, setSelfieFile] = useState<File | null>(null) // File object untuk upload
+  const [backCameraImage, setBackCameraImage] = useState<string | null>(null) // Preview URL
+  const [backCameraFile, setBackCameraFile] = useState<File | null>(null) // File object untuk upload
   const [hasIssue, setHasIssue] = useState<boolean>(false)
   const [description, setDescription] = useState<string>('')
 
@@ -40,7 +42,9 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
   const openForm = (session: 'pagi' | 'sore') => {
     setShowForm(session)
     setSelfieImage(null)
+    setSelfieFile(null)
     setBackCameraImage(null)
+    setBackCameraFile(null)
     setHasIssue(false)
     setDescription('')
   }
@@ -48,13 +52,15 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
   const closeForm = () => {
     setShowForm(null)
     setSelfieImage(null)
+    setSelfieFile(null)
     setBackCameraImage(null)
+    setBackCameraFile(null)
     setHasIssue(false)
     setDescription('')
   }
 
   const submitAttendance = async () => {
-    if (!selfieImage) {
+    if (!selfieFile) {
       alert('Silakan ambil foto selfie terlebih dahulu')
       return
     }
@@ -63,13 +69,20 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
 
     setSubmitting(showForm)
     try {
-      const selfieBase64 = selfieImage.split(',')[1]
-      const backCameraBase64 = backCameraImage ? backCameraImage.split(',')[1] : undefined
+      // Upload selfie ke GCS
+      const selfieURL = await uploadAPI.uploadFile(selfieFile)
       
+      // Upload back camera ke GCS (jika ada)
+      let backCameraURL: string | undefined
+      if (backCameraFile) {
+        backCameraURL = await uploadAPI.uploadFile(backCameraFile)
+      }
+      
+      // Kirim URL ke backend
       await attendanceAPI.createAttendance({
         session: showForm,
-        selfie_image: selfieBase64,
-        back_camera_image: backCameraBase64,
+        selfie_image: selfieURL,
+        back_camera_image: backCameraURL,
         has_issue: hasIssue,
         description: description.trim() || undefined,
       })
@@ -174,7 +187,7 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
                 </p>
                 {soreAttendance.selfie_image && (
                   <img
-                    src={`data:image/jpeg;base64,${soreAttendance.selfie_image}`}
+                    src={soreAttendance.selfie_image.startsWith('http') ? soreAttendance.selfie_image : `data:image/jpeg;base64,${soreAttendance.selfie_image}`}
                     alt="Selfie sore"
                     className="w-full h-32 object-cover rounded-lg border border-gray-200"
                   />
@@ -230,6 +243,8 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
                       onChange={(e) => {
                         const file = e.target.files?.[0]
                         if (file) {
+                          setSelfieFile(file)
+                          // Create preview
                           const reader = new FileReader()
                           reader.onload = (event) => {
                             const result = event.target?.result as string
@@ -301,6 +316,8 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
                       onChange={(e) => {
                         const file = e.target.files?.[0]
                         if (file) {
+                          setBackCameraFile(file)
+                          // Create preview
                           const reader = new FileReader()
                           reader.onload = (event) => {
                             const result = event.target?.result as string
@@ -335,6 +352,8 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
                       onChange={(e) => {
                         const file = e.target.files?.[0]
                         if (file) {
+                          setBackCameraFile(file)
+                          // Create preview
                           const reader = new FileReader()
                           reader.onload = (event) => {
                             const result = event.target?.result as string
@@ -410,7 +429,7 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
                 </button>
                 <button
                   onClick={submitAttendance}
-                  disabled={!selfieImage || submitting === showForm}
+                  disabled={!selfieFile || submitting === showForm}
                   className="flex-1 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {submitting === showForm ? (

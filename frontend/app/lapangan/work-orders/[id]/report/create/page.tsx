@@ -34,7 +34,6 @@ export default function CreateReportPage() {
       return
     }
     checkAuth()
-    checkDevice()
   }, [workOrderId])
 
   useEffect(() => {
