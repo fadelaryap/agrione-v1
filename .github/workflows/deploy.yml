@@ -84,12 +84,12 @@ jobs:
             if [ ! -f .env ]; then
               echo "📝 Creating .env file..."
               cat > .env << 'ENVEOF'
-POSTGRES_USER=agrione
-POSTGRES_PASSWORD=agrione123
-POSTGRES_DB=agrione_db
-JWT_SECRET=your-super-secret-jwt-key-change-in-production
-CSRF_SECRET=your-csrf-secret-key-change-in-production
-ENVEOF
+              POSTGRES_USER=agrione
+              POSTGRES_PASSWORD=agrione123
+              POSTGRES_DB=agrione_db
+              JWT_SECRET=your-super-secret-jwt-key-change-in-production
+              CSRF_SECRET=your-csrf-secret-key-change-in-production
+              ENVEOF
               echo "CORS_ORIGIN=http://$VPS_IP:3000" >> .env
               echo "NEXT_PUBLIC_API_URL=http://$VPS_IP:8000" >> .env
             else
