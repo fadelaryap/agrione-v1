@@ -32,60 +32,30 @@ else
     echo -e "${GREEN}✅ Nginx already installed${NC}"
 fi
 
-# Step 2: Generate SSL Certificate
+# Step 2: Skip SSL Certificate (Cloudflare handles HTTPS)
 echo ""
-echo -e "${GREEN}🔒 Step 2: Generating SSL certificate...${NC}"
-sudo mkdir -p /etc/nginx/ssl
-
-if [ ! -f /etc/nginx/ssl/agrione.crt ]; then
-    sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-      -keyout /etc/nginx/ssl/agrione.key \
-      -out /etc/nginx/ssl/agrione.crt \
-      -subj "/C=ID/ST=Indonesia/L=Jakarta/O=Agrione/CN=$DOMAIN" \
-      -addext "subjectAltName=DNS:$DOMAIN,DNS:*.agrihub.id,IP:$VPS_IP"
-    echo -e "${GREEN}✅ SSL certificate generated${NC}"
-else
-    echo -e "${YELLOW}⚠️  SSL certificate already exists${NC}"
-fi
+echo -e "${GREEN}🔒 Step 2: SSL handled by Cloudflare (Flexible mode)${NC}"
+echo -e "${YELLOW}ℹ️  No SSL certificate needed - Cloudflare provides HTTPS to users${NC}"
 
 # Step 3: Create Nginx config
 echo ""
 echo -e "${GREEN}⚙️  Step 3: Creating Nginx configuration...${NC}"
 
 sudo tee /etc/nginx/sites-available/agrione > /dev/null <<EOF
-# HTTP to HTTPS redirect
+# HTTP server (Cloudflare Flexible mode)
+# Cloudflare → User: HTTPS (handled by Cloudflare automatically)
+# Cloudflare → Origin (this server): HTTP (port 80)
 server {
     listen 80;
     listen [::]:80;
     server_name $DOMAIN;
-
-    # Redirect semua HTTP ke HTTPS
-    return 301 https://\$server_name\$request_uri;
-}
-
-# HTTPS server
-server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
-    server_name $DOMAIN;
-
-    # SSL configuration
-    ssl_certificate /etc/nginx/ssl/agrione.crt;
-    ssl_certificate_key /etc/nginx/ssl/agrione.key;
-    
-    # SSL settings
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384;
-    ssl_prefer_server_ciphers on;
-    ssl_session_cache shared:SSL:10m;
-    ssl_session_timeout 10m;
 
     # Security headers
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-XSS-Protection "1; mode=block" always;
 
-    # Real IP from Cloudflare
+    # Real IP from Cloudflare (important for logging and security)
     set_real_ip_from 173.245.48.0/20;
     set_real_ip_from 103.21.244.0/22;
     set_real_ip_from 103.22.200.0/22;
@@ -101,6 +71,13 @@ server {
     set_real_ip_from 104.24.0.0/14;
     set_real_ip_from 172.64.0.0/13;
     set_real_ip_from 131.0.72.0/22;
+    set_real_ip_from 2400:cb00::/32;
+    set_real_ip_from 2606:4700::/32;
+    set_real_ip_from 2803:f800::/32;
+    set_real_ip_from 2405:b500::/32;
+    set_real_ip_from 2405:8100::/32;
+    set_real_ip_from 2c0f:f248::/32;
+    set_real_ip_from 2a06:98c0::/29;
     real_ip_header CF-Connecting-IP;
 
     # Frontend (Next.js)
@@ -180,8 +157,8 @@ echo -e "${GREEN}✅ Nginx restarted and enabled${NC}"
 echo ""
 echo -e "${GREEN}🔥 Step 7: Updating firewall...${NC}"
 sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
-echo -e "${GREEN}✅ Firewall updated${NC}"
+# Port 443 tidak perlu (Cloudflare handles HTTPS)
+echo -e "${GREEN}✅ Firewall updated (port 80 only - Cloudflare handles HTTPS)${NC}"
 
 # Step 8: Update .env file
 echo ""
@@ -211,7 +188,7 @@ if [ -n "$PROJECT_DIR" ] && [ -d "$PROJECT_DIR" ]; then
         echo "CORS_ORIGIN=https://$DOMAIN" >> .env
     fi
     
-    # Update NEXT_PUBLIC_API_URL
+    # Update NEXT_PUBLIC_API_URL (PENTING: ini build-time variable, perlu rebuild!)
     if grep -q "^NEXT_PUBLIC_API_URL=" .env; then
         sed -i "s|^NEXT_PUBLIC_API_URL=.*|NEXT_PUBLIC_API_URL=https://$DOMAIN/api|" .env
     else
@@ -219,7 +196,12 @@ if [ -n "$PROJECT_DIR" ] && [ -d "$PROJECT_DIR" ]; then
     fi
     
     echo -e "${GREEN}✅ Environment variables updated${NC}"
-    echo -e "${YELLOW}📝 Restart containers: docker compose restart backend frontend${NC}"
+    echo -e "${YELLOW}📝 Rebuilding frontend (NEXT_PUBLIC_API_URL is build-time variable)...${NC}"
+    docker compose up -d --build frontend
+    echo -e "${GREEN}✅ Frontend rebuilt${NC}"
+    echo -e "${YELLOW}📝 Restarting backend...${NC}"
+    docker compose restart backend
+    echo -e "${GREEN}✅ Backend restarted${NC}"
 fi
 
 # Summary
@@ -236,12 +218,11 @@ echo "     - IPv4: $VPS_IP"
 echo "     - Proxy: ✅ Proxied (orange cloud)"
 echo ""
 echo "  2. Setup SSL/TLS di Cloudflare:"
-echo "     - SSL/TLS mode: Full (atau Full strict)"
+echo "     - SSL/TLS mode: Flexible ✅ (tidak perlu SSL di server)"
 echo "     - Always Use HTTPS: ✅ Enabled"
 echo ""
-echo "  3. Restart containers:"
-echo "     cd $PROJECT_DIR"
-echo "     docker compose restart backend frontend"
+echo "  3. Containers sudah di-restart otomatis!"
+echo "     (Frontend sudah di-rebuild, backend sudah di-restart)"
 echo ""
 echo "  4. Test:"
 echo "     https://$DOMAIN"

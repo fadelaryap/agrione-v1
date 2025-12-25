@@ -2,6 +2,8 @@
 
 Panduan setup `https://agrione.agrihub.id` dengan Cloudflare dan Nginx reverse proxy.
 
+**Note:** Dengan Cloudflare **Flexible mode**, tidak perlu setup SSL certificate di server. Cloudflare menangani HTTPS ke user, server hanya perlu HTTP (port 80).
+
 ---
 
 ## 📋 Prerequisites
@@ -35,10 +37,12 @@ Panduan setup `https://agrione.agrihub.id` dengan Cloudflare dan Nginx reverse p
 
 1. Klik **SSL/TLS** di sidebar
 2. Pilih **Overview**
-3. Set **SSL/TLS encryption mode** ke: **Full** atau **Full (strict)**
-   - **Full**: Cloudflare akan accept self-signed certificate dari origin
-   - **Full (strict)**: Perlu valid certificate dari CA (recommended)
+3. Set **SSL/TLS encryption mode** ke: **Flexible** ✅
+   - **Flexible**: Cloudflare → User: HTTPS, Cloudflare → Origin: HTTP (tidak perlu SSL di server)
+   - **Full**: Cloudflare → User: HTTPS, Cloudflare → Origin: HTTPS (perlu SSL di server)
 4. **Save**
+
+**Note:** Dengan mode **Flexible**, tidak perlu setup SSL certificate di server!
 
 ---
 
@@ -57,36 +61,19 @@ sudo systemctl status nginx
 
 ---
 
-## 🔒 Step 3: Setup SSL Certificate
+## 🔒 Step 3: Skip SSL Certificate (Cloudflare Flexible Mode)
 
-### Opsi A: Self-Signed Certificate (Quick, untuk Full mode)
+**Tidak perlu setup SSL certificate di server!**
 
-```bash
-# Buat directory untuk certificates
-sudo mkdir -p /etc/nginx/ssl
+Dengan Cloudflare **Flexible mode**:
+- ✅ Cloudflare menangani HTTPS ke user (otomatis)
+- ✅ Server hanya perlu HTTP (port 80)
+- ✅ Tidak perlu generate certificate
+- ✅ Setup lebih mudah
 
-# Generate self-signed certificate
-sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-  -keyout /etc/nginx/ssl/agrione.key \
-  -out /etc/nginx/ssl/agrione.crt \
-  -subj "/C=ID/ST=Indonesia/L=Jakarta/O=Agrione/CN=agrione.agrihub.id" \
-  -addext "subjectAltName=DNS:agrione.agrihub.id,DNS:*.agrihub.id,IP:103.31.205.102"
-```
-
-### Opsi B: Let's Encrypt Certificate (Recommended, untuk Full strict mode)
-
-```bash
-# Install certbot
-sudo apt install certbot python3-certbot-nginx -y
-
-# Generate certificate
-sudo certbot --nginx -d agrione.agrihub.id
-
-# Test auto-renewal
-sudo certbot renew --dry-run
-```
-
-**Note:** Untuk Let's Encrypt, pastikan DNS sudah propagate dan domain bisa diakses via HTTP dulu.
+**Jika ingin Full mode (end-to-end encryption):**
+- Gunakan **Full** atau **Full (strict)** di Cloudflare
+- Baru perlu setup SSL certificate di server
 
 ---
 
@@ -228,9 +215,8 @@ sudo systemctl enable nginx
 ## 🔥 Step 6: Update Firewall
 
 ```bash
-# Allow HTTP and HTTPS
+# Allow HTTP (Cloudflare handles HTTPS)
 sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
 
 # Optional: Close direct access to 3000 dan 8000 (via Nginx saja)
 # sudo ufw deny 3000/tcp
@@ -239,6 +225,8 @@ sudo ufw allow 443/tcp
 # Check status
 sudo ufw status
 ```
+
+**Note:** Dengan Cloudflare Flexible mode, hanya perlu port 80 (HTTP). Cloudflare menangani HTTPS.
 
 ---
 
@@ -267,8 +255,14 @@ NEXT_PUBLIC_API_URL=https://agrione.agrihub.id/api
 **Restart containers:**
 
 ```bash
-docker compose restart backend frontend
+# Rebuild frontend (NEXT_PUBLIC_API_URL is build-time variable!)
+docker compose up -d --build frontend
+
+# Restart backend
+docker compose restart backend
 ```
+
+**⚠️ PENTING:** `NEXT_PUBLIC_API_URL` adalah build-time variable di Next.js, jadi perlu **rebuild** frontend, bukan hanya restart!
 
 ---
 
@@ -346,8 +340,11 @@ curl http://localhost:8000/api/health
 
 ### Error: SSL Certificate Invalid
 
+**Jika pakai Flexible mode:** Tidak perlu SSL certificate di server, skip error ini.
+
+**Jika pakai Full mode:**
 ```bash
-# Jika pakai self-signed, pastikan Cloudflare SSL mode = "Full"
+# Pastikan Cloudflare SSL mode = "Full"
 # Jika pakai Let's Encrypt, check certificate
 sudo certbot certificates
 
