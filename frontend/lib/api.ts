@@ -397,26 +397,35 @@ export const fieldReportsAPI = {
 }
 
 export const uploadAPI = {
+  // Get signed URL from backend, then upload directly to GCS
   uploadFile: async (file: File): Promise<string> => {
-    // Convert file to base64
-    const base64 = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => {
-        const result = reader.result as string
-        // Remove data:image/jpeg;base64, prefix if present
-        const base64Data = result.includes(',') ? result.split(',')[1] : result
-        resolve(base64Data)
-      }
-      reader.onerror = reject
-      reader.readAsDataURL(file)
+    // Step 1: Request signed URL from backend
+    const signedURLResponse = await api.post<{
+      signed_url: string
+      object_name: string
+      public_url: string
+    }>('/upload/signed-url', {
+      filename: file.name,
+      content_type: file.type,
     })
 
-    const response = await api.post<{ url: string; filename: string }>('/upload', {
-      file: base64,
-      filename: file.name,
-      filetype: file.type,
+    const { signed_url, public_url } = signedURLResponse.data
+
+    // Step 2: Upload file directly to GCS using signed URL
+    const uploadResponse = await fetch(signed_url, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': file.type,
+      },
+      body: file,
     })
-    return response.data.url
+
+    if (!uploadResponse.ok) {
+      throw new Error(`Failed to upload to GCS: ${uploadResponse.statusText}`)
+    }
+
+    // Step 3: Return public URL
+    return public_url
   },
 }
 

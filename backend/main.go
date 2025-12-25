@@ -132,8 +132,7 @@ func main() {
 	protectedPost.HandleFunc("/plots", plotsHandler.CreatePlot).Methods("POST")
 	protectedPost.HandleFunc("/plant-types", plantTypesHandler.CreatePlantType).Methods("POST")
 	protectedPost.HandleFunc("/work-orders", workOrdersHandler.CreateWorkOrder).Methods("POST")
-	protectedPost.HandleFunc("/upload", uploadHandler.UploadFile).Methods("POST")
-	protectedPost.HandleFunc("/upload/multipart", uploadHandler.UploadFileMultipart).Methods("POST")
+	protectedPost.HandleFunc("/upload/signed-url", uploadHandler.GenerateSignedURL).Methods("POST")
 	
 	// Protected PUT routes (require both auth and CSRF)
 	protectedPut := api.PathPrefix("").Subrouter()

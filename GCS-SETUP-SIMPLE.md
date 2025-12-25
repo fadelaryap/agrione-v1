@@ -85,6 +85,16 @@ cat .env | grep GOOGLE_APPLICATION_CREDENTIALS
    - Ke: `/opt/gcs-credentials.json` (container)
 4. Jika GCS belum dikonfigurasi, sistem akan pakai base64 fallback (untuk development)
 
+## 🚀 Upload Flow (Direct Upload)
+
+Sistem sekarang pakai **direct upload** dari frontend ke GCS:
+1. Frontend request signed URL ke backend
+2. Backend generate signed URL (valid 15 menit)
+3. Frontend upload langsung ke GCS
+4. Frontend kirim URL ke backend untuk disimpan
+
+**Keuntungan:** Lebih cepat, hemat bandwidth backend, scalable!
+
 ---
 
 **Gampang kan?** 😎

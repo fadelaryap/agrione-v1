@@ -69,6 +69,35 @@ func (g *GCSClient) UploadFile(ctx context.Context, fileData []byte, fileName st
 	return url, nil
 }
 
+// GenerateSignedURL generates a signed URL for direct upload from frontend
+func (g *GCSClient) GenerateSignedURL(ctx context.Context, fileName string, contentType string, expiresIn time.Duration) (string, string, error) {
+	// Generate unique filename with timestamp
+	timestamp := time.Now().Unix()
+	objectName := fmt.Sprintf("%s/%d_%s", time.Now().Format("2006/01/02"), timestamp, fileName)
+	
+	opts := &storage.SignedURLOptions{
+		Scheme:  storage.SigningSchemeV4,
+		Method:  "PUT",
+		Expires: time.Now().Add(expiresIn),
+		Headers: []string{
+			fmt.Sprintf("Content-Type:%s", contentType),
+		},
+	}
+	
+	url, err := g.client.Bucket(g.bucketName).SignedURL(objectName, opts)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to generate signed URL: %w", err)
+	}
+	
+	// Return both signed URL and object name (for storing in DB)
+	return url, objectName, nil
+}
+
+// GetPublicURL returns the public URL for an object
+func (g *GCSClient) GetPublicURL(objectName string) string {
+	return fmt.Sprintf("https://storage.googleapis.com/%s/%s", g.bucketName, objectName)
+}
+
 func (g *GCSClient) DeleteFile(ctx context.Context, objectName string) error {
 	obj := g.client.Bucket(g.bucketName).Object(objectName)
 	return obj.Delete(ctx)
