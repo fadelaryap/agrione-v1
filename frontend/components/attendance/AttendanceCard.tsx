@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Camera, CheckCircle, Clock, Sun, Moon, X, AlertCircle } from 'lucide-react'
 import { attendanceAPI, Attendance } from '@/lib/api'
 import { format } from 'date-fns'
@@ -20,13 +20,6 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
   const [backCameraImage, setBackCameraImage] = useState<string | null>(null)
   const [hasIssue, setHasIssue] = useState<boolean>(false)
   const [description, setDescription] = useState<string>('')
-  
-  // Camera refs
-  const selfieVideoRef = useRef<HTMLVideoElement>(null)
-  const backCameraVideoRef = useRef<HTMLVideoElement>(null)
-  const selfieStreamRef = useRef<MediaStream | null>(null)
-  const backCameraStreamRef = useRef<MediaStream | null>(null)
-  const [cameraMode, setCameraMode] = useState<'selfie' | 'back' | null>(null)
 
   useEffect(() => {
     loadTodayAttendance()
@@ -43,122 +36,6 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
     }
   }
 
-  const startCamera = async (mode: 'selfie' | 'back') => {
-    try {
-      // Check if mediaDevices is available
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        const errorMsg = 'Kamera tidak didukung di browser ini atau akses kamera tidak tersedia.'
-        alert(errorMsg)
-        console.error('MediaDevices API not available')
-        return
-      }
-
-      // Check if we're on HTTPS or localhost (required for Safari)
-      const isSecure = window.location.protocol === 'https:' || 
-                      window.location.hostname === 'localhost' || 
-                      window.location.hostname === '127.0.0.1'
-      
-      if (!isSecure) {
-        const errorMsg = 'Akses kamera memerlukan HTTPS. Semua browser modern memerlukan koneksi aman untuk mengakses kamera.\n\n' +
-                        'Solusi:\n' +
-                        '1. Setup HTTPS dengan IP address (self-signed certificate) - Lihat panduan di HTTPS-WITH-IP.md\n' +
-                        '2. Atau gunakan domain dengan Let\'s Encrypt (lebih profesional)\n' +
-                        '3. Atau akses via localhost untuk development\n\n' +
-                        'Note: Bisa pakai IP address saja, tidak perlu domain!'
-        alert(errorMsg)
-        console.error('Camera access requires HTTPS (browser security requirement)')
-        return
-      }
-
-      const constraints = mode === 'selfie' 
-        ? { video: { facingMode: 'user' }, audio: false } // Front camera
-        : { video: { facingMode: 'environment' }, audio: false } // Back camera
-      
-      const stream = await navigator.mediaDevices.getUserMedia(constraints)
-      
-      if (mode === 'selfie' && selfieVideoRef.current) {
-        selfieVideoRef.current.srcObject = stream
-        selfieStreamRef.current = stream
-        setCameraMode('selfie')
-      } else if (mode === 'back' && backCameraVideoRef.current) {
-        backCameraVideoRef.current.srcObject = stream
-        backCameraStreamRef.current = stream
-        setCameraMode('back')
-      }
-    } catch (err: any) {
-      console.error('Failed to access camera:', err)
-      
-      let errorMsg = 'Gagal mengakses kamera.\n\n'
-      
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        errorMsg += 'Izin kamera ditolak. Silakan:\n' +
-                   '1. Klik ikon kamera di address bar Safari\n' +
-                   '2. Pilih "Izinkan" untuk akses kamera\n' +
-                   '3. Refresh halaman dan coba lagi'
-      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-        errorMsg += 'Tidak ada kamera yang terdeteksi. Pastikan kamera terhubung dan tidak digunakan aplikasi lain.'
-      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-        errorMsg += 'Kamera sedang digunakan oleh aplikasi lain. Tutup aplikasi lain yang menggunakan kamera.'
-      } else if (err.name === 'OverconstrainedError' || err.name === 'ConstraintNotSatisfiedError') {
-        errorMsg += 'Kamera tidak mendukung mode yang diminta. Coba gunakan kamera lain.'
-      } else {
-        errorMsg += 'Error: ' + (err.message || 'Unknown error') + '\n\n' +
-                  'Tips:\n' +
-                  '- Safari memerlukan HTTPS untuk akses kamera\n' +
-                  '- Pastikan izin kamera sudah diberikan di Settings Safari\n' +
-                  '- Coba gunakan browser Chrome atau Firefox'
-      }
-      
-      alert(errorMsg)
-    }
-  }
-
-  const stopCamera = (mode?: 'selfie' | 'back') => {
-    if (mode === 'selfie' || !mode) {
-      if (selfieStreamRef.current) {
-        selfieStreamRef.current.getTracks().forEach(track => track.stop())
-        selfieStreamRef.current = null
-      }
-      if (selfieVideoRef.current) {
-        selfieVideoRef.current.srcObject = null
-      }
-    }
-    if (mode === 'back' || !mode) {
-      if (backCameraStreamRef.current) {
-        backCameraStreamRef.current.getTracks().forEach(track => track.stop())
-        backCameraStreamRef.current = null
-      }
-      if (backCameraVideoRef.current) {
-        backCameraVideoRef.current.srcObject = null
-      }
-    }
-    if (!mode) {
-      setCameraMode(null)
-    }
-  }
-
-  const capturePhoto = (mode: 'selfie' | 'back') => {
-    const videoRef = mode === 'selfie' ? selfieVideoRef.current : backCameraVideoRef.current
-    if (!videoRef) return
-
-    const canvas = document.createElement('canvas')
-    canvas.width = videoRef.videoWidth
-    canvas.height = videoRef.videoHeight
-    const ctx = canvas.getContext('2d')
-    
-    if (ctx) {
-      ctx.drawImage(videoRef, 0, 0)
-      const imageData = canvas.toDataURL('image/jpeg', 0.8)
-      
-      if (mode === 'selfie') {
-        setSelfieImage(imageData)
-      } else {
-        setBackCameraImage(imageData)
-      }
-      stopCamera(mode)
-      setCameraMode(null)
-    }
-  }
 
   const openForm = (session: 'pagi' | 'sore') => {
     setShowForm(session)
@@ -170,12 +47,10 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
 
   const closeForm = () => {
     setShowForm(null)
-    stopCamera()
     setSelfieImage(null)
     setBackCameraImage(null)
     setHasIssue(false)
     setDescription('')
-    setCameraMode(null)
   }
 
   const submitAttendance = async () => {
@@ -348,42 +223,33 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
                 </label>
                 {!selfieImage ? (
                   <div className="space-y-3">
-                    {!cameraMode && (
-                      <button
-                        onClick={() => startCamera('selfie')}
-                        className="w-full py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 flex items-center justify-center gap-2"
-                      >
-                        <Camera className="w-5 h-5" />
-                        Buka Kamera Depan
-                      </button>
-                    )}
-                    {cameraMode === 'selfie' && selfieVideoRef.current && (
-                      <div className="space-y-3">
-                        <div className="relative bg-black rounded-lg overflow-hidden">
-                          <video
-                            ref={selfieVideoRef}
-                            autoPlay
-                            playsInline
-                            className="w-full h-64 object-cover"
-                          />
-                        </div>
-                        <div className="flex gap-3">
-                          <button
-                            onClick={() => stopCamera('selfie')}
-                            className="flex-1 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300"
-                          >
-                            Batal
-                          </button>
-                          <button
-                            onClick={() => capturePhoto('selfie')}
-                            className="flex-1 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 flex items-center justify-center gap-2"
-                          >
-                            <Camera className="w-5 h-5" />
-                            Ambil Foto
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="user"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          const reader = new FileReader()
+                          reader.onload = (event) => {
+                            const result = event.target?.result as string
+                            setSelfieImage(result)
+                          }
+                          reader.readAsDataURL(file)
+                        }
+                        // Reset input
+                        e.target.value = ''
+                      }}
+                      className="hidden"
+                      id="selfie-input"
+                    />
+                    <label
+                      htmlFor="selfie-input"
+                      className="w-full py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <Camera className="w-5 h-5" />
+                      Ambil Foto Selfie
+                    </label>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -392,15 +258,31 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
                       alt="Selfie"
                       className="w-full h-48 object-cover rounded-lg border border-gray-200"
                     />
-                    <button
-                      onClick={() => {
-                        setSelfieImage(null)
-                        startCamera('selfie')
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="user"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          const reader = new FileReader()
+                          reader.onload = (event) => {
+                            const result = event.target?.result as string
+                            setSelfieImage(result)
+                          }
+                          reader.readAsDataURL(file)
+                        }
+                        e.target.value = ''
                       }}
-                      className="w-full py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300"
+                      className="hidden"
+                      id="selfie-input-retake"
+                    />
+                    <label
+                      htmlFor="selfie-input-retake"
+                      className="w-full py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 cursor-pointer text-center block"
                     >
                       Ambil Ulang
-                    </button>
+                    </label>
                   </div>
                 )}
               </div>
@@ -412,42 +294,32 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
                 </label>
                 {!backCameraImage ? (
                   <div className="space-y-3">
-                    {cameraMode !== 'back' && (
-                      <button
-                        onClick={() => startCamera('back')}
-                        className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 flex items-center justify-center gap-2"
-                      >
-                        <Camera className="w-5 h-5" />
-                        Buka Kamera Belakang
-                      </button>
-                    )}
-                    {cameraMode === 'back' && backCameraVideoRef.current && (
-                      <div className="space-y-3">
-                        <div className="relative bg-black rounded-lg overflow-hidden">
-                          <video
-                            ref={backCameraVideoRef}
-                            autoPlay
-                            playsInline
-                            className="w-full h-64 object-cover"
-                          />
-                        </div>
-                        <div className="flex gap-3">
-                          <button
-                            onClick={() => stopCamera('back')}
-                            className="flex-1 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300"
-                          >
-                            Batal
-                          </button>
-                          <button
-                            onClick={() => capturePhoto('back')}
-                            className="flex-1 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 flex items-center justify-center gap-2"
-                          >
-                            <Camera className="w-5 h-5" />
-                            Ambil Foto
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          const reader = new FileReader()
+                          reader.onload = (event) => {
+                            const result = event.target?.result as string
+                            setBackCameraImage(result)
+                          }
+                          reader.readAsDataURL(file)
+                        }
+                        e.target.value = ''
+                      }}
+                      className="hidden"
+                      id="back-camera-input"
+                    />
+                    <label
+                      htmlFor="back-camera-input"
+                      className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <Camera className="w-5 h-5" />
+                      Ambil Foto Kamera Belakang
+                    </label>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -456,15 +328,31 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
                       alt="Back camera"
                       className="w-full h-48 object-cover rounded-lg border border-gray-200"
                     />
-                    <button
-                      onClick={() => {
-                        setBackCameraImage(null)
-                        startCamera('back')
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          const reader = new FileReader()
+                          reader.onload = (event) => {
+                            const result = event.target?.result as string
+                            setBackCameraImage(result)
+                          }
+                          reader.readAsDataURL(file)
+                        }
+                        e.target.value = ''
                       }}
-                      className="w-full py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300"
+                      className="hidden"
+                      id="back-camera-input-retake"
+                    />
+                    <label
+                      htmlFor="back-camera-input-retake"
+                      className="w-full py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 cursor-pointer text-center block"
                     >
                       Ambil Ulang
-                    </button>
+                    </label>
                   </div>
                 )}
               </div>

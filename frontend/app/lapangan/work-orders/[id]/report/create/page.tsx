@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { authAPI, User, workOrdersAPI, WorkOrder, fieldReportsAPI, FieldReport } from '@/lib/api'
 import { Camera, Video, MapPin, ArrowLeft, X } from 'lucide-react'
@@ -27,11 +27,6 @@ export default function CreateReportPage() {
   
   const [mediaFiles, setMediaFiles] = useState<File[]>([])
   const [gpsPermission, setGpsPermission] = useState<'granted' | 'denied' | 'prompt'>('prompt')
-  const [isMobile, setIsMobile] = useState(false)
-  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null)
-  const [isCapturing, setIsCapturing] = useState(false)
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
     if (!workOrderId) {
@@ -49,10 +44,6 @@ export default function CreateReportPage() {
     }
   }, [user, workOrderId])
 
-  const checkDevice = () => {
-    const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-    setIsMobile(mobile)
-  }
 
   const checkAuth = async () => {
     try {
@@ -104,213 +95,11 @@ export default function CreateReportPage() {
     }
   }
 
-  // Start camera
-  const startCamera = async () => {
-    try {
-      // Check if mediaDevices is available
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        const errorMsg = 'Kamera tidak didukung di browser ini atau akses kamera tidak tersedia.'
-        alert(errorMsg)
-        console.error('MediaDevices API not available')
-        return
-      }
-
-      // Check if we're on HTTPS or localhost (required for Safari)
-      const isSecure = window.location.protocol === 'https:' || 
-                      window.location.hostname === 'localhost' || 
-                      window.location.hostname === '127.0.0.1'
-      
-      if (!isSecure) {
-        const errorMsg = '⚠️ Akses kamera memerlukan HTTPS!\n\n' +
-                        'Semua browser modern memerlukan HTTPS untuk akses kamera.\n\n' +
-                        'Solusi:\n' +
-                        '1. Setup HTTPS dengan IP address (self-signed certificate) - Bisa pakai IP saja!\n' +
-                        '2. Atau setup HTTPS dengan domain + Let\'s Encrypt (lebih profesional)\n' +
-                        '3. Atau akses via localhost untuk development\n\n' +
-                        'Lihat panduan: HTTPS-WITH-IP.md'
-        alert(errorMsg)
-        console.error('Camera access requires HTTPS (browser security requirement)')
-        return
-      }
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' }, // Use back camera on mobile
-        audio: false,
-      })
-      setCameraStream(stream)
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-      }
-    } catch (err: any) {
-      console.error('Error accessing camera:', err)
-      
-      let errorMsg = 'Gagal mengakses kamera.\n\n'
-      
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        errorMsg += 'Izin kamera ditolak. Silakan:\n' +
-                   '1. Klik ikon kamera di address bar Safari\n' +
-                   '2. Pilih "Izinkan" untuk akses kamera\n' +
-                   '3. Refresh halaman dan coba lagi\n\n' +
-                   'Atau gunakan browser Chrome/Firefox untuk pengalaman yang lebih baik.'
-      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-        errorMsg += 'Tidak ada kamera yang terdeteksi. Pastikan kamera terhubung dan tidak digunakan aplikasi lain.'
-      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-        errorMsg += 'Kamera sedang digunakan oleh aplikasi lain. Tutup aplikasi lain yang menggunakan kamera.'
-      } else if (err.name === 'OverconstrainedError' || err.name === 'ConstraintNotSatisfiedError') {
-        errorMsg += 'Kamera tidak mendukung mode yang diminta. Coba gunakan kamera lain.'
-      } else {
-        errorMsg += 'Error: ' + (err.message || 'Unknown error') + '\n\n' +
-                  'Tips:\n' +
-                  '- Semua browser modern memerlukan HTTPS untuk akses kamera\n' +
-                  '- Setup HTTPS dengan IP address (self-signed certificate) - Lihat HTTPS-WITH-IP.md\n' +
-                  '- Pastikan izin kamera sudah diberikan di browser settings'
-      }
-      
-      alert(errorMsg)
-    }
-  }
-
-  // Stop camera
-  const stopCamera = () => {
-    if (cameraStream) {
-      cameraStream.getTracks().forEach(track => track.stop())
-      setCameraStream(null)
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null
-    }
-  }
-
-  // Capture photo from camera
-  const capturePhoto = () => {
-    if (!videoRef.current || !canvasRef.current) return
-
-    const video = videoRef.current
-    const canvas = canvasRef.current
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
-    const ctx = canvas.getContext('2d')
-    if (ctx) {
-      ctx.drawImage(video, 0, 0)
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const file = new File([blob], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' })
-          setMediaFiles(prev => [...prev, file])
-        }
-      }, 'image/jpeg', 0.9)
-    }
-  }
-
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
-  const recordedChunksRef = useRef<Blob[]>([])
-
-  // Start video recording
-  const startVideoRecording = async () => {
-    try {
-      // Check if mediaDevices is available
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        const errorMsg = 'Kamera tidak didukung di browser ini atau akses kamera tidak tersedia.'
-        alert(errorMsg)
-        console.error('MediaDevices API not available')
-        return
-      }
-
-      // Check if we're on HTTPS or localhost (required for Safari)
-      const isSecure = window.location.protocol === 'https:' || 
-                      window.location.hostname === 'localhost' || 
-                      window.location.hostname === '127.0.0.1'
-      
-      if (!isSecure) {
-        const errorMsg = '⚠️ Akses kamera memerlukan HTTPS!\n\n' +
-                        'Semua browser modern memerlukan HTTPS untuk akses kamera.\n\n' +
-                        'Solusi:\n' +
-                        '1. Setup HTTPS dengan IP address (self-signed certificate) - Bisa pakai IP saja!\n' +
-                        '2. Atau setup HTTPS dengan domain + Let\'s Encrypt (lebih profesional)\n' +
-                        '3. Atau akses via localhost untuk development\n\n' +
-                        'Lihat panduan: HTTPS-WITH-IP.md'
-        alert(errorMsg)
-        console.error('Camera access requires HTTPS (browser security requirement)')
-        return
-      }
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' },
-        audio: true,
-      })
-      setCameraStream(stream)
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-      }
-
-      // Setup MediaRecorder
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'video/webm;codecs=vp8,opus',
-      })
-      mediaRecorderRef.current = mediaRecorder
-      recordedChunksRef.current = []
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          recordedChunksRef.current.push(event.data)
-        }
-      }
-
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' })
-        const file = new File([blob], `video-${Date.now()}.webm`, { type: 'video/webm' })
-        setMediaFiles(prev => [...prev, file])
-        recordedChunksRef.current = []
-      }
-
-      mediaRecorder.start()
-      setIsCapturing(true)
-    } catch (err: any) {
-      console.error('Error accessing camera for video:', err)
-      
-      let errorMsg = 'Gagal mengakses kamera untuk video.\n\n'
-      
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        errorMsg += 'Izin kamera ditolak. Silakan:\n' +
-                   '1. Klik ikon kamera di address bar Safari\n' +
-                   '2. Pilih "Izinkan" untuk akses kamera\n' +
-                   '3. Refresh halaman dan coba lagi\n\n' +
-                   'Atau gunakan browser Chrome/Firefox untuk pengalaman yang lebih baik.'
-      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-        errorMsg += 'Tidak ada kamera yang terdeteksi. Pastikan kamera terhubung dan tidak digunakan aplikasi lain.'
-      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-        errorMsg += 'Kamera sedang digunakan oleh aplikasi lain. Tutup aplikasi lain yang menggunakan kamera.'
-      } else {
-        errorMsg += 'Error: ' + (err.message || 'Unknown error') + '\n\n' +
-                  'Tips:\n' +
-                  '- Semua browser modern memerlukan HTTPS untuk akses kamera\n' +
-                  '- Setup HTTPS dengan IP address (self-signed certificate) - Lihat HTTPS-WITH-IP.md\n' +
-                  '- Pastikan izin kamera sudah diberikan di browser settings'
-      }
-      
-      alert(errorMsg)
-    }
-  }
-
-  // Stop video recording
-  const stopVideoRecording = () => {
-    if (mediaRecorderRef.current && isCapturing) {
-      mediaRecorderRef.current.stop()
-      setIsCapturing(false)
-    }
-    // Don't stop camera stream here, let user continue taking photos
-  }
 
   const removeMediaFile = (index: number) => {
     setMediaFiles(prev => prev.filter((_, i) => i !== index))
   }
 
-  // Cleanup camera on unmount
-  useEffect(() => {
-    return () => {
-      stopCamera()
-      stopVideoRecording()
-    }
-  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -464,84 +253,62 @@ export default function CreateReportPage() {
               <span className="text-xs text-gray-500 ml-2">(Camera only - no file upload)</span>
             </label>
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
-              {/* Camera Preview */}
-              {cameraStream && (
-                <div className="mb-4">
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    className="w-full max-w-md mx-auto rounded-lg border border-gray-200"
-                    style={{ maxHeight: '400px' }}
-                  />
-                  <canvas ref={canvasRef} className="hidden" />
-                </div>
-              )}
-
               <div className="text-center space-y-4">
-                {!cameraStream ? (
-                  <>
-                    <div className="flex justify-center gap-4">
-                      <Camera className="w-8 h-8 text-gray-400" />
-                      <Video className="w-8 h-8 text-gray-400" />
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium text-gray-900">Use Camera to Capture Media</p>
-                      <p className="text-xs text-gray-500">
-                        Click below to start camera. File upload is disabled to prevent data falsification.
-                      </p>
-                    </div>
-                    <div className="flex justify-center gap-3">
-                      <button
-                        type="button"
-                        onClick={startCamera}
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium flex items-center gap-2"
-                      >
-                        <Camera className="w-4 h-4" />
-                        Start Camera
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="flex justify-center gap-3">
-                      <button
-                        type="button"
-                        onClick={capturePhoto}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium flex items-center gap-2"
-                      >
-                        <Camera className="w-4 h-4" />
-                        Capture Photo
-                      </button>
-                      {!isCapturing ? (
-                        <button
-                          type="button"
-                          onClick={startVideoRecording}
-                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium flex items-center gap-2"
-                        >
-                          <Video className="w-4 h-4" />
-                          Start Video
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={stopVideoRecording}
-                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium flex items-center gap-2"
-                        >
-                          <Video className="w-4 h-4" />
-                          Stop Video
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={stopCamera}
-                        className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm font-medium"
-                      >
-                        Stop Camera
-                      </button>
-                    </div>
-                  </div>
-                )}
+                <div className="flex justify-center gap-4">
+                  <Camera className="w-8 h-8 text-gray-400" />
+                  <Video className="w-8 h-8 text-gray-400" />
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-gray-900">Gunakan Kamera untuk Mengambil Foto/Video</p>
+                  <p className="text-xs text-gray-500">
+                    Klik tombol di bawah untuk membuka aplikasi kamera bawaan HP. Upload file dinonaktifkan untuk mencegah pemalsuan data.
+                  </p>
+                </div>
+                <div className="flex justify-center gap-3 flex-wrap">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) {
+                        setMediaFiles(prev => [...prev, file])
+                      }
+                      e.target.value = ''
+                    }}
+                    className="hidden"
+                    id="photo-input"
+                  />
+                  <label
+                    htmlFor="photo-input"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium flex items-center gap-2 cursor-pointer"
+                  >
+                    <Camera className="w-4 h-4" />
+                    Ambil Foto
+                  </label>
+                  
+                  <input
+                    type="file"
+                    accept="video/*"
+                    capture="environment"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) {
+                        setMediaFiles(prev => [...prev, file])
+                      }
+                      e.target.value = ''
+                    }}
+                    className="hidden"
+                    id="video-input"
+                  />
+                  <label
+                    htmlFor="video-input"
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium flex items-center gap-2 cursor-pointer"
+                  >
+                    <Video className="w-4 h-4" />
+                    Ambil Video
+                  </label>
+                </div>
               </div>
             </div>
 
