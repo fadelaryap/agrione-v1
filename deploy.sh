@@ -25,7 +25,7 @@ if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/
 fi
 
 # Navigate to project directory
-PROJECT_DIR="${PROJECT_DIR:-~/agrione}"
+PROJECT_DIR="${PROJECT_DIR:-~/agrione-v1}"
 if [ ! -d "$PROJECT_DIR" ]; then
     echo -e "${YELLOW}⚠️  Project directory not found at $PROJECT_DIR${NC}"
     echo -e "${YELLOW}   Please set PROJECT_DIR environment variable or clone the repository first.${NC}"
@@ -36,12 +36,48 @@ cd "$PROJECT_DIR"
 
 echo -e "${GREEN}📁 Project directory: $(pwd)${NC}"
 
+# Get VPS IP for environment variables
+VPS_IP=$(hostname -I | awk '{print $1}')
+echo -e "${BLUE}🌐 VPS IP: $VPS_IP${NC}"
+
 # Pull latest changes (if git repo)
 if [ -d ".git" ]; then
     echo -e "${GREEN}📥 Pulling latest changes...${NC}"
     git fetch origin
     git reset --hard origin/main 2>/dev/null || git reset --hard origin/master 2>/dev/null || echo "⚠️  Could not pull from git"
 fi
+
+# Setup .env file with VPS IP
+if [ ! -f .env ]; then
+    echo -e "${GREEN}📝 Creating .env file...${NC}"
+    cat > .env << 'ENVEOF'
+POSTGRES_USER=agrione
+POSTGRES_PASSWORD=agrione123
+POSTGRES_DB=agrione_db
+JWT_SECRET=your-super-secret-jwt-key-change-in-production
+CSRF_SECRET=your-csrf-secret-key-change-in-production
+ENVEOF
+    echo "CORS_ORIGIN=http://$VPS_IP:3000" >> .env
+    echo "NEXT_PUBLIC_API_URL=http://$VPS_IP:8000" >> .env
+else
+    echo -e "${GREEN}📝 Updating .env file with VPS IP...${NC}"
+    # Update CORS_ORIGIN and NEXT_PUBLIC_API_URL
+    if grep -q "^CORS_ORIGIN=" .env; then
+        sed -i "s|^CORS_ORIGIN=.*|CORS_ORIGIN=http://$VPS_IP:3000|" .env
+    else
+        echo "CORS_ORIGIN=http://$VPS_IP:3000" >> .env
+    fi
+    
+    if grep -q "^NEXT_PUBLIC_API_URL=" .env; then
+        sed -i "s|^NEXT_PUBLIC_API_URL=.*|NEXT_PUBLIC_API_URL=http://$VPS_IP:8000|" .env
+    else
+        echo "NEXT_PUBLIC_API_URL=http://$VPS_IP:8000" >> .env
+    fi
+fi
+
+echo -e "${GREEN}✅ Environment configured:${NC}"
+echo -e "   CORS_ORIGIN=http://$VPS_IP:3000"
+echo -e "   NEXT_PUBLIC_API_URL=http://$VPS_IP:8000"
 
 # Stop existing containers
 echo -e "${YELLOW}🛑 Stopping existing containers...${NC}"

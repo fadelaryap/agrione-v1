@@ -29,12 +29,12 @@ sudo apt update && sudo apt upgrade -y
 
 ```bash
 # Download script
-curl -fsSL https://raw.githubusercontent.com/YOUR_USERNAME/agrione/main/setup-vps-complete.sh -o setup.sh
+curl -fsSL https://raw.githubusercontent.com/fadelaryap/agrione-v1/main/setup-vps-complete.sh -o setup.sh
 
 # Atau jika sudah clone repository:
 # cd ~
-# git clone https://github.com/YOUR_USERNAME/agrione.git
-# cd agrione
+# git clone https://github.com/fadelaryap/agrione-v1.git
+# cd agrione-v1
 # chmod +x setup-vps-complete.sh
 # ./setup-vps-complete.sh
 
@@ -80,10 +80,10 @@ cat ~/.ssh/github_actions
 ### 1.6 Clone Repository
 
 ```bash
-cd /opt/agrione
+cd /opt/agrione-v1
 
 # Jika repository sudah ada di GitHub:
-git clone https://github.com/YOUR_USERNAME/agrione.git .
+git clone https://github.com/fadelaryap/agrione-v1.git .
 
 # Atau jika belum ada repository:
 # Kita akan setup git repository di step berikutnya
@@ -97,7 +97,7 @@ git clone https://github.com/YOUR_USERNAME/agrione.git .
 
 1. Buka https://github.com
 2. Klik "New repository"
-3. Nama: `agrione`
+3. Nama: `agrione-v1`
 4. Pilih Public atau Private
 5. **JANGAN** centang "Initialize with README"
 6. Klik "Create repository"
@@ -106,13 +106,13 @@ git clone https://github.com/YOUR_USERNAME/agrione.git .
 
 ```bash
 # Di Windows/WSL, di folder project
-cd /d/agrione  # atau D:\agrione
+cd /d/agrione  # atau D:\agrione (folder local Anda)
 
 # Initialize git (jika belum)
 git init
 
 # Add remote
-git remote add origin https://github.com/YOUR_USERNAME/agrione.git
+git remote add origin https://github.com/fadelaryap/agrione-v1.git
 
 # Add semua file
 git add .
@@ -127,7 +127,7 @@ git push -u origin main
 
 ### 2.3 Setup GitHub Secrets
 
-1. Buka repository di GitHub: `https://github.com/YOUR_USERNAME/agrione`
+1. Buka repository di GitHub: `https://github.com/fadelaryap/agrione-v1`
 2. Klik **Settings** → **Secrets and variables** → **Actions**
 3. Klik **New repository secret**
 
@@ -168,14 +168,14 @@ Tambahkan 3 secrets:
 Jika repository belum di-clone di VPS:
 
 ```bash
-cd /opt/agrione
+cd /opt/agrione-v1
 
 # Clone repository
-git clone https://github.com/YOUR_USERNAME/agrione.git .
+git clone https://github.com/fadelaryap/agrione-v1.git .
 
 # Atau jika folder sudah ada tapi kosong:
 git init
-git remote add origin https://github.com/YOUR_USERNAME/agrione.git
+git remote add origin https://github.com/fadelaryap/agrione-v1.git
 git fetch origin
 git checkout -b main origin/main
 ```
@@ -187,7 +187,7 @@ git checkout -b main origin/main
 ### 4.1 Test Manual di VPS
 
 ```bash
-cd /opt/agrione
+cd /opt/agrione-v1
 
 # Test docker compose
 docker compose version
@@ -255,13 +255,13 @@ docker ps
 
 ```bash
 # Pastikan directory ada
-ls -la /opt/agrione
+ls -la /opt/agrione-v1
 
 # Jika tidak ada, buat:
-sudo mkdir -p /opt/agrione
-sudo chown $USER:$USER /opt/agrione
-cd /opt/agrione
-git clone https://github.com/YOUR_USERNAME/agrione.git .
+sudo mkdir -p /opt/agrione-v1
+sudo chown $USER:$USER /opt/agrione-v1
+cd /opt/agrione-v1
+git clone https://github.com/fadelaryap/agrione-v1.git .
 ```
 
 ### GitHub Actions gagal

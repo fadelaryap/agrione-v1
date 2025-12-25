@@ -64,7 +64,7 @@ else
 fi
 
 echo -e "${BLUE}📁 Step 5: Setting up project directory...${NC}"
-PROJECT_DIR="/opt/agrione"
+PROJECT_DIR="/opt/agrione-v1"
 
 if [ ! -d "$PROJECT_DIR" ]; then
     sudo mkdir -p "$PROJECT_DIR"
@@ -98,8 +98,8 @@ echo "   3. Clone repository ke $PROJECT_DIR"
 echo ""
 echo -e "${BLUE}Langkah selanjutnya:${NC}"
 echo "   cd $PROJECT_DIR"
-echo "   git clone https://github.com/YOUR_USERNAME/agrione.git ."
+echo "   git clone https://github.com/fadelaryap/agrione-v1.git ."
 echo "   # atau jika sudah ada:"
-echo "   git remote add origin https://github.com/YOUR_USERNAME/agrione.git"
+echo "   git remote add origin https://github.com/fadelaryap/agrione-v1.git"
 echo "   git pull origin main"
 

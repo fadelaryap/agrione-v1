@@ -60,12 +60,22 @@ func main() {
 	api.HandleFunc("/user", testHandler.TestConnection).Methods("GET")
 
 	// Setup CSRF protection (only validates POST/PUT/DELETE, GET is exempt)
+	// Support IP addresses in trusted origins
+	trustedOrigins := []string{}
+	if cfg.CORSOrigin != "" && cfg.CORSOrigin != "*" {
+		trustedOrigins = []string{cfg.CORSOrigin}
+	}
+	// If CORS_ORIGIN is "*" or empty, CSRF will be more permissive
+	// This allows IP-based access without strict origin checking
+	
 	csrfMiddleware := csrf.Protect(
 		[]byte(cfg.CSRFSecret),
-		csrf.Secure(false), // Set to true in production with HTTPS
+		csrf.Secure(false), // Set to false for HTTP (IP-based access without HTTPS)
 		csrf.Path("/"),
-		csrf.TrustedOrigins([]string{cfg.CORSOrigin}),
+		csrf.TrustedOrigins(trustedOrigins),
 		csrf.ErrorHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Log for debugging
+			log.Printf("CSRF validation failed. Origin: %s, Expected: %s", r.Header.Get("Origin"), cfg.CORSOrigin)
 			http.Error(w, "CSRF token validation failed", http.StatusForbidden)
 		})),
 	)

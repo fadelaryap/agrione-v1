@@ -67,7 +67,7 @@ else
 fi
 
 # Create project directory
-PROJECT_DIR="${1:-/opt/agrione}"
+PROJECT_DIR="${1:-/opt/agrione-v1}"
 echo -e "${GREEN}📁 Setting up project directory at $PROJECT_DIR...${NC}"
 
 if [ ! -d "$PROJECT_DIR" ]; then
@@ -77,7 +77,7 @@ if [ ! -d "$PROJECT_DIR" ]; then
     echo -e "${YELLOW}📋 Next steps:${NC}"
     echo "  1. Clone your repository:"
     echo "     cd $PROJECT_DIR"
-    echo "     git clone https://github.com/YOUR_USERNAME/agrione.git ."
+    echo "     git clone https://github.com/fadelaryap/agrione-v1.git ."
     echo ""
     echo "  2. Add GitHub Secrets:"
     echo "     - VPS_HOST: $(hostname -I | awk '{print $1}') or your domain"

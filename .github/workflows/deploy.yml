@@ -36,13 +36,13 @@ jobs:
             
             # Find project directory
             PROJECT_DIR=""
-            if [ -d ~/agrione ]; then
-              PROJECT_DIR=~/agrione
-            elif [ -d /opt/agrione ]; then
-              PROJECT_DIR=/opt/agrione
+            if [ -d ~/agrione-v1 ]; then
+              PROJECT_DIR=~/agrione-v1
+            elif [ -d /opt/agrione-v1 ]; then
+              PROJECT_DIR=/opt/agrione-v1
             else
               echo "❌ Project directory not found!"
-              echo "   Please clone repository to ~/agrione or /opt/agrione"
+              echo "   Please clone repository to ~/agrione-v1 or /opt/agrione-v1"
               exit 1
             fi
             
@@ -75,6 +75,38 @@ jobs:
             echo ""
             echo "🛑 Stopping existing containers..."
             docker compose down || true
+            
+            # Get VPS IP for environment variables
+            VPS_IP=$(hostname -I | awk '{print $1}')
+            echo "🌐 VPS IP: $VPS_IP"
+            
+            # Create .env file if it doesn't exist
+            if [ ! -f .env ]; then
+              echo "📝 Creating .env file..."
+              cat > .env << EOF
+POSTGRES_USER=agrione
+POSTGRES_PASSWORD=agrione123
+POSTGRES_DB=agrione_db
+JWT_SECRET=\${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+CSRF_SECRET=\${CSRF_SECRET:-your-csrf-secret-key-change-in-production}
+CORS_ORIGIN=http://$VPS_IP:3000
+NEXT_PUBLIC_API_URL=http://$VPS_IP:8000
+EOF
+            else
+              echo "📝 Updating .env file with VPS IP..."
+              # Update CORS_ORIGIN and NEXT_PUBLIC_API_URL if they exist, or add them
+              if grep -q "CORS_ORIGIN=" .env; then
+                sed -i "s|CORS_ORIGIN=.*|CORS_ORIGIN=http://$VPS_IP:3000|" .env
+              else
+                echo "CORS_ORIGIN=http://$VPS_IP:3000" >> .env
+              fi
+              
+              if grep -q "NEXT_PUBLIC_API_URL=" .env; then
+                sed -i "s|NEXT_PUBLIC_API_URL=.*|NEXT_PUBLIC_API_URL=http://$VPS_IP:8000|" .env
+              else
+                echo "NEXT_PUBLIC_API_URL=http://$VPS_IP:8000" >> .env
+              fi
+            fi
             
             # Build containers
             echo ""

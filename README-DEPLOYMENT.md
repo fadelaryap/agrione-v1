@@ -15,15 +15,15 @@ Panduan lengkap untuk setup automatic deployment dari GitHub ke VPS Ubuntu.
 
 ```bash
 # Download dan run setup script
-curl -fsSL https://raw.githubusercontent.com/YOUR_USERNAME/agrione/main/setup-vps.sh -o setup-vps.sh
+curl -fsSL https://raw.githubusercontent.com/fadelaryap/agrione-v1/main/setup-vps-complete.sh -o setup-vps.sh
 chmod +x setup-vps.sh
 ./setup-vps.sh
 
 # Atau clone repository dulu
-git clone https://github.com/YOUR_USERNAME/agrione.git
-cd agrione
-chmod +x setup-vps.sh
-./setup-vps.sh
+git clone https://github.com/fadelaryap/agrione-v1.git
+cd agrione-v1
+chmod +x setup-vps-complete.sh
+./setup-vps-complete.sh
 ```
 
 ### Opsi 2: Manual Setup
@@ -50,11 +50,11 @@ exit
 #### 2. Clone Repository
 
 ```bash
-# Pilih lokasi (contoh: /opt/agrione atau ~/agrione)
+# Pilih lokasi (contoh: /opt/agrione-v1 atau ~/agrione-v1)
 cd /opt
-sudo git clone https://github.com/YOUR_USERNAME/agrione.git
-sudo chown -R $USER:$USER agrione
-cd agrione
+sudo git clone https://github.com/fadelaryap/agrione-v1.git
+sudo chown -R $USER:$USER agrione-v1
+cd agrione-v1
 ```
 
 #### 3. Setup SSH Key untuk GitHub Actions
@@ -109,7 +109,7 @@ Tambahkan 3 secrets:
 Jika ingin deploy manual di VPS:
 
 ```bash
-cd /opt/agrione  # atau lokasi project Anda
+cd /opt/agrione-v1  # atau lokasi project Anda
 chmod +x deploy.sh
 ./deploy.sh
 ```
@@ -172,7 +172,7 @@ docker compose exec postgres psql -U agrione -d agrione_db
 
 ```bash
 # Fix ownership
-sudo chown -R $USER:$USER /opt/agrione
+sudo chown -R $USER:$USER /opt/agrione-v1
 
 # Add user to docker group
 sudo usermod -aG docker $USER
@@ -188,7 +188,7 @@ sudo usermod -aG docker $USER
 sudo apt install nginx certbot python3-certbot-nginx -y
 
 # Setup Nginx config
-sudo nano /etc/nginx/sites-available/agrione
+sudo nano /etc/nginx/sites-available/agrione-v1
 ```
 
 ```nginx
@@ -218,7 +218,7 @@ server {
 
 ```bash
 # Enable site
-sudo ln -s /etc/nginx/sites-available/agrione /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/agrione-v1 /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl reload nginx
 
