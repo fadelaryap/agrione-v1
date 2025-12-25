@@ -1,0 +1,139 @@
+name: 🚀 Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔑 Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+
+      - name: 🔐 Add VPS to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: 🚀 Deploy to VPS
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'ENDSSH'
+            set -e
+            
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "🚀 Starting deployment..."
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            
+            # Find project directory
+            PROJECT_DIR=""
+            if [ -d ~/agrione ]; then
+              PROJECT_DIR=~/agrione
+            elif [ -d /opt/agrione ]; then
+              PROJECT_DIR=/opt/agrione
+            else
+              echo "❌ Project directory not found!"
+              echo "   Please clone repository to ~/agrione or /opt/agrione"
+              exit 1
+            fi
+            
+            cd "$PROJECT_DIR"
+            echo "📁 Project directory: $(pwd)"
+            
+            # Pull latest changes
+            echo ""
+            echo "📥 Pulling latest changes from GitHub..."
+            git fetch origin
+            
+            # Get current branch or default to main
+            CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "main")
+            if [ "$CURRENT_BRANCH" = "" ]; then
+              CURRENT_BRANCH="main"
+            fi
+            
+            # Try to checkout main or master
+            if git show-ref --verify --quiet refs/remotes/origin/main; then
+              git checkout -B main origin/main 2>/dev/null || git checkout main
+              git reset --hard origin/main
+            elif git show-ref --verify --quiet refs/remotes/origin/master; then
+              git checkout -B master origin/master 2>/dev/null || git checkout master
+              git reset --hard origin/master
+            else
+              echo "⚠️  No main or master branch found, using current branch"
+            fi
+            
+            # Stop existing containers
+            echo ""
+            echo "🛑 Stopping existing containers..."
+            docker compose down || true
+            
+            # Build containers
+            echo ""
+            echo "🔨 Building containers (this may take a while)..."
+            docker compose build --no-cache
+            
+            # Start containers
+            echo ""
+            echo "🚀 Starting containers..."
+            docker compose up -d
+            
+            # Wait for services to be ready
+            echo ""
+            echo "⏳ Waiting for services to start (15 seconds)..."
+            sleep 15
+            
+            # Clean up old images
+            echo ""
+            echo "🧹 Cleaning up old Docker images..."
+            docker image prune -f
+            
+            # Show container status
+            echo ""
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "✅ Deployment complete!"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo ""
+            docker compose ps
+          ENDSSH
+
+      - name: 🏥 Health Check
+        run: |
+          sleep 5
+          ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'ENDSSH'
+            echo ""
+            echo "🏥 Running health checks..."
+            echo ""
+            
+            # Check containers
+            echo "📊 Container Status:"
+            docker compose ps
+            echo ""
+            
+            # Check backend
+            echo "🔍 Checking backend (http://localhost:8000/api/health)..."
+            if curl -f http://localhost:8000/api/health > /dev/null 2>&1; then
+              echo "✅ Backend is healthy"
+            else
+              echo "⚠️  Backend health check failed (may need more time to start)"
+              echo "   Check logs with: docker compose logs backend"
+            fi
+            
+            # Check frontend
+            echo ""
+            echo "🔍 Checking frontend (http://localhost:3000)..."
+            if curl -f http://localhost:3000 > /dev/null 2>&1; then
+              echo "✅ Frontend is healthy"
+            else
+              echo "⚠️  Frontend health check failed (may need more time to start)"
+              echo "   Check logs with: docker compose logs frontend"
+            fi
+          ENDSSH
