@@ -16,14 +16,10 @@ import (
 
 type WorkOrdersHandler struct {
 	db  *sql.DB
-	hub interface {
-		SendToUser(userID int, message interface{}) error
-	}
+	hub *websocket.Hub
 }
 
-func NewWorkOrdersHandler(db *sql.DB, hub interface {
-	SendToUser(userID int, message interface{}) error
-}) *WorkOrdersHandler {
+func NewWorkOrdersHandler(db *sql.DB, hub *websocket.Hub) *WorkOrdersHandler {
 	return &WorkOrdersHandler{db: db, hub: hub}
 }
 

@@ -14,14 +14,10 @@ import (
 
 type FieldReportsHandler struct {
 	db  *sql.DB
-	hub interface {
-		SendToUser(userID int, message interface{}) error
-	}
+	hub *websocket.Hub
 }
 
-func NewFieldReportsHandler(db *sql.DB, hub interface {
-	SendToUser(userID int, message interface{}) error
-}) *FieldReportsHandler {
+func NewFieldReportsHandler(db *sql.DB, hub *websocket.Hub) *FieldReportsHandler {
 	return &FieldReportsHandler{db: db, hub: hub}
 }
 
