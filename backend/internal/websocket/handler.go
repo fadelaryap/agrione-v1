@@ -22,32 +22,36 @@ var upgrader = websocket.Upgrader{
 // HandleWebSocket handles WebSocket connections
 func HandleWebSocket(hub *Hub, cfg *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Try to get user ID from context (if authenticated via middleware)
-		userID, ok := r.Context().Value(middleware.UserIDKey).(int)
+		var userID int
+		var ok bool
 		
-		// If not in context, try to get from Authorization header or query param
+		// First, try to get user ID from context (if authenticated via middleware)
+		userID, ok = r.Context().Value(middleware.UserIDKey).(int)
+		
+		// If not in context, try to get from query parameter (token)
 		if !ok {
-			// Try Authorization header
+			tokenParam := r.URL.Query().Get("token")
+			if tokenParam != "" {
+				userID, ok = parseTokenForUserID(tokenParam, cfg)
+			}
+		}
+		
+		// If still not found, try Authorization header
+		if !ok {
 			authHeader := r.Header.Get("Authorization")
 			if authHeader != "" && len(authHeader) > 7 && authHeader[:7] == "Bearer " {
 				tokenString := authHeader[7:]
-				// Parse JWT token to get user ID
 				userID, ok = parseTokenForUserID(tokenString, cfg)
-			}
-			
-			// If still not found, try query parameter
-			if !ok {
-				tokenParam := r.URL.Query().Get("token")
-				if tokenParam != "" {
-					userID, ok = parseTokenForUserID(tokenParam, cfg)
-				}
 			}
 		}
 		
 		if !ok || userID == 0 {
+			log.Printf("WebSocket authentication failed: no valid token found")
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
+
+		log.Printf("WebSocket connection authenticated for userID: %d", userID)
 
 		// Upgrade connection to WebSocket
 		conn, err := upgrader.Upgrade(w, r, nil)
@@ -75,8 +79,11 @@ func HandleWebSocket(hub *Hub, cfg *config.Config) http.HandlerFunc {
 
 // parseTokenForUserID parses JWT token and returns user ID
 func parseTokenForUserID(tokenString string, cfg *config.Config) (int, bool) {
-	// Import jwt here to avoid circular dependency
-	// We'll use a simple approach: decode and verify token
+	if tokenString == "" {
+		log.Printf("WebSocket: Empty token string")
+		return 0, false
+	}
+	
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, jwt.ErrSignatureInvalid
@@ -84,21 +91,36 @@ func parseTokenForUserID(tokenString string, cfg *config.Config) (int, bool) {
 		return []byte(cfg.JWTSecret), nil
 	})
 	
-	if err != nil || !token.Valid {
+	if err != nil {
+		log.Printf("WebSocket: JWT parse error: %v", err)
+		return 0, false
+	}
+	
+	if !token.Valid {
+		log.Printf("WebSocket: JWT token is invalid")
 		return 0, false
 	}
 	
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
+		log.Printf("WebSocket: JWT claims type assertion failed")
 		return 0, false
 	}
 	
-	userID, ok := claims["user_id"].(float64)
+	userIDFloat, ok := claims["user_id"].(float64)
 	if !ok {
+		log.Printf("WebSocket: JWT user_id not found or wrong type")
 		return 0, false
 	}
 	
-	return int(userID), true
+	userID := int(userIDFloat)
+	if userID == 0 {
+		log.Printf("WebSocket: JWT user_id is 0")
+		return 0, false
+	}
+	
+	log.Printf("WebSocket: Successfully parsed token for userID: %d", userID)
+	return userID, true
 }
 
 // CreateNotification creates a notification in the database and sends it via WebSocket

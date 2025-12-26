@@ -178,8 +178,9 @@ func main() {
 	protectedPut.HandleFunc("/notifications/{id}/read", notificationsHandler.MarkAsRead).Methods("PUT")
 	protectedPut.HandleFunc("/notifications/read-all", notificationsHandler.MarkAllAsRead).Methods("PUT")
 	
-	// WebSocket route
-	protected.HandleFunc("/ws", websocket.HandleWebSocket(hub, cfg)).Methods("GET")
+	// WebSocket route (handles authentication internally via query param or header)
+	// Not using protected router because WebSocket needs to handle auth differently
+	api.HandleFunc("/ws", websocket.HandleWebSocket(hub, cfg)).Methods("GET")
 
 	// Wrap router
 	http.Handle("/", r)
