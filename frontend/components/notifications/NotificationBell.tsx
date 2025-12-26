@@ -126,16 +126,6 @@ export default function NotificationBell({ userRole }: NotificationBellProps) {
     }
   }, [isOpen])
 
-  // Show for Level 1, 2, 3, and 4
-  if (!userRole || (userRole !== 'Level 1' && userRole !== 'Level 2' && userRole !== 'Level 3' && userRole !== 'Level 4')) {
-    return null
-  }
-
-  const handleNotificationClick = (notification: Notification) => {
-    setIsOpen(false)
-    router.push(notification.link)
-  }
-
   // Mark all as read when dropdown is opened
   useEffect(() => {
     if (isOpen && unreadCount > 0) {
@@ -152,6 +142,16 @@ export default function NotificationBell({ userRole }: NotificationBellProps) {
       markAllRead()
     }
   }, [isOpen, unreadCount])
+
+  // Show for Level 1, 2, 3, and 4
+  if (!userRole || (userRole !== 'Level 1' && userRole !== 'Level 2' && userRole !== 'Level 3' && userRole !== 'Level 4')) {
+    return null
+  }
+
+  const handleNotificationClick = (notification: Notification) => {
+    setIsOpen(false)
+    router.push(notification.link)
+  }
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
