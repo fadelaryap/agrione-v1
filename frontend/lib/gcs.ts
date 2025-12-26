@@ -37,10 +37,58 @@ function getGCSConfig(): GCSConfig | null {
   }
 }
 
+// Sign JWT using Web Crypto API (browser-compatible)
+async function signJWT(payload: any, privateKeyPEM: string): Promise<string> {
+  // Remove PEM headers and whitespace
+  const pemHeader = '-----BEGIN PRIVATE KEY-----'
+  const pemFooter = '-----END PRIVATE KEY-----'
+  let pemContents = privateKeyPEM
+    .replace(pemHeader, '')
+    .replace(pemFooter, '')
+    .replace(/\s/g, '')
+  
+  // Base64 decode
+  const binaryDer = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0))
+  
+  // Import private key
+  const cryptoKey = await crypto.subtle.importKey(
+    'pkcs8',
+    binaryDer,
+    {
+      name: 'RSASSA-PKCS1-v1_5',
+      hash: 'SHA-256',
+    },
+    false,
+    ['sign']
+  )
+
+  // Create JWT header and payload
+  const header = {
+    alg: 'RS256',
+    typ: 'JWT',
+  }
+
+  // Base64URL encode (RFC 4648)
+  function base64UrlEncode(str: string): string {
+    return btoa(str)
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '')
+  }
+
+  const encodedHeader = base64UrlEncode(JSON.stringify(header))
+  const encodedPayload = base64UrlEncode(JSON.stringify(payload))
+  
+  // Sign
+  const data = new TextEncoder().encode(`${encodedHeader}.${encodedPayload}`)
+  const signature = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', cryptoKey, data)
+  const encodedSignature = base64UrlEncode(String.fromCharCode(...new Uint8Array(signature)))
+
+  return `${encodedHeader}.${encodedPayload}.${encodedSignature}`
+}
+
 // Generate OAuth2 access token from service account credentials
 async function getAccessToken(credentials: GCSConfig['credentials']): Promise<string> {
-  const jwt = await import('jsonwebtoken')
-  
   const now = Math.floor(Date.now() / 1000)
   const expiry = now + 3600 // 1 hour
 
@@ -53,10 +101,8 @@ async function getAccessToken(credentials: GCSConfig['credentials']): Promise<st
     scope: 'https://www.googleapis.com/auth/devstorage.full_control',
   }
 
-  const token = jwt.default.sign(payload, credentials.private_key, {
-    algorithm: 'RS256',
-    keyid: credentials.private_key_id,
-  })
+  // Sign JWT using Web Crypto API
+  const token = await signJWT(payload, credentials.private_key)
 
   // Exchange JWT for access token
   const response = await fetch(credentials.token_uri, {

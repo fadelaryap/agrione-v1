@@ -93,7 +93,10 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
       alert(`Absen ${showForm === 'pagi' ? 'Pagi' : 'Sore'} berhasil!`)
     } catch (err: any) {
       console.error('Failed to submit attendance:', err)
-      alert('Gagal melakukan absen: ' + (err.response?.data?.error || err.message))
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : (err?.response?.data?.error || err?.message || 'Gagal melakukan absen')
+      alert('Gagal melakukan absen: ' + errorMessage)
     } finally {
       setSubmitting(null)
     }
