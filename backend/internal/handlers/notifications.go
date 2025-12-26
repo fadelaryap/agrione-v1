@@ -35,10 +35,23 @@ type NotificationsResponse struct {
 
 // GetNotifications returns notifications for Level 1/2 users
 func (h *NotificationsHandler) GetNotifications(w http.ResponseWriter, r *http.Request) {
-	user := r.Context().Value(middleware.UserContextKey).(middleware.UserContext)
-	
+	// Get user ID from context
+	userID, ok := r.Context().Value(middleware.UserIDKey).(int)
+	if !ok {
+		http.Error(w, "User ID not found in context", http.StatusUnauthorized)
+		return
+	}
+
+	// Get user role from database
+	var userRole string
+	err := h.db.QueryRow("SELECT role FROM users WHERE id = $1", userID).Scan(&userRole)
+	if err != nil {
+		http.Error(w, "Failed to get user role", http.StatusInternalServerError)
+		return
+	}
+
 	// Only Level 1 and Level 2 can see notifications
-	if user.Role != "Level 1" && user.Role != "Level 2" {
+	if userRole != "Level 1" && userRole != "Level 2" {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(NotificationsResponse{
 			Notifications: []Notification{},
