@@ -1,53 +1,55 @@
-# ☁️ Setup GCS - Versi Sederhana (Pakai File)
+# ☁️ Setup GCS - Versi Simple (Pakai Next.js API Route)
 
-## 📋 Step 1: Taruh File di VPS
+## 📋 Step 1: Install Package
 
 ```bash
-# Upload file ke VPS (dari local)
-scp gcs-credentials.json user@vps:/opt/agrione/gcs-credentials.json
-
-# Atau jika sudah di VPS, pindahkan ke lokasi yang tepat
-sudo mkdir -p /opt/agrione
-sudo mv gcs-credentials.json /opt/agrione/gcs-credentials.json
-sudo chmod 600 /opt/agrione/gcs-credentials.json
+cd frontend
+npm install @google-cloud/storage
 ```
 
----
-
 ## 📝 Step 2: Update .env File
+
+Edit `.env` di VPS:
 
 ```bash
 cd /opt/agrione/agrione-v1
 nano .env
 ```
 
-**Tambahkan 2 baris ini:**
+**Tambahkan baris ini:**
 
 ```env
 GCS_BUCKET_NAME=agrione-media
-GOOGLE_APPLICATION_CREDENTIALS=/opt/gcs-credentials.json
+GOOGLE_CLIENT_EMAIL=agrione-gcs-uploader@mystical-moon-469502-m5.iam.gserviceaccount.com
+GOOGLE_PRIVATE_KEY=-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC4VhV8Niuckvle\n...\n-----END PRIVATE KEY-----\n
+GOOGLE_PRIVATE_KEY_ID=ab9ab51bc90c2c1212e2ae1174b929005cf7dc9d
+GOOGLE_CLIENT_ID=100249810148217928356
+GOOGLE_PROJECT_ID=mystical-moon-469502-m5
 ```
 
 **Catatan Penting:**
-- File di VPS: `/opt/agrione/gcs-credentials.json` (file asli)
-- File di container: `/opt/gcs-credentials.json` (setelah di-mount)
-- Environment variable `GOOGLE_APPLICATION_CREDENTIALS` harus pakai path **di dalam container**: `/opt/gcs-credentials.json`
-- Docker Compose akan otomatis mount dari `/opt/agrione/gcs-credentials.json` (VPS) ke `/opt/gcs-credentials.json` (container)
+- `GOOGLE_PRIVATE_KEY` harus pakai `\n` untuk newline (bukan newline asli)
+- Copy semua isi `private_key` dari `gcs-credentials.json`, ganti newline dengan `\n`
 
-**Selesai!** ✅
+**Cara convert dari file ke .env:**
+```bash
+# Extract values dari gcs-credentials.json
+cat /opt/agrione/gcs-credentials.json | jq -r '.client_email'  # untuk GOOGLE_CLIENT_EMAIL
+cat /opt/agrione/gcs-credentials.json | jq -r '.private_key_id'  # untuk GOOGLE_PRIVATE_KEY_ID
+cat /opt/agrione/gcs-credentials.json | jq -r '.client_id'  # untuk GOOGLE_CLIENT_ID
+cat /opt/agrione/gcs-credentials.json | jq -r '.private_key' | sed 's/$/\\n/' | tr -d '\n'  # untuk GOOGLE_PRIVATE_KEY
+```
 
----
-
-## 🚀 Step 3: Restart Backend
+## 🔄 Step 3: Rebuild Frontend
 
 ```bash
 cd /opt/agrione/agrione-v1
-docker compose restart backend
+docker compose up -d --build frontend
 ```
 
----
+**PENTING:** Environment variables di Next.js API route adalah runtime variables, jadi **tidak perlu rebuild** (tapi rebuild untuk pastikan package terinstall).
 
-## ✅ Step 4: Test
+## ✅ Step 4: Test Upload
 
 1. Buka aplikasi
 2. Coba upload foto di absen atau field report
@@ -57,49 +59,46 @@ docker compose restart backend
 
 ## 🔍 Troubleshooting
 
-### Error: "credentials file not found"
+### Error: "GCS credentials not configured"
+
+**Penyebab:** Environment variable tidak ter-set
 
 **Fix:**
-```bash
-# Check apakah file ada
-ls -la /opt/agrione/gcs-credentials.json
+1. Check `.env` file:
+   ```bash
+   grep GOOGLE .env
+   ```
 
-# Check permission
-chmod 600 /opt/agrione/gcs-credentials.json
+2. Check environment variable di container:
+   ```bash
+   docker compose exec frontend env | grep GOOGLE
+   ```
 
-# Check path di .env
-cat .env | grep GOOGLE_APPLICATION_CREDENTIALS
-```
+3. Pastikan `GOOGLE_PRIVATE_KEY` pakai `\n` bukan newline asli
 
-### Error: "Access Denied"
+### Error: "Failed to upload file"
+
+**Penyebab:** Service account tidak punya permission
 
 **Fix:**
-1. Buka file `gcs-credentials.json`
-2. Check `project_id` dan `client_email`
-3. Pastikan service account punya role `Storage Object Admin` di GCP Console
+1. Buka GCP Console → IAM & Admin → Service Accounts
+2. Klik service account Anda
+3. Pastikan punya role: `Storage Object Admin` atau `Storage Admin`
 
 ---
 
-## 📌 Catatan Penting
+## 📊 Cara Kerja
 
-1. **File di VPS:** `/opt/agrione/gcs-credentials.json` (path di VPS)
-2. **Path di .env:** `/opt/gcs-credentials.json` (path di dalam container)
-3. **Docker Compose** akan otomatis mount:
-   - Dari: `/opt/agrione/gcs-credentials.json` (VPS)
-   - Ke: `/opt/gcs-credentials.json` (container)
-4. Jika GCS belum dikonfigurasi, sistem akan pakai base64 fallback (untuk development)
+1. **Frontend** upload file ke Next.js API route: `POST /api/upload`
+2. **Next.js API route** upload file ke GCS menggunakan `@google-cloud/storage`
+3. **Next.js API route** return public URL
+4. **Frontend** kirim URL ke Go backend untuk disimpan di database
 
-## 🚀 Upload Flow (Direct Upload)
-
-Sistem sekarang pakai **direct upload** dari frontend ke GCS:
-1. Frontend request signed URL ke backend
-2. Backend generate signed URL (valid 15 menit)
-3. Frontend upload langsung ke GCS
-4. Frontend kirim URL ke backend untuk disimpan
-
-**Keuntungan:** Lebih cepat, hemat bandwidth backend, scalable!
+**Keuntungan:**
+- ✅ Simple, pakai library yang sudah ada
+- ✅ Credentials di server (Next.js), tidak exposed ke client
+- ✅ Go backend hanya terima URL (ringan)
 
 ---
 
-**Gampang kan?** 😎
-
+**Selesai!** 🎉

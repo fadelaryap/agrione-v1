@@ -133,12 +133,21 @@ jobs:
                 echo "NEXT_PUBLIC_API_URL=$API_URL" >> .env
               fi
               
-              # GCS Configuration for frontend (jika belum ada)
+              # GCS Configuration (jika belum ada)
               if ! grep -q "^GCS_BUCKET_NAME=" .env; then
                 echo "GCS_BUCKET_NAME=" >> .env
               fi
-              if ! grep -q "^GCS_CREDENTIALS_JSON=" .env; then
-                echo "GCS_CREDENTIALS_JSON=" >> .env
+              if ! grep -q "^GOOGLE_CLIENT_EMAIL=" .env; then
+                echo "GOOGLE_CLIENT_EMAIL=" >> .env
+              fi
+              if ! grep -q "^GOOGLE_PRIVATE_KEY=" .env; then
+                echo "GOOGLE_PRIVATE_KEY=" >> .env
+              fi
+              if ! grep -q "^GOOGLE_PRIVATE_KEY_ID=" .env; then
+                echo "GOOGLE_PRIVATE_KEY_ID=" >> .env
+              fi
+              if ! grep -q "^GOOGLE_CLIENT_ID=" .env; then
+                echo "GOOGLE_CLIENT_ID=" >> .env
               fi
               
               echo "✅ .env updated with domain configuration"

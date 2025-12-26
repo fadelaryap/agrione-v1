@@ -61,9 +61,13 @@ services:
       # Untuk production dengan domain: https://agrione.agrihub.id/api
       # Untuk development: http://localhost:8000/api
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api}
-      # GCS Configuration (for frontend direct upload)
-      NEXT_PUBLIC_GCS_BUCKET_NAME: ${GCS_BUCKET_NAME:-}
-      NEXT_PUBLIC_GCS_CREDENTIALS: ${GCS_CREDENTIALS_JSON:-}
+      # GCS Configuration (for Next.js API route)
+      GCS_BUCKET_NAME: ${GCS_BUCKET_NAME:-}
+      GOOGLE_CLIENT_EMAIL: ${GOOGLE_CLIENT_EMAIL:-}
+      GOOGLE_PRIVATE_KEY: ${GOOGLE_PRIVATE_KEY:-}
+      GOOGLE_PRIVATE_KEY_ID: ${GOOGLE_PRIVATE_KEY_ID:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_PROJECT_ID: ${GOOGLE_PROJECT_ID:-mystical-moon-469502-m5}
       JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
     depends_on:
       - backend

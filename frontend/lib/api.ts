@@ -396,12 +396,24 @@ export const fieldReportsAPI = {
   },
 }
 
-import { uploadToGCS } from './gcs'
-
 export const uploadAPI = {
-  // Upload file directly to GCS (frontend-only, no backend)
+  // Upload file via Next.js API route (simple approach)
   uploadFile: async (file: File): Promise<string> => {
-    return uploadToGCS(file)
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to upload file')
+    }
+
+    const data = await response.json()
+    return data.url
   },
 }
 
