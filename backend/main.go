@@ -17,6 +17,10 @@ import (
 func main() {
 	// Load configuration
 	cfg := config.Load()
+	
+	// Log database configuration (without password)
+	log.Printf("Database config: host=%s, port=%s, user=%s, dbname=%s", 
+		cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBName)
 
 	// Initialize database
 	db, err := database.Init(cfg)

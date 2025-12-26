@@ -15,7 +15,7 @@ services:
     networks:
       - agrione_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U agrione"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-agrione} -d ${POSTGRES_DB:-agrione_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
