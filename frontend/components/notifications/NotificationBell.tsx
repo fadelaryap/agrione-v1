@@ -67,13 +67,19 @@ export default function NotificationBell({ userRole }: NotificationBellProps) {
     // Load notifications on mount
     loadNotifications()
 
-    // Connect WebSocket for real-time updates
+    // Connect WebSocket for real-time updates (only once)
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
-    if (token) {
+    if (token && !wsClient.isConnected()) {
       wsClient.connect(token, {
         onNotification: (notification) => {
-          // Add new notification to the list
-          setNotifications(prev => [notification, ...prev])
+          // Add new notification to the list (avoid duplicates)
+          setNotifications(prev => {
+            // Check if notification already exists
+            if (prev.some(n => n.id === notification.id)) {
+              return prev
+            }
+            return [notification, ...prev]
+          })
           setUnreadCount(prev => prev + 1)
           
           // Show toast
@@ -98,9 +104,10 @@ export default function NotificationBell({ userRole }: NotificationBellProps) {
     }
 
     return () => {
-      wsClient.disconnect()
+      // Don't disconnect on unmount - let it stay connected for other components
+      // wsClient.disconnect()
     }
-  }, [loadNotifications, router])
+  }, []) // Empty deps - only run once on mount
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -124,24 +131,27 @@ export default function NotificationBell({ userRole }: NotificationBellProps) {
     return null
   }
 
-  const handleNotificationClick = async (notification: Notification) => {
-    // Mark as read if not already read
-    if (!notification.read) {
-      try {
-        await notificationsAPI.markAsRead(notification.id)
-        // Update local state
-        setNotifications(prev => prev.map(n => 
-          n.id === notification.id ? { ...n, read: true } : n
-        ))
-        setUnreadCount(prev => Math.max(0, prev - 1))
-      } catch (err) {
-        console.error('Failed to mark notification as read:', err)
-      }
-    }
-    
+  const handleNotificationClick = (notification: Notification) => {
     setIsOpen(false)
     router.push(notification.link)
   }
+
+  // Mark all as read when dropdown is opened
+  useEffect(() => {
+    if (isOpen && unreadCount > 0) {
+      const markAllRead = async () => {
+        try {
+          await notificationsAPI.markAllAsRead()
+          // Update local state
+          setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+          setUnreadCount(0)
+        } catch (err) {
+          console.error('Failed to mark all notifications as read:', err)
+        }
+      }
+      markAllRead()
+    }
+  }, [isOpen, unreadCount])
 
   const getNotificationIcon = (type: string) => {
     switch (type) {

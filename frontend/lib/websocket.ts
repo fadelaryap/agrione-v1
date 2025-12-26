@@ -25,10 +25,29 @@ class WebSocketClient {
   private reconnectDelay = 1000
   private callbacks: WebSocketCallbacks = {}
   private token: string | null = null
+  private isConnecting = false
 
   connect(token: string, callbacks: WebSocketCallbacks = {}) {
+    // Prevent multiple connections
+    if (this.isConnecting || (this.ws && this.ws.readyState === WebSocket.CONNECTING)) {
+      console.log('WebSocket: Already connecting, skipping...')
+      return
+    }
+
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      console.log('WebSocket: Already connected, updating callbacks only')
+      this.callbacks = callbacks
+      return
+    }
+
+    // Disconnect existing connection if any
+    if (this.ws) {
+      this.disconnect()
+    }
+
     this.token = token
     this.callbacks = callbacks
+    this.isConnecting = true
 
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
     // Convert HTTP/HTTPS URL to WebSocket URL
@@ -46,6 +65,7 @@ class WebSocketClient {
     this.ws.onopen = () => {
       console.log('WebSocket connected')
       this.reconnectAttempts = 0
+      this.isConnecting = false
     }
 
     this.ws.onmessage = (event) => {
@@ -61,33 +81,52 @@ class WebSocketClient {
 
     this.ws.onerror = (error) => {
       console.error('WebSocket error:', error)
+      this.isConnecting = false
       this.callbacks.onError?.(error)
     }
 
-    this.ws.onclose = () => {
-      console.log('WebSocket closed')
+    this.ws.onclose = (event) => {
+      console.log('WebSocket closed', event.code, event.reason)
+      this.isConnecting = false
       this.callbacks.onClose?.()
-      this.reconnect()
+      // Only reconnect if it was an unexpected close (not manual disconnect with code 1000)
+      if (event.code !== 1000) {
+        this.reconnect()
+      }
     }
   }
 
   private reconnect() {
+    // Don't reconnect if already connecting or connected
+    if (this.isConnecting || (this.ws && (this.ws.readyState === WebSocket.CONNECTING || this.ws.readyState === WebSocket.OPEN))) {
+      return
+    }
+
     if (this.reconnectAttempts < this.maxReconnectAttempts && this.token) {
       this.reconnectAttempts++
       setTimeout(() => {
         console.log(`Reconnecting... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
-        if (this.token) {
+        if (this.token && !this.isConnecting) {
           this.connect(this.token, this.callbacks)
         }
       }, this.reconnectDelay * this.reconnectAttempts)
+    } else {
+      console.log('Max reconnection attempts reached')
     }
   }
 
   disconnect() {
     if (this.ws) {
-      this.ws.close()
+      // Set a flag to prevent reconnect
+      const wasConnected = this.ws.readyState === WebSocket.OPEN
+      this.ws.onclose = () => {
+        // Prevent reconnect on manual disconnect
+      }
+      this.ws.close(1000, 'Manual disconnect') // 1000 = normal closure
       this.ws = null
     }
+    this.isConnecting = false
+    this.reconnectAttempts = 0
   }
 
   isConnected(): boolean {
