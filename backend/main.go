@@ -9,6 +9,7 @@ import (
 	"agrione/backend/internal/database"
 	"agrione/backend/internal/handlers"
 	"agrione/backend/internal/middleware"
+	"agrione/backend/internal/websocket"
 
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
@@ -34,6 +35,10 @@ func main() {
 		log.Fatalf("Failed to run migrations: %v", err)
 	}
 
+	// Initialize WebSocket hub
+	hub := websocket.NewHub()
+	go hub.Run()
+
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(db, cfg)
 	testHandler := handlers.NewTestHandler(db)
@@ -41,10 +46,10 @@ func main() {
 	fieldsHandler := handlers.NewFieldsHandler(db)
 	plotsHandler := handlers.NewPlotsHandler(db)
 	plantTypesHandler := handlers.NewPlantTypesHandler(db)
-	workOrdersHandler := handlers.NewWorkOrdersHandler(db)
-	fieldReportsHandler := handlers.NewFieldReportsHandler(db)
+	workOrdersHandler := handlers.NewWorkOrdersHandler(db, hub)
+	fieldReportsHandler := handlers.NewFieldReportsHandler(db, hub)
 	attendanceHandler := handlers.NewAttendanceHandler(db)
-	notificationsHandler := handlers.NewNotificationsHandler(db)
+	notificationsHandler := handlers.NewNotificationsHandler(db, hub)
 
 	// Setup router
 	r := mux.NewRouter()
@@ -170,6 +175,11 @@ func main() {
 	
 	// Notifications routes
 	protected.HandleFunc("/notifications", notificationsHandler.GetNotifications).Methods("GET")
+	protectedPut.HandleFunc("/notifications/{id}/read", notificationsHandler.MarkAsRead).Methods("PUT")
+	protectedPut.HandleFunc("/notifications/read-all", notificationsHandler.MarkAllAsRead).Methods("PUT")
+	
+	// WebSocket route
+	protected.HandleFunc("/ws", websocket.HandleWebSocket(hub, cfg)).Methods("GET")
 
 	// Wrap router
 	http.Handle("/", r)

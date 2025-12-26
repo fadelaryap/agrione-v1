@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { notificationsAPI, Notification, NotificationsResponse } from '@/lib/api'
 import { formatDateIndonesian } from '@/lib/dateUtils'
+import { wsClient } from '@/lib/websocket'
 
 interface NotificationBellProps {
   userRole?: string
@@ -66,13 +67,40 @@ export default function NotificationBell({ userRole }: NotificationBellProps) {
     // Load notifications on mount
     loadNotifications()
 
-    // Poll for updates every 30 seconds
-    const interval = setInterval(() => {
-      loadNotifications()
-    }, 30000) // 30 seconds
+    // Connect WebSocket for real-time updates
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+    if (token) {
+      wsClient.connect(token, {
+        onNotification: (notification) => {
+          // Add new notification to the list
+          setNotifications(prev => [notification, ...prev])
+          setUnreadCount(prev => prev + 1)
+          
+          // Show toast
+          toast.info(notification.title, {
+            description: notification.message,
+            duration: 5000,
+            action: {
+              label: 'Lihat',
+              onClick: () => {
+                router.push(notification.link)
+              }
+            }
+          })
+        },
+        onError: (error) => {
+          console.error('WebSocket error:', error)
+        },
+        onClose: () => {
+          console.log('WebSocket closed')
+        }
+      })
+    }
 
-    return () => clearInterval(interval)
-  }, [loadNotifications])
+    return () => {
+      wsClient.disconnect()
+    }
+  }, [loadNotifications, router])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -96,7 +124,21 @@ export default function NotificationBell({ userRole }: NotificationBellProps) {
     return null
   }
 
-  const handleNotificationClick = (notification: Notification) => {
+  const handleNotificationClick = async (notification: Notification) => {
+    // Mark as read if not already read
+    if (!notification.read) {
+      try {
+        await notificationsAPI.markAsRead(notification.id)
+        // Update local state
+        setNotifications(prev => prev.map(n => 
+          n.id === notification.id ? { ...n, read: true } : n
+        ))
+        setUnreadCount(prev => Math.max(0, prev - 1))
+      } catch (err) {
+        console.error('Failed to mark notification as read:', err)
+      }
+    }
+    
     setIsOpen(false)
     router.push(notification.link)
   }

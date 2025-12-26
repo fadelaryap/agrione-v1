@@ -227,6 +227,23 @@ func RunMigrations(db *sql.DB) error {
 
 	CREATE INDEX IF NOT EXISTS idx_field_report_comments_field_report_id ON field_report_comments(field_report_id);
 	CREATE INDEX IF NOT EXISTS idx_field_report_comments_created_at ON field_report_comments(created_at);
+
+	-- Create notifications table
+	CREATE TABLE IF NOT EXISTS notifications (
+		id SERIAL PRIMARY KEY,
+		user_id INTEGER NOT NULL,
+		type VARCHAR(50) NOT NULL,
+		title VARCHAR(255) NOT NULL,
+		message TEXT NOT NULL,
+		link VARCHAR(500),
+		read BOOLEAN DEFAULT FALSE,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	);
+
+	CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
+	CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(read);
+	CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at);
 	`
 
 	_, err = db.Exec(createFieldReportsQuery)
@@ -255,9 +272,38 @@ func RunMigrations(db *sql.DB) error {
 	END $$;
 	`
 
+	// Add notifications table columns if already exists
+	alterNotificationsQuery := `
+	DO $$ 
+	BEGIN
+		IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name='notifications') THEN
+			CREATE TABLE notifications (
+				id SERIAL PRIMARY KEY,
+				user_id INTEGER NOT NULL,
+				type VARCHAR(50) NOT NULL,
+				title VARCHAR(255) NOT NULL,
+				message TEXT NOT NULL,
+				link VARCHAR(500),
+				read BOOLEAN DEFAULT FALSE,
+				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+				updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+			);
+			CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
+			CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(read);
+			CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at);
+		END IF;
+	END $$;
+	`
+
 	_, err = db.Exec(alterFieldReportsQuery)
 	if err != nil {
 		log.Printf("Warning: Failed to run alter table migrations for field_reports: %v", err)
+	}
+
+	// Create notifications table if not exists
+	_, err = db.Exec(alterNotificationsQuery)
+	if err != nil {
+		log.Printf("Warning: Failed to create notifications table: %v", err)
 	}
 
 	// Create attendance table

@@ -3,18 +3,26 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
+
+	"agrione/backend/internal/websocket"
 
 	"github.com/gorilla/mux"
 )
 
 type FieldReportsHandler struct {
-	db *sql.DB
+	db  *sql.DB
+	hub interface {
+		SendToUser(userID int, message interface{}) error
+	}
 }
 
-func NewFieldReportsHandler(db *sql.DB) *FieldReportsHandler {
-	return &FieldReportsHandler{db: db}
+func NewFieldReportsHandler(db *sql.DB, hub interface {
+	SendToUser(userID int, message interface{}) error
+}) *FieldReportsHandler {
+	return &FieldReportsHandler{db: db, hub: hub}
 }
 
 type FieldReport struct {
@@ -350,6 +358,30 @@ func (h *FieldReportsHandler) CreateFieldReport(w http.ResponseWriter, r *http.R
 		}
 	}
 
+	// Create notifications for Level 1/2 users
+	go func() {
+		level12UserIDs, err := websocket.GetUserIDsByRole(h.db, "Level 1")
+		if err == nil {
+			level12UserIDs2, err2 := websocket.GetUserIDsByRole(h.db, "Level 2")
+			if err2 == nil {
+				level12UserIDs = append(level12UserIDs, level12UserIDs2...)
+			}
+		}
+		if err == nil {
+			for _, userID := range level12UserIDs {
+				websocket.CreateNotification(
+					h.db,
+					h.hub,
+					userID,
+					"field_report_pending",
+					"Laporan Baru Menunggu Persetujuan",
+					fmt.Sprintf("Laporan '%s' dari %s menunggu persetujuan", req.Title, req.SubmittedBy),
+					fmt.Sprintf("/dashboard/field-reports-approval?filter=pending&report_id=%d", reportID),
+				)
+			}
+		}
+	}()
+
 	// Fetch and return the created report
 	var fr FieldReport
 	var coordinatesJSONBytes, mediaJSONBytes []byte
@@ -542,6 +574,15 @@ func (h *FieldReportsHandler) AddComment(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	// Get submitted_by and status before inserting comment
+	var submittedBy string
+	var status string
+	err = h.db.QueryRow("SELECT submitted_by, status FROM field_reports WHERE id = $1", fieldReportID).Scan(&submittedBy, &status)
+	if err != nil {
+		http.Error(w, "Failed to get field report", http.StatusInternalServerError)
+		return
+	}
+
 	var commentID int
 	err = h.db.QueryRow(`
 		INSERT INTO field_report_comments (field_report_id, comment, commented_by)
@@ -552,6 +593,54 @@ func (h *FieldReportsHandler) AddComment(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		http.Error(w, "Failed to create comment", http.StatusInternalServerError)
 		return
+	}
+
+	// Create notification for the submitter (if comment is from someone else)
+	if req.CommentedBy != submittedBy {
+		go func() {
+			submitterUserID, err := websocket.GetUserIDFromSubmittedBy(h.db, submittedBy)
+			if err == nil && submitterUserID > 0 {
+				var reportTitle string
+				h.db.QueryRow("SELECT title FROM field_reports WHERE id = $1", fieldReportID).Scan(&reportTitle)
+				websocket.CreateNotification(
+					h.db,
+					h.hub,
+					submitterUserID,
+					"field_report_comment",
+					"Komentar Baru di Laporan Anda",
+					fmt.Sprintf("%s memberikan komentar pada laporan '%s'", req.CommentedBy, reportTitle),
+					fmt.Sprintf("/lapangan/work-orders/%d/report", fieldReportID),
+				)
+			}
+		}()
+	}
+
+	// Also notify Level 1/2 if report is pending
+	if status == "pending" {
+		go func() {
+			level12UserIDs, err := websocket.GetUserIDsByRole(h.db, "Level 1")
+			if err == nil {
+				level12UserIDs2, err2 := websocket.GetUserIDsByRole(h.db, "Level 2")
+				if err2 == nil {
+					level12UserIDs = append(level12UserIDs, level12UserIDs2...)
+				}
+			}
+			if err == nil {
+				for _, userID := range level12UserIDs {
+					var reportTitle string
+					h.db.QueryRow("SELECT title FROM field_reports WHERE id = $1", fieldReportID).Scan(&reportTitle)
+					websocket.CreateNotification(
+						h.db,
+						h.hub,
+						userID,
+						"field_report_comment",
+						"Komentar Baru di Laporan",
+						fmt.Sprintf("%s memberikan komentar pada laporan '%s'", req.CommentedBy, reportTitle),
+						fmt.Sprintf("/dashboard/field-reports-approval?filter=pending&report_id=%d", fieldReportID),
+					)
+				}
+			}
+		}()
 	}
 
 	// Fetch the created comment
@@ -637,6 +726,14 @@ func (h *FieldReportsHandler) ApproveFieldReport(w http.ResponseWriter, r *http.
 		return
 	}
 
+	// Get submitted_by before updating
+	var submittedBy string
+	err = h.db.QueryRow("SELECT submitted_by FROM field_reports WHERE id = $1", id).Scan(&submittedBy)
+	if err != nil {
+		http.Error(w, "Failed to get field report", http.StatusInternalServerError)
+		return
+	}
+
 	// Update field report status to approved
 	_, err = h.db.Exec(`
 		UPDATE field_reports 
@@ -647,6 +744,24 @@ func (h *FieldReportsHandler) ApproveFieldReport(w http.ResponseWriter, r *http.
 		http.Error(w, "Failed to approve field report", http.StatusInternalServerError)
 		return
 	}
+
+	// Create notification for the submitter
+	go func() {
+		submitterUserID, err := websocket.GetUserIDFromSubmittedBy(h.db, submittedBy)
+		if err == nil && submitterUserID > 0 {
+			var reportTitle string
+			h.db.QueryRow("SELECT title FROM field_reports WHERE id = $1", id).Scan(&reportTitle)
+			websocket.CreateNotification(
+				h.db,
+				h.hub,
+				submitterUserID,
+				"field_report_approved",
+				"Laporan Anda Disetujui",
+				fmt.Sprintf("Laporan '%s' telah disetujui oleh %s", reportTitle, req.ApprovedBy),
+				fmt.Sprintf("/lapangan/work-orders/%d/report", id),
+			)
+		}
+	}()
 
 	// Fetch and return the updated report
 	h.GetFieldReport(w, r)
@@ -672,6 +787,14 @@ func (h *FieldReportsHandler) RejectFieldReport(w http.ResponseWriter, r *http.R
 		return
 	}
 
+	// Get submitted_by before updating
+	var submittedBy string
+	err = h.db.QueryRow("SELECT submitted_by FROM field_reports WHERE id = $1", id).Scan(&submittedBy)
+	if err != nil {
+		http.Error(w, "Failed to get field report", http.StatusInternalServerError)
+		return
+	}
+
 	// Update field report status to rejected
 	_, err = h.db.Exec(`
 		UPDATE field_reports 
@@ -683,6 +806,24 @@ func (h *FieldReportsHandler) RejectFieldReport(w http.ResponseWriter, r *http.R
 		http.Error(w, "Failed to reject field report", http.StatusInternalServerError)
 		return
 	}
+
+	// Create notification for the submitter
+	go func() {
+		submitterUserID, err := websocket.GetUserIDFromSubmittedBy(h.db, submittedBy)
+		if err == nil && submitterUserID > 0 {
+			var reportTitle string
+			h.db.QueryRow("SELECT title FROM field_reports WHERE id = $1", id).Scan(&reportTitle)
+			websocket.CreateNotification(
+				h.db,
+				h.hub,
+				submitterUserID,
+				"field_report_rejected",
+				"Laporan Anda Ditolak",
+				fmt.Sprintf("Laporan '%s' ditolak oleh %s. Alasan: %s", reportTitle, req.RejectedBy, req.RejectionReason),
+				fmt.Sprintf("/lapangan/work-orders/%d/report", id),
+			)
+		}
+	}()
 
 	// Fetch and return the updated report
 	h.GetFieldReport(w, r)

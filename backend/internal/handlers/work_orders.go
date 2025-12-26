@@ -3,20 +3,28 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
+	"agrione/backend/internal/websocket"
+
 	"github.com/gorilla/mux"
 )
 
 type WorkOrdersHandler struct {
-	db *sql.DB
+	db  *sql.DB
+	hub interface {
+		SendToUser(userID int, message interface{}) error
+	}
 }
 
-func NewWorkOrdersHandler(db *sql.DB) *WorkOrdersHandler {
-	return &WorkOrdersHandler{db: db}
+func NewWorkOrdersHandler(db *sql.DB, hub interface {
+	SendToUser(userID int, message interface{}) error
+}) *WorkOrdersHandler {
+	return &WorkOrdersHandler{db: db, hub: hub}
 }
 
 type WorkOrder struct {
@@ -359,6 +367,22 @@ func (h *WorkOrdersHandler) CreateWorkOrder(w http.ResponseWriter, r *http.Reque
 		http.Error(w, "Failed to create work order", http.StatusInternalServerError)
 		return
 	}
+
+	// Create notification for the assignee
+	go func() {
+		assigneeUserID, err := websocket.GetUserIDFromSubmittedBy(h.db, req.Assignee)
+		if err == nil && assigneeUserID > 0 {
+			websocket.CreateNotification(
+				h.db,
+				h.hub,
+				assigneeUserID,
+				"work_order_new",
+				"Work Order Baru",
+				fmt.Sprintf("Work order '%s' telah ditugaskan kepada Anda", req.Title),
+				fmt.Sprintf("/lapangan/work-orders/%d", woID),
+			)
+		}
+	}()
 
 	// Fetch created work order
 	h.GetWorkOrderByID(w, r, woID)
