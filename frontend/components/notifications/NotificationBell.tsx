@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Bell, X } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -19,12 +19,12 @@ export default function NotificationBell({ userRole }: NotificationBellProps) {
   const dropdownRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
 
-  // Only show for Level 1 and Level 2
-  if (userRole !== 'Level 1' && userRole !== 'Level 2') {
-    return null
-  }
+  const loadNotifications = useCallback(async () => {
+    // Only load for Level 1 and Level 2
+    if (userRole !== 'Level 1' && userRole !== 'Level 2') {
+      return
+    }
 
-  const loadNotifications = async () => {
     try {
       setLoading(true)
       const data = await notificationsAPI.getNotifications()
@@ -35,7 +35,7 @@ export default function NotificationBell({ userRole }: NotificationBellProps) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [userRole])
 
   useEffect(() => {
     // Load notifications on mount
@@ -47,7 +47,7 @@ export default function NotificationBell({ userRole }: NotificationBellProps) {
     }, 30000) // 30 seconds
 
     return () => clearInterval(interval)
-  }, [])
+  }, [loadNotifications])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -65,6 +65,11 @@ export default function NotificationBell({ userRole }: NotificationBellProps) {
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [isOpen])
+
+  // Only show for Level 1 and Level 2
+  if (userRole !== 'Level 1' && userRole !== 'Level 2') {
+    return null
+  }
 
   const handleNotificationClick = (notification: Notification) => {
     setIsOpen(false)

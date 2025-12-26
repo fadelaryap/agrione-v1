@@ -120,7 +120,10 @@ export default function DashboardStats({ className }: DashboardStatsProps) {
     <div className={`space-y-6 ${className || ''}`}>
       {/* Field Reports Stats */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Statistik Laporan Lapangan</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">Statistik Laporan Lapangan</h2>
+          <span className="text-sm text-gray-500">Update real-time</span>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-blue-500">
             <div className="flex items-center justify-between mb-2">
@@ -170,7 +173,10 @@ export default function DashboardStats({ className }: DashboardStatsProps) {
 
       {/* Work Orders Stats */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Statistik Work Orders</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">Statistik Work Orders</h2>
+          <span className="text-sm text-gray-500">Update real-time</span>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-indigo-500">
             <div className="flex items-center justify-between mb-2">
@@ -220,7 +226,10 @@ export default function DashboardStats({ className }: DashboardStatsProps) {
 
       {/* Activity Stats */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Aktivitas Terkini</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">Aktivitas Terkini</h2>
+          <span className="text-sm text-gray-500">Update real-time</span>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-white rounded-lg shadow-lg p-6">
             <div className="flex items-center justify-between mb-2">
