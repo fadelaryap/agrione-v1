@@ -28,6 +28,13 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
 
   useEffect(() => {
     loadTodayAttendance()
+    
+    // Auto-refresh every minute to check if day has changed
+    const interval = setInterval(() => {
+      loadTodayAttendance()
+    }, 60000) // 1 minute
+    
+    return () => clearInterval(interval)
   }, [])
 
   const loadTodayAttendance = async () => {

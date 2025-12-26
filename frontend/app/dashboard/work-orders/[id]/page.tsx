@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { authAPI, User, workOrdersAPI, WorkOrder, fieldReportsAPI, FieldReport, FieldReportComment } from '@/lib/api'
+import { authAPI, User, workOrdersAPI, WorkOrder, fieldReportsAPI, FieldReport, FieldReportComment, fieldsAPI, Field } from '@/lib/api'
 import DashboardLayout from '@/components/layout/DashboardLayout'
-import { Calendar, MapPin, User as UserIcon, Clock, CheckCircle, AlertCircle, MessageSquare, Send, Camera, Video, ArrowLeft, Image as ImageIcon, X } from 'lucide-react'
+import { Calendar, MapPin, User as UserIcon, Clock, CheckCircle, AlertCircle, MessageSquare, Send, Camera, Video, ArrowLeft, Image as ImageIcon, X, Navigation } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
+import { toast } from 'sonner'
 
 export default function WorkOrderDetailPage() {
   const router = useRouter()
@@ -14,6 +15,7 @@ export default function WorkOrderDetailPage() {
 
   const [user, setUser] = useState<User | null>(null)
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null)
+  const [field, setField] = useState<Field | null>(null)
   const [fieldReports, setFieldReports] = useState<FieldReport[]>([])
   const [loading, setLoading] = useState(true)
   const [newComment, setNewComment] = useState<{ [reportId: number]: string }>({})
@@ -59,9 +61,50 @@ export default function WorkOrderDetailPage() {
     try {
       const wo = await workOrdersAPI.getWorkOrder(workOrderId)
       setWorkOrder(wo)
+      
+      // Load field details if field_id exists
+      if (wo.field_id) {
+        try {
+          const fieldData = await fieldsAPI.getField(wo.field_id)
+          setField(fieldData)
+        } catch (err) {
+          console.error('Failed to load field:', err)
+        }
+      }
     } catch (err) {
       console.error('Failed to load work order:', err)
     }
+  }
+
+  const openGoogleMaps = () => {
+    if (!field || !field.coordinates) {
+      toast.error('Koordinat field tidak tersedia')
+      return
+    }
+
+    let lat: number, lng: number
+
+    // Handle different coordinate formats
+    if (field.draw_type === 'circle' && field.coordinates.center) {
+      // Circle: use center
+      lat = field.coordinates.center[0]
+      lng = field.coordinates.center[1]
+    } else if (Array.isArray(field.coordinates) && field.coordinates.length > 0) {
+      // Polygon: use first point
+      lat = field.coordinates[0][0]
+      lng = field.coordinates[0][1]
+    } else if (field.coordinates.latitude && field.coordinates.longitude) {
+      // Point format
+      lat = field.coordinates.latitude
+      lng = field.coordinates.longitude
+    } else {
+      toast.error('Format koordinat tidak didukung')
+      return
+    }
+
+    // Open Google Maps with navigation
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
+    window.open(url, '_blank')
   }
 
   const loadFieldReports = async () => {
@@ -141,6 +184,12 @@ export default function WorkOrderDetailPage() {
                     <UserIcon className="w-4 h-4" />
                     {workOrder.assignee}
                   </span>
+                  {workOrder.field_name && (
+                    <span className="flex items-center gap-1">
+                      <MapPin className="w-4 h-4" />
+                      {workOrder.field_name}
+                    </span>
+                  )}
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                     workOrder.status === 'pending' ? 'bg-amber-100 text-amber-800' :
                     workOrder.status === 'in-progress' ? 'bg-blue-100 text-blue-800' :
@@ -152,6 +201,16 @@ export default function WorkOrderDetailPage() {
                   </span>
                 </div>
               </div>
+              {field && field.coordinates && (
+                <button
+                  onClick={openGoogleMaps}
+                  className="ml-4 flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors shadow-md"
+                  title="Buka di Google Maps"
+                >
+                  <Navigation className="w-5 h-5" />
+                  <span className="hidden sm:inline">Buka di Maps</span>
+                </button>
+              )}
             </div>
             
             {/* Progress */}

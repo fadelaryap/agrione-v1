@@ -7,6 +7,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout'
 import { FileText, CheckCircle, XCircle, Clock, Calendar, MapPin, User as UserIcon, Camera, Video, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatDateIndonesian, formatDateOnly } from '@/lib/dateUtils'
+import { wsClient } from '@/lib/websocket'
 
 export default function FieldReportsApprovalPage() {
   const router = useRouter()
@@ -27,6 +28,49 @@ export default function FieldReportsApprovalPage() {
       loadReports()
     }
   }, [user, filter])
+
+  // WebSocket real-time updates for new reports
+  useEffect(() => {
+    if (!user) return
+
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+    if (!token) return
+
+    // Create callback function
+    const handleNotification = (notification: any) => {
+      // If it's a new field report notification, reload reports
+      if (notification.type === 'field_report_pending' || notification.type === 'field_report_comment') {
+        loadReports()
+        toast.info(notification.title, {
+          description: notification.message,
+          duration: 5000,
+        })
+      }
+    }
+
+    if (!wsClient.isConnected()) {
+      wsClient.connect(token, {
+        onNotification: handleNotification,
+        onError: (error) => {
+          console.error('WebSocket error:', error)
+        },
+        onClose: () => {
+          console.log('WebSocket closed')
+        }
+      })
+    } else {
+      // Update callbacks if already connected
+      wsClient.updateCallbacks({
+        onNotification: handleNotification,
+        onError: (error) => {
+          console.error('WebSocket error:', error)
+        },
+        onClose: () => {
+          console.log('WebSocket closed')
+        }
+      })
+    }
+  }, [user])
 
   const checkAuth = async () => {
     try {
