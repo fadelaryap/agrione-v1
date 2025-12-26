@@ -73,16 +73,38 @@ export async function POST(request: NextRequest) {
     // Convert File to Buffer
     const buffer = Buffer.from(await file.arrayBuffer())
 
-    // Upload to GCS
+    // Upload to GCS using createWriteStream (no ACL for uniform bucket-level access)
     const fileUpload = bucket.file(filename)
-    await fileUpload.save(buffer, {
+    
+    // Create write stream with metadata (no ACL options)
+    const stream = fileUpload.createWriteStream({
       metadata: {
         contentType: file.type,
         cacheControl: 'public, max-age=31536000',
       },
-      public: true, // Make file public
+      // Don't set predefinedAcl - uniform bucket-level access handles permissions
+      // This prevents the "Cannot insert legacy ACL" error
     })
-
+    
+    // Write buffer to stream and wait for completion
+    await new Promise<void>((resolve, reject) => {
+      stream.on('error', (error: Error) => {
+        reject(error)
+      })
+      
+      stream.on('finish', () => {
+        resolve()
+      })
+      
+      stream.end(buffer)
+    })
+    
+    // Verify file was uploaded
+    const [exists] = await fileUpload.exists()
+    if (!exists) {
+      throw new Error('File upload failed - file does not exist after upload')
+    }
+    
     // Return public URL
     const publicUrl = `https://storage.googleapis.com/${bucketName}/${filename}`
 
