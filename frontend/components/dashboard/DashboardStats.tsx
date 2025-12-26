@@ -117,15 +117,23 @@ export default function DashboardStats({ className }: DashboardStatsProps) {
     : '0'
 
   return (
-    <div className={`space-y-6 ${className || ''}`}>
+    <div className={`space-y-8 ${className || ''}`}>
       {/* Field Reports Stats */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-gray-900">Statistik Laporan Lapangan</h2>
-          <span className="text-sm text-gray-500">Update real-time</span>
+      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border-2 border-blue-200">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-500 rounded-lg">
+              <FileText className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Statistik Laporan Lapangan</h2>
+              <p className="text-sm text-gray-600">Ringkasan laporan lapangan</p>
+            </div>
+          </div>
+          <span className="text-xs text-gray-500 bg-white px-3 py-1 rounded-full">Real-time</span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-blue-500">
+          <div className="bg-white rounded-xl shadow-md p-6 border-2 border-blue-200 hover:border-blue-400 transition-colors">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium text-gray-600">Total Laporan</h3>
               <FileText className="w-5 h-5 text-blue-500" />
@@ -136,7 +144,7 @@ export default function DashboardStats({ className }: DashboardStatsProps) {
             </p>
           </div>
 
-          <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-amber-500">
+          <div className="bg-white rounded-xl shadow-md p-6 border-2 border-amber-200 hover:border-amber-400 transition-colors">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium text-gray-600">Menunggu</h3>
               <Clock className="w-5 h-5 text-amber-500" />
@@ -147,7 +155,7 @@ export default function DashboardStats({ className }: DashboardStatsProps) {
             </p>
           </div>
 
-          <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-green-500">
+          <div className="bg-white rounded-xl shadow-md p-6 border-2 border-green-200 hover:border-green-400 transition-colors">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium text-gray-600">Disetujui</h3>
               <CheckCircle className="w-5 h-5 text-green-500" />
@@ -158,7 +166,7 @@ export default function DashboardStats({ className }: DashboardStatsProps) {
             </p>
           </div>
 
-          <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-red-500">
+          <div className="bg-white rounded-xl shadow-md p-6 border-2 border-red-200 hover:border-red-400 transition-colors">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium text-gray-600">Ditolak</h3>
               <XCircle className="w-5 h-5 text-red-500" />
@@ -172,13 +180,21 @@ export default function DashboardStats({ className }: DashboardStatsProps) {
       </div>
 
       {/* Work Orders Stats */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-gray-900">Statistik Work Orders</h2>
-          <span className="text-sm text-gray-500">Update real-time</span>
+      <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-6 border-2 border-indigo-200">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-indigo-500 rounded-lg">
+              <ClipboardList className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Statistik Work Orders</h2>
+              <p className="text-sm text-gray-600">Ringkasan tugas kerja</p>
+            </div>
+          </div>
+          <span className="text-xs text-gray-500 bg-white px-3 py-1 rounded-full">Real-time</span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-indigo-500">
+          <div className="bg-white rounded-xl shadow-md p-6 border-2 border-indigo-200 hover:border-indigo-400 transition-colors">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium text-gray-600">Total Work Orders</h3>
               <ClipboardList className="w-5 h-5 text-indigo-500" />
@@ -189,7 +205,7 @@ export default function DashboardStats({ className }: DashboardStatsProps) {
             </p>
           </div>
 
-          <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-amber-500">
+          <div className="bg-white rounded-xl shadow-md p-6 border-2 border-amber-200 hover:border-amber-400 transition-colors">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium text-gray-600">Pending</h3>
               <Clock className="w-5 h-5 text-amber-500" />
@@ -200,7 +216,7 @@ export default function DashboardStats({ className }: DashboardStatsProps) {
             </p>
           </div>
 
-          <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-blue-500">
+          <div className="bg-white rounded-xl shadow-md p-6 border-2 border-blue-200 hover:border-blue-400 transition-colors">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium text-gray-600">In Progress</h3>
               <TrendingUp className="w-5 h-5 text-blue-500" />
@@ -211,7 +227,7 @@ export default function DashboardStats({ className }: DashboardStatsProps) {
             </p>
           </div>
 
-          <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-green-500">
+          <div className="bg-white rounded-xl shadow-md p-6 border-2 border-green-200 hover:border-green-400 transition-colors">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium text-gray-600">Selesai</h3>
               <CheckCircle className="w-5 h-5 text-green-500" />
@@ -225,13 +241,21 @@ export default function DashboardStats({ className }: DashboardStatsProps) {
       </div>
 
       {/* Activity Stats */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-gray-900">Aktivitas Terkini</h2>
-          <span className="text-sm text-gray-500">Update real-time</span>
+      <div className="bg-gradient-to-br from-gray-50 to-slate-50 rounded-xl p-6 border-2 border-gray-200">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gray-500 rounded-lg">
+              <TrendingUp className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Aktivitas Terkini</h2>
+              <p className="text-sm text-gray-600">Laporan berdasarkan periode</p>
+            </div>
+          </div>
+          <span className="text-xs text-gray-500 bg-white px-3 py-1 rounded-full">Real-time</span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white rounded-lg shadow-lg p-6">
+          <div className="bg-white rounded-xl shadow-md p-6 border-2 border-gray-200 hover:border-gray-400 transition-colors">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium text-gray-600">Hari Ini</h3>
               <AlertCircle className="w-5 h-5 text-gray-400" />
@@ -242,7 +266,7 @@ export default function DashboardStats({ className }: DashboardStatsProps) {
             </p>
           </div>
 
-          <div className="bg-white rounded-lg shadow-lg p-6">
+          <div className="bg-white rounded-xl shadow-md p-6 border-2 border-gray-200 hover:border-gray-400 transition-colors">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium text-gray-600">7 Hari Terakhir</h3>
               <TrendingUp className="w-5 h-5 text-gray-400" />
@@ -253,7 +277,7 @@ export default function DashboardStats({ className }: DashboardStatsProps) {
             </p>
           </div>
 
-          <div className="bg-white rounded-lg shadow-lg p-6">
+          <div className="bg-white rounded-xl shadow-md p-6 border-2 border-gray-200 hover:border-gray-400 transition-colors">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium text-gray-600">30 Hari Terakhir</h3>
               <FileText className="w-5 h-5 text-gray-400" />

@@ -50,8 +50,17 @@ func (h *NotificationsHandler) GetNotifications(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	// Only Level 1 and Level 2 can see notifications
-	if userRole != "Level 1" && userRole != "Level 2" {
+	// Build notifications based on user role
+	var notifications []Notification
+	
+	if userRole == "Level 1" || userRole == "Level 2" {
+		// Level 1/2 notifications (approval-related)
+		notifications = h.getLevel12Notifications()
+	} else if userRole == "Level 3" || userRole == "Level 4" {
+		// Level 3/4 notifications (field worker notifications)
+		notifications = h.getLevel34Notifications(userID)
+	} else {
+		// Other roles - no notifications
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(NotificationsResponse{
 			Notifications: []Notification{},
@@ -59,49 +68,26 @@ func (h *NotificationsHandler) GetNotifications(w http.ResponseWriter, r *http.R
 		})
 		return
 	}
+	
+	unreadCount := len(notifications)
 
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(NotificationsResponse{
+		Notifications: notifications,
+		UnreadCount:   unreadCount,
+	})
+}
+
+func (h *NotificationsHandler) getLevel12Notifications() []Notification {
+	notifications := []Notification{}
+	
 	// Get pending field reports count
 	var pendingReportsCount int
-	err = h.db.QueryRow(`
+	err := h.db.QueryRow(`
 		SELECT COUNT(*) FROM field_reports 
 		WHERE status = 'pending'
 	`).Scan(&pendingReportsCount)
-	if err != nil {
-		http.Error(w, "Failed to get pending reports count", http.StatusInternalServerError)
-		return
-	}
-
-	// Get new work orders (created in last 7 days)
-	var newWorkOrdersCount int
-	err = h.db.QueryRow(`
-		SELECT COUNT(*) FROM work_orders 
-		WHERE created_at > NOW() - INTERVAL '7 days'
-	`).Scan(&newWorkOrdersCount)
-	if err != nil {
-		http.Error(w, "Failed to get new work orders count", http.StatusInternalServerError)
-		return
-	}
-
-	// Get unread comments (comments on reports that user hasn't seen)
-	// We'll check for comments created in last 24 hours on reports user hasn't approved/rejected yet
-	var unreadCommentsCount int
-	err = h.db.QueryRow(`
-		SELECT COUNT(DISTINCT frc.field_report_id) 
-		FROM field_report_comments frc
-		INNER JOIN field_reports fr ON fr.id = frc.field_report_id
-		WHERE frc.created_at > NOW() - INTERVAL '24 hours'
-		AND fr.status = 'pending'
-	`).Scan(&unreadCommentsCount)
-	if err != nil {
-		http.Error(w, "Failed to get unread comments count", http.StatusInternalServerError)
-		return
-	}
-
-	// Build notifications
-	notifications := []Notification{}
-
-	// Pending field reports notification
-	if pendingReportsCount > 0 {
+	if err == nil && pendingReportsCount > 0 {
 		notifications = append(notifications, Notification{
 			ID:        1,
 			Type:      "field_report_pending",
@@ -113,8 +99,13 @@ func (h *NotificationsHandler) GetNotifications(w http.ResponseWriter, r *http.R
 		})
 	}
 
-	// New work orders notification
-	if newWorkOrdersCount > 0 {
+	// Get new work orders (created in last 7 days)
+	var newWorkOrdersCount int
+	err = h.db.QueryRow(`
+		SELECT COUNT(*) FROM work_orders 
+		WHERE created_at > NOW() - INTERVAL '7 days'
+	`).Scan(&newWorkOrdersCount)
+	if err == nil && newWorkOrdersCount > 0 {
 		notifications = append(notifications, Notification{
 			ID:        2,
 			Type:      "work_order_new",
@@ -126,8 +117,16 @@ func (h *NotificationsHandler) GetNotifications(w http.ResponseWriter, r *http.R
 		})
 	}
 
-	// Unread comments notification
-	if unreadCommentsCount > 0 {
+	// Get unread comments
+	var unreadCommentsCount int
+	err = h.db.QueryRow(`
+		SELECT COUNT(DISTINCT frc.field_report_id) 
+		FROM field_report_comments frc
+		INNER JOIN field_reports fr ON fr.id = frc.field_report_id
+		WHERE frc.created_at > NOW() - INTERVAL '24 hours'
+		AND fr.status = 'pending'
+	`).Scan(&unreadCommentsCount)
+	if err == nil && unreadCommentsCount > 0 {
 		notifications = append(notifications, Notification{
 			ID:        3,
 			Type:      "field_report_comment",
@@ -139,7 +138,7 @@ func (h *NotificationsHandler) GetNotifications(w http.ResponseWriter, r *http.R
 		})
 	}
 
-	// Get recently approved/rejected reports (last 24 hours)
+	// Get recently processed reports
 	var recentApprovalsCount int
 	err = h.db.QueryRow(`
 		SELECT COUNT(*) FROM field_reports 
@@ -158,12 +157,78 @@ func (h *NotificationsHandler) GetNotifications(w http.ResponseWriter, r *http.R
 		})
 	}
 
-	unreadCount := len(notifications)
+	return notifications
+}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(NotificationsResponse{
-		Notifications: notifications,
-		UnreadCount:   unreadCount,
-	})
+func (h *NotificationsHandler) getLevel34Notifications(userID int) []Notification {
+	notifications := []Notification{}
+	
+	// Get user's name for query
+	var userName string
+	err := h.db.QueryRow("SELECT first_name || ' ' || last_name FROM users WHERE id = $1", userID).Scan(&userName)
+	if err != nil {
+		return notifications
+	}
+
+	// Get approved/rejected reports for this user (last 24 hours)
+	var processedReportsCount int
+	err = h.db.QueryRow(`
+		SELECT COUNT(*) FROM field_reports 
+		WHERE submitted_by = $1
+		AND (status = 'approved' OR status = 'rejected')
+		AND approved_at > NOW() - INTERVAL '24 hours'
+	`, userName).Scan(&processedReportsCount)
+	if err == nil && processedReportsCount > 0 {
+		notifications = append(notifications, Notification{
+			ID:        1,
+			Type:      "field_report_processed",
+			Title:     "Laporan Anda Diproses",
+			Message:   fmt.Sprintf("%d laporan Anda telah diproses", processedReportsCount),
+			Link:      "/lapangan/reports",
+			Read:      false,
+			CreatedAt: time.Now(),
+		})
+	}
+
+	// Get new work orders assigned to this user (last 7 days)
+	var newWorkOrdersCount int
+	err = h.db.QueryRow(`
+		SELECT COUNT(*) FROM work_orders 
+		WHERE assignee LIKE '%' || $1 || '%'
+		AND created_at > NOW() - INTERVAL '7 days'
+	`, userName).Scan(&newWorkOrdersCount)
+	if err == nil && newWorkOrdersCount > 0 {
+		notifications = append(notifications, Notification{
+			ID:        2,
+			Type:      "work_order_new",
+			Title:     "Work Order Baru",
+			Message:   fmt.Sprintf("Anda memiliki %d work order baru", newWorkOrdersCount),
+			Link:      "/lapangan/work-orders",
+			Read:      false,
+			CreatedAt: time.Now(),
+		})
+	}
+
+	// Get comments on user's reports (last 24 hours)
+	var commentsCount int
+	err = h.db.QueryRow(`
+		SELECT COUNT(*) FROM field_report_comments frc
+		INNER JOIN field_reports fr ON fr.id = frc.field_report_id
+		WHERE fr.submitted_by = $1
+		AND frc.created_at > NOW() - INTERVAL '24 hours'
+	`, userName).Scan(&commentsCount)
+	if err == nil && commentsCount > 0 {
+		notifications = append(notifications, Notification{
+			ID:        3,
+			Type:      "field_report_comment",
+			Title:     "Komentar di Laporan Anda",
+			Message:   fmt.Sprintf("Ada %d komentar baru di laporan Anda", commentsCount),
+			Link:      "/lapangan/reports",
+			Read:      false,
+			CreatedAt: time.Now(),
+		})
+	}
+
+	return notifications
 }
 

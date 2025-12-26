@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { Bell, X } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { notificationsAPI, Notification, NotificationsResponse } from '@/lib/api'
 import { formatDateIndonesian } from '@/lib/dateUtils'
 
@@ -16,26 +17,50 @@ export default function NotificationBell({ userRole }: NotificationBellProps) {
   const [unreadCount, setUnreadCount] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const previousNotificationIdsRef = useRef<Set<number>>(new Set())
   const dropdownRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
 
   const loadNotifications = useCallback(async () => {
-    // Only load for Level 1 and Level 2
-    if (userRole !== 'Level 1' && userRole !== 'Level 2') {
+    // Load for Level 1, 2, 3, and 4
+    if (!userRole || (userRole !== 'Level 1' && userRole !== 'Level 2' && userRole !== 'Level 3' && userRole !== 'Level 4')) {
       return
     }
 
     try {
       setLoading(true)
       const data = await notificationsAPI.getNotifications()
+      
+      // Check for new notifications
+      const currentIds = new Set(data.notifications.map(n => n.id))
+      const previousIds = previousNotificationIdsRef.current
+      const newNotifications = data.notifications.filter(n => !previousIds.has(n.id))
+      
+      // Show toast for new notifications (only after first load)
+      if (previousIds.size > 0 && newNotifications.length > 0) {
+        newNotifications.forEach(notification => {
+          toast.info(notification.title, {
+            description: notification.message,
+            duration: 5000,
+            action: {
+              label: 'Lihat',
+              onClick: () => {
+                router.push(notification.link)
+              }
+            }
+          })
+        })
+      }
+      
       setNotifications(data.notifications)
       setUnreadCount(data.unread_count)
+      previousNotificationIdsRef.current = currentIds
     } catch (err) {
       console.error('Failed to load notifications:', err)
     } finally {
       setLoading(false)
     }
-  }, [userRole])
+  }, [userRole, router])
 
   useEffect(() => {
     // Load notifications on mount
@@ -66,8 +91,8 @@ export default function NotificationBell({ userRole }: NotificationBellProps) {
     }
   }, [isOpen])
 
-  // Only show for Level 1 and Level 2
-  if (userRole !== 'Level 1' && userRole !== 'Level 2') {
+  // Show for Level 1, 2, 3, and 4
+  if (!userRole || (userRole !== 'Level 1' && userRole !== 'Level 2' && userRole !== 'Level 3' && userRole !== 'Level 4')) {
     return null
   }
 
@@ -158,11 +183,11 @@ export default function NotificationBell({ userRole }: NotificationBellProps) {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
-                          <h4 className="text-sm font-semibold text-gray-900 truncate">
+                          <h4 className={`text-sm font-semibold truncate ${!notification.read ? 'text-gray-900 font-bold' : 'text-gray-700'}`}>
                             {notification.title}
                           </h4>
                           {!notification.read && (
-                            <span className="flex-shrink-0 w-2 h-2 bg-indigo-600 rounded-full ml-2"></span>
+                            <span className="flex-shrink-0 w-2.5 h-2.5 bg-indigo-600 rounded-full ml-2 animate-pulse"></span>
                           )}
                         </div>
                         <p className="text-sm text-gray-600 mb-2 line-clamp-2">
