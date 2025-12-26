@@ -129,6 +129,14 @@ jobs:
                 echo "NEXT_PUBLIC_API_URL=$API_URL" >> .env
               fi
               
+              # GCS Configuration for frontend (jika belum ada)
+              if ! grep -q "^GCS_BUCKET_NAME=" .env; then
+                echo "GCS_BUCKET_NAME=" >> .env
+              fi
+              if ! grep -q "^GCS_CREDENTIALS_JSON=" .env; then
+                echo "GCS_CREDENTIALS_JSON=" >> .env
+              fi
+              
               echo "✅ .env updated with domain configuration"
               echo "   CORS_ORIGIN=$CORS_ORIGIN"
               echo "   NEXT_PUBLIC_API_URL=$API_URL"

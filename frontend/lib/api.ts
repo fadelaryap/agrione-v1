@@ -396,19 +396,12 @@ export const fieldReportsAPI = {
   },
 }
 
+import { uploadToGCS } from './gcs'
+
 export const uploadAPI = {
   // Upload file directly to GCS (frontend-only, no backend)
-  // Note: You need to configure GCS in frontend (e.g., Firebase Storage or public bucket)
   uploadFile: async (file: File): Promise<string> => {
-    // TODO: Implement GCS upload in frontend
-    // Options:
-    // 1. Use Firebase Storage SDK
-    // 2. Use GCS JavaScript library with public bucket
-    // 3. Use signed URL from external service
-    
-    // For now, return a placeholder
-    // You should implement actual GCS upload here
-    throw new Error('GCS upload not implemented in frontend yet. Please configure Firebase Storage or GCS JavaScript SDK.')
+    return uploadToGCS(file)
   },
 }
 
