@@ -5,6 +5,9 @@ import { useRouter, useParams } from 'next/navigation'
 import { authAPI, User, workOrdersAPI, WorkOrder, fieldReportsAPI, FieldReport, FieldReportComment } from '@/lib/api'
 import { Calendar, MapPin, User as UserIcon, Clock, CheckCircle, AlertCircle, MessageSquare, Send, Camera, Video } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
+import { id } from 'date-fns/locale'
+import { toast } from 'sonner'
+import { formatDateIndonesian, formatDateOnly } from '@/lib/dateUtils'
 
 export default function WorkOrderReportPage() {
   const router = useRouter()
@@ -80,9 +83,10 @@ export default function WorkOrderReportPage() {
       await fieldReportsAPI.addComment(reportId, newComment[reportId], commentedBy)
       setNewComment(prev => ({ ...prev, [reportId]: '' }))
       await loadFieldReports() // Reload to get updated comments
+      toast.success('Komentar berhasil ditambahkan!')
     } catch (err) {
       console.error('Failed to add comment:', err)
-      alert('Failed to add comment')
+      toast.error('Gagal menambahkan komentar')
     } finally {
       setSubmittingComment(null)
     }
@@ -99,10 +103,18 @@ export default function WorkOrderReportPage() {
     const style = styles[status] || styles.pending
     const Icon = style.icon
 
+    const statusLabels: { [key: string]: string } = {
+      'pending': 'Menunggu',
+      'in-progress': 'Sedang Berjalan',
+      'completed': 'Selesai',
+      'overdue': 'Terlambat',
+      'cancelled': 'Dibatalkan',
+    }
+    
     return (
       <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${style.bg} ${style.text}`}>
         <Icon className="w-3 h-3" />
-        {status.replace('-', ' ').toUpperCase()}
+        {statusLabels[status] || status}
       </span>
     )
   }
@@ -114,9 +126,15 @@ export default function WorkOrderReportPage() {
       'fair': 'bg-yellow-100 text-yellow-800 border-yellow-200',
       'poor': 'bg-red-100 text-red-800 border-red-200',
     }
+    const conditionLabels: { [key: string]: string } = {
+      'excellent': 'Sangat Baik',
+      'good': 'Baik',
+      'fair': 'Cukup',
+      'poor': 'Buruk',
+    }
     return (
       <span className={`px-2 py-1 rounded text-xs font-medium border ${styles[condition] || styles.fair}`}>
-        {condition.toUpperCase()}
+        {conditionLabels[condition] || condition}
       </span>
     )
   }
@@ -126,7 +144,7 @@ export default function WorkOrderReportPage() {
       <div className="min-h-screen flex items-center justify-center pb-16">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <p className="mt-4 text-gray-600">Memuat...</p>
         </div>
       </div>
     )
@@ -145,7 +163,7 @@ export default function WorkOrderReportPage() {
             onClick={() => router.back()}
             className="text-green-600 hover:text-green-700 mb-4 text-sm font-medium"
           >
-            ← Back to Work Orders
+            ← Kembali ke Tugas
           </button>
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4">
@@ -160,8 +178,8 @@ export default function WorkOrderReportPage() {
               <div className="flex items-center gap-2 text-gray-600">
                 <Calendar className="w-4 h-4" />
                 <span>
-                  {workOrder.start_date ? format(parseISO(workOrder.start_date), 'MMM d, yyyy') : 'N/A'} -{' '}
-                  {workOrder.end_date ? format(parseISO(workOrder.end_date), 'MMM d, yyyy') : 'N/A'}
+                  {workOrder.start_date ? formatDateOnly(workOrder.start_date) : 'Tidak tersedia'} -{' '}
+                  {workOrder.end_date ? formatDateOnly(workOrder.end_date) : 'Tidak tersedia'}
                 </span>
               </div>
               {workOrder.field_name && (
@@ -187,18 +205,18 @@ export default function WorkOrderReportPage() {
         {/* Field Reports */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Field Reports ({fieldReports.length})</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Laporan Lapangan ({fieldReports.length})</h2>
             <button
               onClick={() => router.push(`/lapangan/work-orders/${workOrderId}/report/create`)}
               className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
             >
-              + Add Report
+              + Tambah Laporan
             </button>
           </div>
 
           {fieldReports.length === 0 ? (
             <div className="bg-white rounded-lg shadow-lg p-8 text-center">
-              <p className="text-gray-500">No field reports yet. Create one to get started.</p>
+              <p className="text-gray-500">Belum ada laporan lapangan. Buat laporan untuk memulai.</p>
             </div>
           ) : (
             fieldReports.map((report) => (
@@ -215,18 +233,18 @@ export default function WorkOrderReportPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 text-sm">
                   <div>
-                    <span className="text-gray-500">Submitted by:</span>
+                    <span className="text-gray-500">Dikirim oleh:</span>
                     <span className="ml-2 font-medium text-gray-900">{report.submitted_by}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500">Date:</span>
+                    <span className="text-gray-500">Tanggal:</span>
                     <span className="ml-2 font-medium text-gray-900">
-                      {format(parseISO(report.created_at), 'MMM d, yyyy HH:mm')}
+                      {formatDateIndonesian(report.created_at)}
                     </span>
                   </div>
                   {report.coordinates && (
                     <div className="col-span-2">
-                      <span className="text-gray-500">Location:</span>
+                      <span className="text-gray-500">Lokasi:</span>
                       <span className="ml-2 font-medium text-gray-900">
                         {report.coordinates.latitude?.toFixed(6)}, {report.coordinates.longitude?.toFixed(6)}
                       </span>
@@ -245,12 +263,12 @@ export default function WorkOrderReportPage() {
                             <img
                               src={media.url}
                               alt={media.filename}
-                              className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                              className="w-full h-24 object-contain rounded-lg border border-gray-200 bg-gray-50"
                             />
                           ) : (
                             <video
                               src={media.url}
-                              className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                              className="w-full h-24 object-contain rounded-lg border border-gray-200 bg-gray-50"
                               controls={false}
                             />
                           )}
@@ -273,7 +291,7 @@ export default function WorkOrderReportPage() {
                 <div className="border-t border-gray-200 pt-4 mt-4">
                   <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
                     <MessageSquare className="w-4 h-4" />
-                    Comments ({report.comments?.length || 0})
+                    Komentar ({report.comments?.length || 0})
                   </h4>
 
                   {/* Comments List */}
@@ -284,7 +302,7 @@ export default function WorkOrderReportPage() {
                           <div className="flex items-start justify-between mb-1">
                             <span className="text-sm font-medium text-gray-900">{comment.commented_by}</span>
                             <span className="text-xs text-gray-500">
-                              {format(parseISO(comment.created_at), 'MMM d, yyyy HH:mm')}
+                              {formatDateIndonesian(comment.created_at)}
                             </span>
                           </div>
                           <p className="text-sm text-gray-700">{comment.comment}</p>
@@ -293,14 +311,14 @@ export default function WorkOrderReportPage() {
                     </div>
                   )}
 
-                  {/* Add Comment Form (only for Level 1/2 users) */}
+                  {/* Form Tambah Komentar (hanya untuk Level 1/2) */}
                   {user.role === 'Level 1' || user.role === 'Level 2' ? (
                     <div className="flex gap-2">
                       <input
                         type="text"
                         value={newComment[report.id] || ''}
                         onChange={(e) => setNewComment(prev => ({ ...prev, [report.id]: e.target.value }))}
-                        placeholder="Add a comment..."
+                        placeholder="Tambah komentar..."
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
                         onKeyPress={(e) => {
                           if (e.key === 'Enter' && !e.shiftKey) {
@@ -322,7 +340,7 @@ export default function WorkOrderReportPage() {
                       </button>
                     </div>
                   ) : (
-                    <p className="text-xs text-gray-500">Only Level 1 and Level 2 users can add comments</p>
+                    <p className="text-xs text-gray-500">Hanya pengguna Level 1 dan Level 2 yang dapat menambahkan komentar</p>
                   )}
                 </div>
               </div>

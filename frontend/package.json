@@ -27,6 +27,7 @@
     "react-leaflet": "^4.2.1",
     "react-spinners": "^0.17.0",
     "recharts": "^3.6.0",
+    "sonner": "^1.4.0",
     "tailwind-merge": "^2.2.0",
     "zod": "^3.22.4"
   },

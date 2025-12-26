@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { authAPI, User, fieldReportsAPI, FieldReport, workOrdersAPI, WorkOrder } from '@/lib/api'
 import { FileText, Calendar, MapPin, Eye, Image as ImageIcon, Video, MessageSquare } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
+import { id } from 'date-fns/locale'
+import { formatDateIndonesian } from '@/lib/dateUtils'
 
 export default function ReportsPage() {
   const router = useRouter()
@@ -61,9 +63,9 @@ export default function ReportsPage() {
   }
 
   const getWorkOrderTitle = (workOrderId: number | null | undefined) => {
-    if (!workOrderId) return 'Unknown Work Order'
+    if (!workOrderId) return 'Tugas Tidak Diketahui'
     const wo = workOrders.find(o => o.id === workOrderId)
-    return wo?.title || `Work Order #${workOrderId}`
+    return wo?.title || `Tugas #${workOrderId}`
   }
 
   if (loading) {
@@ -91,8 +93,8 @@ export default function ReportsPage() {
               <div className="flex items-center gap-3">
                 <FileText className="h-8 w-8 text-green-600" />
                 <div>
-                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Field Reports</h1>
-                  <p className="text-gray-600 mt-1">View all your submitted field reports</p>
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Laporan Lapangan</h1>
+                  <p className="text-gray-600 mt-1">Lihat semua laporan lapangan yang telah Anda kirim</p>
                 </div>
               </div>
             </div>
@@ -101,13 +103,13 @@ export default function ReportsPage() {
 
         {/* Filter by Work Order */}
         <div className="bg-white rounded-lg shadow-lg p-4 mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Work Order</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Filter berdasarkan Tugas</label>
           <select
             value={selectedWorkOrder || ''}
             onChange={(e) => setSelectedWorkOrder(e.target.value ? parseInt(e.target.value) : null)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500"
           >
-            <option value="">All Work Orders</option>
+            <option value="">Semua Tugas</option>
             {workOrders.map(wo => (
               <option key={wo.id} value={wo.id}>{wo.title}</option>
             ))}
@@ -118,9 +120,9 @@ export default function ReportsPage() {
         {reports.length === 0 ? (
           <div className="bg-white rounded-lg shadow-lg p-8 text-center">
             <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">No Reports Found</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Tidak Ada Laporan</h2>
             <p className="text-gray-600">
-              {selectedWorkOrder ? 'No reports found for this work order.' : 'You haven\'t submitted any reports yet.'}
+              {selectedWorkOrder ? 'Tidak ada laporan untuk tugas ini.' : 'Anda belum mengirimkan laporan apapun.'}
             </p>
           </div>
         ) : (
@@ -133,7 +135,7 @@ export default function ReportsPage() {
                     <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
                       <span className="flex items-center gap-1">
                         <Calendar className="w-4 h-4" />
-                        {report.created_at ? format(parseISO(report.created_at), 'MMM dd, yyyy HH:mm') : 'N/A'}
+                        {report.created_at ? formatDateIndonesian(report.created_at) : 'Tidak tersedia'}
                       </span>
                       {report.work_order_id && (
                         <span className="flex items-center gap-1">
@@ -170,7 +172,7 @@ export default function ReportsPage() {
                       {report.media.some((m: any) => m.type === 'image') && <ImageIcon className="w-4 h-4 text-gray-600" />}
                       {report.media.some((m: any) => m.type === 'video') && <Video className="w-4 h-4 text-gray-600" />}
                       <span className="text-sm font-medium text-gray-700">
-                        {report.media.length} {report.media.length === 1 ? 'file' : 'files'}
+                        {report.media.length} {report.media.length === 1 ? 'file' : 'file'}
                       </span>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -180,19 +182,19 @@ export default function ReportsPage() {
                             <img
                               src={`data:image/jpeg;base64,${media.data}`}
                               alt={media.filename || `Image ${idx + 1}`}
-                              className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                              className="w-full h-24 object-contain rounded-lg border border-gray-200 bg-gray-50"
                             />
                           ) : media.type === 'video' && media.data ? (
                             <video
                               src={`data:video/webm;base64,${media.data}`}
-                              className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                              className="w-full h-24 object-contain rounded-lg border border-gray-200 bg-gray-50"
                               controls={false}
                             />
                           ) : media.url ? (
                             <img
                               src={media.url}
                               alt={media.filename || `Media ${idx + 1}`}
-                              className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                              className="w-full h-24 object-contain rounded-lg border border-gray-200 bg-gray-50"
                             />
                           ) : null}
                         </div>
@@ -213,7 +215,7 @@ export default function ReportsPage() {
                     <div className="flex items-center gap-2 mb-2">
                       <MessageSquare className="w-4 h-4 text-gray-600" />
                       <span className="text-sm font-medium text-gray-700">
-                        {report.comments.length} {report.comments.length === 1 ? 'comment' : 'comments'}
+                        {report.comments.length} {report.comments.length === 1 ? 'komentar' : 'komentar'}
                       </span>
                     </div>
                     <div className="space-y-2">
@@ -222,7 +224,7 @@ export default function ReportsPage() {
                           <p className="font-medium text-gray-900">{comment.commented_by}</p>
                           <p className="text-gray-700">{comment.comment}</p>
                           <p className="text-xs text-gray-500 mt-1">
-                            {format(parseISO(comment.created_at), 'MMM dd, yyyy HH:mm')}
+                            {formatDateIndonesian(comment.created_at)}
                           </p>
                         </div>
                       ))}
@@ -237,7 +239,7 @@ export default function ReportsPage() {
                     className="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium flex items-center gap-2"
                   >
                     <Eye className="w-4 h-4" />
-                    View Work Order Details
+                    Lihat Detail Tugas
                   </button>
                 )}
               </div>

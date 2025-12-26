@@ -242,19 +242,19 @@ export default function WorkOrderDetailPage() {
                               <img
                                 src={`data:image/jpeg;base64,${media.data}`}
                                 alt={media.filename || `Image ${idx + 1}`}
-                                className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                                className="w-full h-32 object-contain rounded-lg border border-gray-200 bg-gray-50"
                               />
                             ) : media.type === 'video' && media.data ? (
                               <video
                                 src={`data:video/webm;base64,${media.data}`}
-                                className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                                className="w-full h-32 object-contain rounded-lg border border-gray-200 bg-gray-50"
                                 controls
                               />
                             ) : media.url ? (
                               <img
                                 src={media.url}
                                 alt={media.filename || `Media ${idx + 1}`}
-                                className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                                className="w-full h-32 object-contain rounded-lg border border-gray-200 bg-gray-50"
                               />
                             ) : null}
                           </div>

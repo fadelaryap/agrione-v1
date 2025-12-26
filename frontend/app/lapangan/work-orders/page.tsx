@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { authAPI, User, fieldsAPI, Field, workOrdersAPI, WorkOrder } from '@/lib/api'
 import { ClipboardList, Calendar, ChevronDown, ChevronUp, MapPin, User as UserIcon, Clock, CheckCircle, XCircle, AlertCircle, Filter, ArrowUpDown } from 'lucide-react'
 import { format, parseISO, startOfDay, isToday, isTomorrow, addDays, isSameDay, eachDayOfInterval, isBefore, isAfter } from 'date-fns'
+import { id } from 'date-fns/locale'
+import { toast } from 'sonner'
 import CalendarGridView from '@/components/work-orders/CalendarGridView'
 
 export default function WorkOrdersPage() {
@@ -228,9 +230,13 @@ export default function WorkOrdersPage() {
   const getDateLabel = (dateStr: string) => {
     try {
       const date = parseISO(dateStr)
-      if (isToday(date)) return 'Today'
-      if (isTomorrow(date)) return 'Tomorrow'
-      return format(date, 'EEEE, MMMM d, yyyy')
+      const today = startOfDay(new Date())
+      const isPast = isBefore(date, today)
+      
+      if (isToday(date)) return 'Hari Ini'
+      if (isTomorrow(date)) return 'Besok'
+      if (isPast) return `Kadaluwarsa - ${format(date, 'EEEE, d MMMM yyyy', { locale: id })}`
+      return format(date, 'EEEE, d MMMM yyyy', { locale: id })
     } catch {
       return dateStr
     }
@@ -259,10 +265,18 @@ export default function WorkOrdersPage() {
     const style = styles[status] || styles.pending
     const Icon = style.icon
     
+    const statusLabels: { [key: string]: string } = {
+      'pending': 'Menunggu',
+      'in-progress': 'Sedang Berjalan',
+      'completed': 'Selesai',
+      'overdue': 'Terlambat',
+      'cancelled': 'Dibatalkan',
+    }
+    
     return (
       <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${style.bg} ${style.text}`}>
         <Icon className="w-3 h-3" />
-        {status.replace('-', ' ').toUpperCase()}
+        {statusLabels[status] || status}
       </span>
     )
   }
@@ -273,9 +287,14 @@ export default function WorkOrdersPage() {
       'medium': 'bg-yellow-100 text-yellow-800',
       'high': 'bg-red-100 text-red-800',
     }
+    const priorityLabels: { [key: string]: string } = {
+      'low': 'Rendah',
+      'medium': 'Sedang',
+      'high': 'Tinggi',
+    }
     return (
       <span className={`px-2 py-1 rounded text-xs font-medium ${styles[priority] || styles.medium}`}>
-        {priority.toUpperCase()}
+        {priorityLabels[priority] || priority}
       </span>
     )
   }
@@ -305,8 +324,8 @@ export default function WorkOrdersPage() {
               <div className="flex items-center gap-3">
                 <ClipboardList className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
                 <div>
-                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Work Orders</h1>
-                  <p className="text-sm text-gray-600 mt-1">Your assigned work orders</p>
+                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Tugas</h1>
+                  <p className="text-sm text-gray-600 mt-1">Tugas yang ditugaskan kepada Anda</p>
                 </div>
               </div>
               
@@ -320,7 +339,7 @@ export default function WorkOrdersPage() {
                       : 'bg-gray-100 text-gray-600'
                   }`}
                 >
-                  List
+                  Daftar
                 </button>
                 <button
                   onClick={() => setViewMode('calendar')}
@@ -347,16 +366,16 @@ export default function WorkOrdersPage() {
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-green-500"
               >
-                <option value="all">All</option>
-                <option value="pending">Pending</option>
-                <option value="in-progress">In Progress</option>
-                <option value="completed">Completed</option>
-                <option value="overdue">Overdue</option>
+                <option value="all">Semua</option>
+                <option value="pending">Menunggu</option>
+                <option value="in-progress">Sedang Berjalan</option>
+                <option value="completed">Selesai</option>
+                <option value="overdue">Terlambat</option>
               </select>
             </div>
             
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Start Date</label>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Tanggal Mulai</label>
               <input
                 type="date"
                 value={dateRangeFilter.start}
@@ -366,7 +385,7 @@ export default function WorkOrdersPage() {
             </div>
             
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">End Date</label>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Tanggal Selesai</label>
               <input
                 type="date"
                 value={dateRangeFilter.end}
@@ -376,15 +395,15 @@ export default function WorkOrdersPage() {
             </div>
             
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Sort By</label>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Urutkan</label>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as 'date' | 'status' | 'priority')}
                 className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-green-500"
               >
-                <option value="date">Date</option>
+                <option value="date">Tanggal</option>
                 <option value="status">Status</option>
-                <option value="priority">Priority</option>
+                <option value="priority">Prioritas</option>
               </select>
             </div>
             
@@ -397,7 +416,7 @@ export default function WorkOrdersPage() {
                   }}
                   className="w-full px-2 py-1.5 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 text-xs font-medium"
                 >
-                  Clear
+                  Hapus Filter
                 </button>
               )}
             </div>
@@ -409,19 +428,8 @@ export default function WorkOrdersPage() {
           <div className="space-y-3">
             {workOrdersByDate && workOrdersByDate.size > 0 ? (
               Array.from(workOrdersByDate.entries())
-                .filter(([dateStr]) => {
-                  // Filter out past dates (only show today and future, unless explicitly filtered)
-                  if (!dateRangeFilter.start && !dateRangeFilter.end) {
-                    try {
-                      const date = parseISO(dateStr)
-                      const today = startOfDay(new Date())
-                      return !isBefore(date, today)
-                    } catch {
-                      return true
-                    }
-                  }
-                  return true
-                })
+                // Tampilkan semua tanggal (termasuk yang sudah lewat)
+                // Tidak filter tanggal yang sudah lewat - tampilkan di accordion "Kadaluwarsa"
                 .map(([dateStr, orders]) => {
                   if (!orders || orders.length === 0) return null
                   
@@ -431,16 +439,16 @@ export default function WorkOrdersPage() {
                   const isPast = isBefore(date, startOfDay(new Date()))
                   
                   return (
-                    <div key={dateStr} className={`bg-white rounded-lg shadow-lg overflow-hidden ${isPast ? 'opacity-75' : ''}`}>
+                    <div key={dateStr} className={`bg-white rounded-lg shadow-lg overflow-hidden ${isPast ? 'border-2 border-red-300' : ''}`}>
                       <button
                         onClick={() => toggleDate(dateStr)}
                         className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
                       >
                         <div className="flex items-center gap-3">
-                          <Calendar className="w-5 h-5 text-green-600" />
+                          <Calendar className={`w-5 h-5 ${isPast ? 'text-red-600' : 'text-green-600'}`} />
                           <div className="text-left">
-                            <h3 className="font-semibold text-gray-900">{dateLabel}</h3>
-                            <p className="text-xs text-gray-500">{orders.length} work order{orders.length !== 1 ? 's' : ''}</p>
+                            <h3 className={`font-semibold ${isPast ? 'text-red-700' : 'text-gray-900'}`}>{dateLabel}</h3>
+                            <p className="text-xs text-gray-500">{orders.length} tugas</p>
                           </div>
                         </div>
                         {isExpanded ? (
@@ -493,7 +501,7 @@ export default function WorkOrdersPage() {
                               
                               {wo.requirements && wo.requirements.length > 0 && (
                                 <div className="mt-2">
-                                  <p className="text-gray-600 mb-1">Requirements:</p>
+                                  <p className="text-gray-600 mb-1">Persyaratan:</p>
                                   <ul className="list-disc list-inside text-gray-500 space-y-1">
                                     {wo.requirements.slice(0, 3).map((req, idx) => (
                                       <li key={idx} className="text-xs">{req}</li>
@@ -527,9 +535,9 @@ export default function WorkOrdersPage() {
             ) : (
               <div className="bg-white rounded-lg shadow-lg p-8 text-center">
                 <ClipboardList className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Work Orders</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Tidak Ada Tugas</h3>
                 <p className="text-gray-600">
-                  You don't have any work orders assigned yet.
+                  Anda belum memiliki tugas yang ditugaskan.
                 </p>
               </div>
             )}

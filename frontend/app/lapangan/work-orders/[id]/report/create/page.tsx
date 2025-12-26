@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { authAPI, User, workOrdersAPI, WorkOrder, fieldReportsAPI, FieldReport, uploadAPI } from '@/lib/api'
 import { Camera, Video, MapPin, ArrowLeft, X } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
+import { toast } from 'sonner'
 
 export default function CreateReportPage() {
   const router = useRouter()
@@ -104,7 +105,7 @@ export default function CreateReportPage() {
     e.preventDefault()
     
     if (!formData.title || !formData.description || !workOrderId || !user) {
-      alert('Please fill in all required fields')
+      toast.error('Harap isi semua field yang wajib diisi')
       return
     }
 
@@ -127,7 +128,7 @@ export default function CreateReportPage() {
           })
         } catch (err) {
           console.error('Failed to upload file to GCS:', err)
-          alert(`Gagal upload file ${file.name}. Silakan coba lagi.`)
+          toast.error(`Gagal upload file ${file.name}. Silakan coba lagi.`)
           setSubmitting(false)
           return
         }
@@ -149,10 +150,11 @@ export default function CreateReportPage() {
       
       // Note: Progress is already updated in backend when creating report
       
+      toast.success('Laporan berhasil dibuat!')
       router.push(`/lapangan/work-orders/${workOrderId}/report`)
     } catch (err: any) {
       console.error('Failed to create report:', err)
-      alert('Failed to create report: ' + (err.response?.data?.error || err.message))
+      toast.error('Gagal membuat laporan: ' + (err.response?.data?.error || err.message))
     } finally {
       setSubmitting(false)
     }
@@ -163,7 +165,7 @@ export default function CreateReportPage() {
       <div className="min-h-screen flex items-center justify-center pb-16">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <p className="mt-4 text-gray-600">Memuat...</p>
         </div>
       </div>
     )
@@ -183,11 +185,11 @@ export default function CreateReportPage() {
             className="text-green-600 hover:text-green-700 mb-4 text-sm font-medium flex items-center gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back
+            Kembali
           </button>
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Create Field Report</h1>
-            <p className="text-sm text-gray-600 mt-1">Work Order: {workOrder.title}</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Buat Laporan Lapangan</h1>
+            <p className="text-sm text-gray-600 mt-1">Tugas: {workOrder.title}</p>
           </div>
         </div>
 
@@ -195,7 +197,7 @@ export default function CreateReportPage() {
         <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-lg p-4 sm:p-6 space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Title <span className="text-red-500">*</span>
+              Judul <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -208,7 +210,7 @@ export default function CreateReportPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description <span className="text-red-500">*</span>
+              Deskripsi <span className="text-red-500">*</span>
             </label>
             <textarea
               value={formData.description}
@@ -221,7 +223,7 @@ export default function CreateReportPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Condition <span className="text-red-500">*</span>
+              Kondisi <span className="text-red-500">*</span>
             </label>
             <select
               value={formData.condition}
@@ -229,18 +231,18 @@ export default function CreateReportPage() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
               required
             >
-              <option value="excellent">Excellent</option>
-              <option value="good">Good</option>
-              <option value="fair">Fair</option>
-              <option value="poor">Poor</option>
+              <option value="excellent">Sangat Baik</option>
+              <option value="good">Baik</option>
+              <option value="fair">Cukup</option>
+              <option value="poor">Buruk</option>
             </select>
           </div>
 
           {/* Media Capture - Camera Only */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Photos/Videos <span className="text-red-500">*</span>
-              <span className="text-xs text-gray-500 ml-2">(Camera only - no file upload)</span>
+              Foto/Video <span className="text-red-500">*</span>
+              <span className="text-xs text-gray-500 ml-2">(Hanya kamera - tidak ada upload file)</span>
             </label>
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
               <div className="text-center space-y-4">
@@ -311,12 +313,12 @@ export default function CreateReportPage() {
                       <img
                         src={URL.createObjectURL(file)}
                         alt={file.name}
-                        className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                        className="w-full h-24 object-contain rounded-lg border border-gray-200 bg-gray-50"
                       />
                     ) : (
                       <video
                         src={URL.createObjectURL(file)}
-                        className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                        className="w-full h-24 object-contain rounded-lg border border-gray-200 bg-gray-50"
                         controls={false}
                       />
                     )}
@@ -335,12 +337,12 @@ export default function CreateReportPage() {
 
           {/* GPS Status */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Location Status</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Status Lokasi</label>
             {gpsPermission === 'denied' && (
               <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 border border-red-200">
                 <MapPin className="w-4 h-4 text-red-600" />
                 <p className="text-sm text-red-600">
-                  GPS access denied. Location will not be automatically detected.
+                  Akses GPS ditolak. Lokasi tidak akan terdeteksi secara otomatis.
                 </p>
               </div>
             )}
@@ -348,7 +350,7 @@ export default function CreateReportPage() {
               <div className="flex items-center gap-2 p-3 rounded-lg bg-green-50 border border-green-200">
                 <MapPin className="w-4 h-4 text-green-600" />
                 <p className="text-sm text-green-600">
-                  GPS access granted. Location: {formData.coordinates.latitude.toFixed(6)}, {formData.coordinates.longitude.toFixed(6)}
+                  Akses GPS diberikan. Lokasi: {formData.coordinates.latitude.toFixed(6)}, {formData.coordinates.longitude.toFixed(6)}
                 </p>
               </div>
             )}
@@ -356,7 +358,7 @@ export default function CreateReportPage() {
               <div className="flex items-center gap-2 p-3 rounded-lg bg-yellow-50 border border-yellow-200">
                 <MapPin className="w-4 h-4 text-yellow-600" />
                 <p className="text-sm text-yellow-600">
-                  Requesting GPS permission...
+                  Meminta izin GPS...
                 </p>
               </div>
             )}
@@ -365,7 +367,7 @@ export default function CreateReportPage() {
           {/* Progress */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Work Order Progress <span className="text-red-500">*</span>
+              Progress Tugas <span className="text-red-500">*</span>
             </label>
             <div className="space-y-2">
               <input
@@ -382,19 +384,19 @@ export default function CreateReportPage() {
                 <span className="text-xs text-gray-500">100%</span>
               </div>
               <p className="text-xs text-gray-500">
-                Set the completion progress for this work order based on this report.
+                Tentukan progress penyelesaian tugas berdasarkan laporan ini.
               </p>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Catatan (Opsional)</label>
             <textarea
               value={formData.notes}
               onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              placeholder="Additional notes..."
+              placeholder="Catatan tambahan..."
             />
           </div>
 
@@ -411,7 +413,7 @@ export default function CreateReportPage() {
               disabled={submitting}
               className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
             >
-              {submitting ? 'Submitting...' : 'Submit Report'}
+              {submitting ? 'Mengirim...' : 'Kirim Laporan'}
             </button>
           </div>
         </form>

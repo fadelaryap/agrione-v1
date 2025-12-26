@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { Camera, CheckCircle, Clock, Sun, Moon, X, AlertCircle } from 'lucide-react'
 import { attendanceAPI, uploadAPI, Attendance } from '@/lib/api'
 import { format } from 'date-fns'
+import { toast } from 'sonner'
+import { formatDateIndonesian, formatTimeOnly } from '@/lib/dateUtils'
 
 interface AttendanceCardProps {
   onUpdate?: () => void
@@ -61,7 +63,7 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
 
   const submitAttendance = async () => {
     if (!selfieFile) {
-      alert('Silakan ambil foto selfie terlebih dahulu')
+      toast.error('Silakan ambil foto selfie terlebih dahulu')
       return
     }
 
@@ -90,13 +92,13 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
       closeForm()
       await loadTodayAttendance()
       if (onUpdate) onUpdate()
-      alert(`Absen ${showForm === 'pagi' ? 'Pagi' : 'Sore'} berhasil!`)
+      toast.success(`Absen ${showForm === 'pagi' ? 'Pagi' : 'Sore'} berhasil!`)
     } catch (err: any) {
       console.error('Failed to submit attendance:', err)
       const errorMessage = err instanceof Error 
         ? err.message 
         : (err?.response?.data?.error || err?.message || 'Gagal melakukan absen')
-      alert('Gagal melakukan absen: ' + errorMessage)
+      toast.error('Gagal melakukan absen: ' + errorMessage)
     } finally {
       setSubmitting(null)
     }
@@ -142,7 +144,7 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
             {pagiAttendance ? (
               <div className="space-y-2">
                 <p className="text-sm text-gray-600">
-                  Waktu: {format(new Date(pagiAttendance.check_in_time), 'HH:mm')}
+                  Waktu: {formatTimeOnly(pagiAttendance.check_in_time)}
                 </p>
                 {pagiAttendance.selfie_image && (
                   <img
@@ -150,7 +152,7 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
                       ? pagiAttendance.selfie_image 
                       : `data:image/jpeg;base64,${pagiAttendance.selfie_image}`}
                     alt="Selfie pagi"
-                    className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                    className="w-full h-32 object-contain rounded-lg border border-gray-200 bg-gray-50"
                   />
                 )}
                 {pagiAttendance.has_issue && (
@@ -196,7 +198,7 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
                       ? soreAttendance.selfie_image 
                       : `data:image/jpeg;base64,${soreAttendance.selfie_image}`}
                     alt="Selfie sore"
-                    className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                    className="w-full h-32 object-contain rounded-lg border border-gray-200 bg-gray-50"
                   />
                 )}
                 {soreAttendance.has_issue && (
@@ -278,7 +280,7 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
                     <img
                       src={selfieImage}
                       alt="Selfie"
-                      className="w-full h-48 object-cover rounded-lg border border-gray-200"
+                      className="w-full h-48 object-contain rounded-lg border border-gray-200 bg-gray-50"
                     />
                     <input
                       type="file"
@@ -350,7 +352,7 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
                     <img
                       src={backCameraImage}
                       alt="Back camera"
-                      className="w-full h-48 object-cover rounded-lg border border-gray-200"
+                      className="w-full h-48 object-contain rounded-lg border border-gray-200 bg-gray-50"
                     />
                     <input
                       type="file"
