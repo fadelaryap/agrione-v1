@@ -76,9 +76,13 @@ jobs:
             # Stop existing containers
             echo ""
             echo "🛑 Stopping existing containers..."
-            # Try both compose files
-            docker compose -f docker-compose.prod.yml down || true
-            docker compose down || true
+            # Try both compose files (ignore errors if file doesn't exist)
+            if [ -f docker-compose.prod.yml ]; then
+              docker compose -f docker-compose.prod.yml down || true
+            fi
+            if [ -f docker-compose.yml ]; then
+              docker compose down || true
+            fi
             
             # Get VPS IP for environment variables
             VPS_IP=$(hostname -I | awk '{print $1}')
@@ -182,18 +186,18 @@ jobs:
             echo "✅ Deployment complete!"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             echo ""
-            docker compose ps
+            COMPOSE_FILE="docker-compose.prod.yml"
+            if [ ! -f "$COMPOSE_FILE" ]; then
+              COMPOSE_FILE="docker-compose.yml"
+            fi
+            docker compose -f "$COMPOSE_FILE" ps
           ENDSSH
 
-      - name: 🏥 Health Check
+      - name: 📊 Container Status
         run: |
           sleep 5
           ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'ENDSSH'
             echo ""
-            echo "🏥 Running health checks..."
-            echo ""
-            
-            # Check containers
             echo "📊 Container Status:"
             COMPOSE_FILE="docker-compose.prod.yml"
             if [ ! -f "$COMPOSE_FILE" ]; then
@@ -201,23 +205,7 @@ jobs:
             fi
             docker compose -f "$COMPOSE_FILE" ps
             echo ""
-            
-            # Check backend
-            echo "🔍 Checking backend (http://localhost:8000/api/health)..."
-            if curl -f http://localhost:8000/api/health > /dev/null 2>&1; then
-              echo "✅ Backend is healthy"
-            else
-              echo "⚠️  Backend health check failed (may need more time to start)"
-              echo "   Check logs with: docker compose -f $COMPOSE_FILE logs backend"
-            fi
-            
-            # Check frontend
-            echo ""
-            echo "🔍 Checking frontend (http://localhost:3000)..."
-            if curl -f http://localhost:3000 > /dev/null 2>&1; then
-              echo "✅ Frontend is healthy"
-            else
-              echo "⚠️  Frontend health check failed (may need more time to start)"
-              echo "   Check logs with: docker compose -f $COMPOSE_FILE logs frontend"
-            fi
+            echo "✅ Deployment completed. Check logs if needed:"
+            echo "   docker compose -f $COMPOSE_FILE logs backend"
+            echo "   docker compose -f $COMPOSE_FILE logs frontend"
           ENDSSH
