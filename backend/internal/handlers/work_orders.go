@@ -238,7 +238,8 @@ func (h *WorkOrdersHandler) GetWorkOrder(w http.ResponseWriter, r *http.Request)
 			wo.assignee, wo.field_id, wo.start_date, wo.end_date, wo.progress,
 			wo.description, wo.requirements, wo.actual_hours, wo.notes,
 			wo.created_by, wo.last_updated_by, wo.completed_date,
-			wo.created_at, wo.updated_at,
+			TO_CHAR(wo.created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as created_at, 
+			TO_CHAR(wo.updated_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as updated_at,
 			f.name as field_name
 		FROM work_orders wo
 		LEFT JOIN fields f ON wo.field_id = f.id

@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -163,8 +164,12 @@ func (h *AttendanceHandler) CreateAttendance(w http.ResponseWriter, r *http.Requ
 
 	err = h.db.QueryRow(`
 		SELECT id, user_id, date, session, selfie_image, back_camera_image, 
-		       has_issue, description, check_in_time, 
-		       check_out_time, status, notes, created_at, updated_at
+		       has_issue, description, 
+		       TO_CHAR(check_in_time AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as check_in_time,
+		       TO_CHAR(check_out_time AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as check_out_time,
+		       status, notes, 
+		       TO_CHAR(created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as created_at,
+		       TO_CHAR(updated_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as updated_at
 		FROM attendance WHERE id = $1
 	`, attendanceID).Scan(
 		&att.ID, &att.UserID, &att.Date, &att.Session, &att.SelfieImage,
@@ -209,12 +214,22 @@ func (h *AttendanceHandler) GetTodayAttendance(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	today := time.Now().Format("2006-01-02")
+	// Get today's date in GMT+7 (Asia/Jakarta timezone)
+	loc, _ := time.LoadLocation("Asia/Jakarta")
+	today := time.Now().In(loc).Format("2006-01-02")
+	
+	// Debug logging
+	log.Printf("[DEBUG Attendance] GetTodayAttendance - UserID: %d, Today (GMT+7): %s, Server Time: %s", 
+		userID, today, time.Now().In(loc).Format("2006-01-02 15:04:05 MST"))
 
 	rows, err := h.db.Query(`
 		SELECT id, user_id, date, session, selfie_image, back_camera_image, 
-		       has_issue, description, check_in_time, 
-		       check_out_time, status, notes, created_at, updated_at
+		       has_issue, description, 
+		       TO_CHAR(check_in_time AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as check_in_time,
+		       TO_CHAR(check_out_time AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as check_out_time,
+		       status, notes, 
+		       TO_CHAR(created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as created_at,
+		       TO_CHAR(updated_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as updated_at
 		FROM attendance 
 		WHERE user_id = $1 AND date = $2
 		ORDER BY session
@@ -283,8 +298,12 @@ func (h *AttendanceHandler) ListAttendance(w http.ResponseWriter, r *http.Reques
 
 	query := `
 		SELECT id, user_id, date, session, selfie_image, back_camera_image, 
-		       has_issue, description, check_in_time, 
-		       check_out_time, status, notes, created_at, updated_at
+		       has_issue, description, 
+		       TO_CHAR(check_in_time AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as check_in_time,
+		       TO_CHAR(check_out_time AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as check_out_time,
+		       status, notes, 
+		       TO_CHAR(created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as created_at,
+		       TO_CHAR(updated_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as updated_at
 		FROM attendance 
 		WHERE user_id = $1
 	`
@@ -370,8 +389,12 @@ func (h *AttendanceHandler) GetAttendance(w http.ResponseWriter, r *http.Request
 
 	err = h.db.QueryRow(`
 		SELECT id, user_id, date, session, selfie_image, back_camera_image, 
-		       has_issue, description, check_in_time, 
-		       check_out_time, status, notes, created_at, updated_at
+		       has_issue, description, 
+		       TO_CHAR(check_in_time AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as check_in_time,
+		       TO_CHAR(check_out_time AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as check_out_time,
+		       status, notes, 
+		       TO_CHAR(created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as created_at,
+		       TO_CHAR(updated_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as updated_at
 		FROM attendance WHERE id = $1
 	`, id).Scan(
 		&att.ID, &att.UserID, &att.Date, &att.Session, &att.SelfieImage,

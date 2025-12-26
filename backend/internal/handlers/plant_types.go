@@ -30,7 +30,9 @@ type CreatePlantTypeRequest struct {
 
 func (h *PlantTypesHandler) ListPlantTypes(w http.ResponseWriter, r *http.Request) {
 	rows, err := h.db.Query(`
-		SELECT id, name, created_at, updated_at 
+		SELECT id, name, 
+		       TO_CHAR(created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as created_at, 
+		       TO_CHAR(updated_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as updated_at 
 		FROM plant_types 
 		ORDER BY name ASC
 	`)
@@ -78,7 +80,9 @@ func (h *PlantTypesHandler) GetPlantType(w http.ResponseWriter, r *http.Request)
 	var createdAt, updatedAt sql.NullString
 
 	err = h.db.QueryRow(`
-		SELECT id, name, created_at, updated_at 
+		SELECT id, name, 
+		       TO_CHAR(created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as created_at, 
+		       TO_CHAR(updated_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as updated_at 
 		FROM plant_types 
 		WHERE id = $1
 	`, id).Scan(&pt.ID, &pt.Name, &createdAt, &updatedAt)
@@ -121,7 +125,9 @@ func (h *PlantTypesHandler) CreatePlantType(w http.ResponseWriter, r *http.Reque
 	err := h.db.QueryRow(`
 		INSERT INTO plant_types (name)
 		VALUES ($1)
-		RETURNING id, name, created_at, updated_at
+		RETURNING id, name, 
+		          TO_CHAR(created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as created_at, 
+		          TO_CHAR(updated_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as updated_at
 	`, req.Name).Scan(&pt.ID, &pt.Name, &createdAt, &updatedAt)
 
 	if err != nil {
@@ -168,7 +174,9 @@ func (h *PlantTypesHandler) UpdatePlantType(w http.ResponseWriter, r *http.Reque
 		UPDATE plant_types 
 		SET name = $1, updated_at = CURRENT_TIMESTAMP 
 		WHERE id = $2
-		RETURNING id, name, created_at, updated_at
+		RETURNING id, name, 
+		          TO_CHAR(created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as created_at, 
+		          TO_CHAR(updated_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as updated_at
 	`, req.Name, id).Scan(&pt.ID, &pt.Name, &createdAt, &updatedAt)
 
 	if err != nil {

@@ -62,7 +62,8 @@ func (h *NotificationsHandler) GetNotifications(w http.ResponseWriter, r *http.R
 	var err error
 	if unreadOnly {
 		rows, err = h.db.Query(`
-			SELECT id, user_id, type, title, message, link, read, created_at::text
+			SELECT id, user_id, type, title, message, link, read, 
+			       TO_CHAR(created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as created_at
 			FROM notifications
 			WHERE user_id = $1 AND read = FALSE
 			ORDER BY created_at DESC
@@ -70,7 +71,8 @@ func (h *NotificationsHandler) GetNotifications(w http.ResponseWriter, r *http.R
 		`, userID, limit)
 	} else {
 		rows, err = h.db.Query(`
-			SELECT id, user_id, type, title, message, link, read, created_at::text
+			SELECT id, user_id, type, title, message, link, read, 
+			       TO_CHAR(created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as created_at
 			FROM notifications
 			WHERE user_id = $1
 			ORDER BY created_at DESC

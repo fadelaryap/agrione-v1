@@ -23,6 +23,25 @@ export default function WorkOrdersPage() {
 
   useEffect(() => {
     checkAuth()
+    
+    // Listen for calendar date clicks
+    const handleCalendarDateClick = (event: CustomEvent) => {
+      const dateKey = event.detail.dateKey
+      setViewMode('accordion')
+      setExpandedDates(new Set([dateKey]))
+      // Scroll to accordion section after a short delay
+      setTimeout(() => {
+        const element = document.querySelector(`[data-date-key="${dateKey}"]`)
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+      }, 100)
+    }
+    
+    window.addEventListener('calendar-date-click', handleCalendarDateClick as EventListener)
+    return () => {
+      window.removeEventListener('calendar-date-click', handleCalendarDateClick as EventListener)
+    }
   }, [])
 
   useEffect(() => {
@@ -424,7 +443,8 @@ export default function WorkOrdersPage() {
                 type="date"
                 value={dateRangeFilter.start}
                 onChange={(e) => setDateRangeFilter({ ...dateRangeFilter, start: e.target.value })}
-                className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-green-500 min-w-0"
+                className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-green-500 min-w-0 max-w-full"
+                style={{ maxWidth: '100%' }}
               />
             </div>
             
@@ -434,7 +454,8 @@ export default function WorkOrdersPage() {
                 type="date"
                 value={dateRangeFilter.end}
                 onChange={(e) => setDateRangeFilter({ ...dateRangeFilter, end: e.target.value })}
-                className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-green-500 min-w-0"
+                className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-green-500 min-w-0 max-w-full"
+                style={{ maxWidth: '100%' }}
               />
             </div>
             
@@ -470,41 +491,234 @@ export default function WorkOrdersPage() {
         {/* Accordion View */}
         {viewMode === 'accordion' && (
           <div className="space-y-3">
-            {workOrdersByDate && workOrdersByDate.size > 0 ? (
-              Array.from(workOrdersByDate.entries())
-                // Tampilkan semua tanggal (termasuk yang sudah lewat)
-                // Tidak filter tanggal yang sudah lewat - tampilkan di accordion "Kadaluwarsa"
-                .map(([dateStr, orders]) => {
-                  if (!orders || orders.length === 0) return null
-                  
-                  const isExpanded = expandedDates.has(dateStr)
-                  const dateLabel = getDateLabel(dateStr)
-                  const date = parseISO(dateStr)
-                  const isPast = isBefore(date, startOfDay(new Date()))
-                  
-                  return (
-                    <div key={dateStr} className={`bg-white rounded-lg shadow-lg overflow-hidden ${isPast ? 'border-2 border-red-300' : ''}`}>
-                      <button
-                        onClick={() => toggleDate(dateStr)}
-                        className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <Calendar className={`w-5 h-5 ${isPast ? 'text-red-600' : 'text-green-600'}`} />
-                          <div className="text-left">
-                            <h3 className={`font-semibold ${isPast ? 'text-red-700' : 'text-gray-900'}`}>{dateLabel}</h3>
-                            <p className="text-xs text-gray-500">{orders.length} tugas</p>
-                          </div>
-                        </div>
-                        {isExpanded ? (
-                          <ChevronUp className="w-5 h-5 text-gray-400" />
-                        ) : (
-                          <ChevronDown className="w-5 h-5 text-gray-400" />
-                        )}
-                      </button>
+            {workOrdersByDate && workOrdersByDate.size > 0 ? (() => {
+              const today = startOfDay(new Date())
+              const pastDates: Array<[string, WorkOrder[]]> = []
+              const futureDates: Array<[string, WorkOrder[]]> = []
+              
+              Array.from(workOrdersByDate.entries()).forEach(([dateStr, orders]) => {
+                if (!orders || orders.length === 0) return
+                const date = parseISO(dateStr)
+                const isPast = isBefore(date, today)
+                if (isPast) {
+                  pastDates.push([dateStr, orders])
+                } else {
+                  futureDates.push([dateStr, orders])
+                }
+              })
+              
+              // Sort past dates (newest first)
+              pastDates.sort((a, b) => b[0].localeCompare(a[0]))
+              // Sort future dates (oldest first)
+              futureDates.sort((a, b) => a[0].localeCompare(b[0]))
+              
+              return (
+                <>
+                  {/* Future dates (normal accordions) */}
+                  {futureDates.map(([dateStr, orders]) => {
+                    const isExpanded = expandedDates.has(dateStr)
+                    const dateLabel = getDateLabel(dateStr)
                     
-                    {isExpanded && (
-                      <div className="border-t border-gray-200 p-4 space-y-3">
-                        {orders.map(wo => (
+                    return (
+                      <div key={dateStr} data-date-key={dateStr} className="bg-white rounded-lg shadow-lg overflow-hidden">
+                        <button
+                          onClick={() => toggleDate(dateStr)}
+                          className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <Calendar className="w-5 h-5 text-green-600" />
+                            <div className="text-left">
+                              <h3 className="font-semibold text-gray-900">{dateLabel}</h3>
+                              <p className="text-xs text-gray-500">{orders.length} tugas</p>
+                            </div>
+                          </div>
+                          {isExpanded ? (
+                            <ChevronUp className="w-5 h-5 text-gray-400" />
+                          ) : (
+                            <ChevronDown className="w-5 h-5 text-gray-400" />
+                          )}
+                        </button>
+                      
+                        {isExpanded && (
+                          <div className="border-t border-gray-200 p-4 space-y-3">
+                            {orders.map(wo => (
+                              <div
+                                key={wo.id}
+                                className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                                onClick={() => router.push(`/lapangan/work-orders/${wo.id}/report`)}
+                              >
+                                <div className="flex items-start justify-between mb-2">
+                                  <div className="flex-1">
+                                    <h4 className="font-semibold text-gray-900 text-sm mb-1">{wo.title || 'Untitled'}</h4>
+                                    <p className="text-xs text-gray-600">
+                                      {wo.category || 'N/A'} - {wo.activity || 'N/A'}
+                                    </p>
+                                  </div>
+                                  {getStatusBadge(wo.status || 'pending')}
+                                </div>
+                                
+                                {wo.description && (
+                                  <p className="text-xs text-gray-500 mb-3 mt-2 line-clamp-2">{wo.description}</p>
+                                )}
+                                
+                                <div className="space-y-2 text-xs">
+                                  {wo.field_name && (
+                                    <div className="flex items-center gap-2 text-gray-600">
+                                      <MapPin className="w-3 h-3" />
+                                      <span>{wo.field_name}</span>
+                                    </div>
+                                  )}
+                                  
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-gray-600">Progress</span>
+                                    <span className="font-medium">{wo.progress || 0}%</span>
+                                  </div>
+                                  <div className="w-full bg-gray-200 rounded-full h-2">
+                                    <div
+                                      className="bg-green-600 h-2 rounded-full transition-all"
+                                      style={{ width: `${wo.progress || 0}%` }}
+                                    />
+                                  </div>
+                                  
+                                  {wo.requirements && wo.requirements.length > 0 && (
+                                    <div className="mt-2">
+                                      <p className="text-gray-600 mb-1">Persyaratan:</p>
+                                      <ul className="list-disc list-inside text-gray-500 space-y-1">
+                                        {wo.requirements.slice(0, 3).map((req, idx) => (
+                                          <li key={idx} className="text-xs">{req}</li>
+                                        ))}
+                                        {wo.requirements.length > 3 && (
+                                          <li className="text-xs text-gray-400">
+                                            +{wo.requirements.length - 3} more
+                                          </li>
+                                        )}
+                                      </ul>
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                <div className="mt-3 space-y-2 pt-3 border-t border-gray-100">
+                                  <div className="flex items-center justify-between">
+                                    {getPriorityBadge(wo.priority || 'medium')}
+                                    {wo.actual_hours && (
+                                      <span className="text-xs text-gray-500 flex items-center gap-1">
+                                        <Clock className="w-3 h-3" />
+                                        {wo.actual_hours}h
+                                      </span>
+                                    )}
+                                  </div>
+                                  {wo.field_id && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        openGoogleMapsForField(wo.field_id!)
+                                      }}
+                                      className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-xs font-medium"
+                                    >
+                                      <Navigation className="w-4 h-4" />
+                                      Buka di Google Maps
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                  
+                  {/* Past dates (single accordion) */}
+                  {pastDates.length > 0 && (() => {
+                    const expiredKey = 'expired'
+                    const isExpanded = expandedDates.has(expiredKey)
+                    
+                    return (
+                      <div data-date-key="expired" className="bg-white rounded-lg shadow-lg overflow-hidden border-2 border-red-300">
+                        <button
+                          onClick={() => toggleDate(expiredKey)}
+                          className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <Calendar className="w-5 h-5 text-red-600" />
+                            <div className="text-left">
+                              <h3 className="font-semibold text-red-700">Kadaluwarsa / Sudah Lewat</h3>
+                              <p className="text-xs text-gray-500">{pastDates.reduce((sum, [, orders]) => sum + orders.length, 0)} tugas</p>
+                            </div>
+                          </div>
+                          {isExpanded ? (
+                            <ChevronUp className="w-5 h-5 text-gray-400" />
+                          ) : (
+                            <ChevronDown className="w-5 h-5 text-gray-400" />
+                          )}
+                        </button>
+                      
+                        {isExpanded && (
+                          <div className="border-t border-gray-200 p-4 space-y-4">
+                            {pastDates.map(([dateStr, orders]) => {
+                              const date = parseISO(dateStr)
+                              const dateLabel = format(date, 'EEEE, d MMMM yyyy', { locale: id })
+                              const isDateExpanded = expandedDates.has(dateStr)
+                              
+                              return (
+                                <div key={dateStr} className="border border-red-200 rounded-lg overflow-hidden">
+                                  <button
+                                    onClick={() => toggleDate(dateStr)}
+                                    className="w-full flex items-center justify-between p-3 bg-red-50 hover:bg-red-100 transition-colors"
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <Calendar className="w-4 h-4 text-red-600" />
+                                      <span className="text-sm font-medium text-red-700">{dateLabel}</span>
+                                      <span className="text-xs text-red-600">({orders.length} tugas)</span>
+                                    </div>
+                                    {isDateExpanded ? (
+                                      <ChevronUp className="w-4 h-4 text-red-600" />
+                                    ) : (
+                                      <ChevronDown className="w-4 h-4 text-red-600" />
+                                    )}
+                                  </button>
+                                  
+                                  {isDateExpanded && (
+                                    <div className="p-3 space-y-2 bg-white">
+                                      {orders.map(wo => (
+                                        <div
+                                          key={wo.id}
+                                          className="border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer"
+                                          onClick={() => router.push(`/lapangan/work-orders/${wo.id}/report`)}
+                                        >
+                                          <div className="flex items-start justify-between mb-2">
+                                            <div className="flex-1">
+                                              <h4 className="font-semibold text-gray-900 text-sm mb-1">{wo.title || 'Untitled'}</h4>
+                                              <p className="text-xs text-gray-600">
+                                                {wo.category || 'N/A'} - {wo.activity || 'N/A'}
+                                              </p>
+                                            </div>
+                                            {getStatusBadge(wo.status || 'pending')}
+                                          </div>
+                                          
+                                          {wo.description && (
+                                            <p className="text-xs text-gray-500 mb-2 line-clamp-2">{wo.description}</p>
+                                          )}
+                                          
+                                          <div className="flex items-center justify-between text-xs">
+                                            <span className="text-gray-600">Progress: {wo.progress || 0}%</span>
+                                            {getPriorityBadge(wo.priority || 'medium')}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })()}
+                </>
+              )
+            })() : (
                           <div
                             key={wo.id}
                             className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"

@@ -169,6 +169,7 @@ func main() {
 	
 	// Attendance routes
 	protected.HandleFunc("/attendance/today", attendanceHandler.GetTodayAttendance).Methods("GET")
+	protected.HandleFunc("/attendance/stats", attendanceHandler.GetAttendanceStats).Methods("GET")
 	protected.HandleFunc("/attendance", attendanceHandler.ListAttendance).Methods("GET")
 	protected.HandleFunc("/attendance/{id}", attendanceHandler.GetAttendance).Methods("GET")
 	protectedPost.HandleFunc("/attendance", attendanceHandler.CreateAttendance).Methods("POST")

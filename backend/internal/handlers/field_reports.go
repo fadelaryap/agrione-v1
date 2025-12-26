@@ -100,8 +100,11 @@ func (h *FieldReportsHandler) ListFieldReports(w http.ResponseWriter, r *http.Re
 		}
 		rows, err = h.db.Query(`
 			SELECT id, title, description, condition, coordinates, notes, 
-			       submitted_by, work_order_id, media, status, approved_by, approved_at, rejection_reason,
-			       created_at, updated_at
+			       submitted_by, work_order_id, media, status, approved_by, 
+			       TO_CHAR(approved_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as approved_at, 
+			       rejection_reason,
+			       TO_CHAR(created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as created_at, 
+			       TO_CHAR(updated_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as updated_at
 			FROM field_reports
 			WHERE work_order_id = $1
 			ORDER BY created_at DESC
@@ -109,8 +112,11 @@ func (h *FieldReportsHandler) ListFieldReports(w http.ResponseWriter, r *http.Re
 	} else {
 		rows, err = h.db.Query(`
 			SELECT id, title, description, condition, coordinates, notes, 
-			       submitted_by, work_order_id, media, status, approved_by, approved_at, rejection_reason,
-			       created_at, updated_at
+			       submitted_by, work_order_id, media, status, approved_by, 
+			       TO_CHAR(approved_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as approved_at, 
+			       rejection_reason,
+			       TO_CHAR(created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as created_at, 
+			       TO_CHAR(updated_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as updated_at
 			FROM field_reports
 			ORDER BY created_at DESC
 		`)
@@ -211,8 +217,11 @@ func (h *FieldReportsHandler) GetFieldReport(w http.ResponseWriter, r *http.Requ
 
 	err = h.db.QueryRow(`
 		SELECT id, title, description, condition, coordinates, notes, 
-		       submitted_by, work_order_id, media, status, approved_by, approved_at, rejection_reason,
-		       created_at, updated_at
+		       submitted_by, work_order_id, media, status, approved_by, 
+		       TO_CHAR(approved_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as approved_at, 
+		       rejection_reason,
+		       TO_CHAR(created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as created_at, 
+		       TO_CHAR(updated_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as updated_at
 		FROM field_reports
 		WHERE id = $1
 	`, id).Scan(
@@ -386,8 +395,11 @@ func (h *FieldReportsHandler) CreateFieldReport(w http.ResponseWriter, r *http.R
 
 	err = h.db.QueryRow(`
 		SELECT id, title, description, condition, coordinates, notes, 
-		       submitted_by, work_order_id, media, status, approved_by, approved_at, rejection_reason,
-		       created_at, updated_at
+		       submitted_by, work_order_id, media, status, approved_by, 
+		       TO_CHAR(approved_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as approved_at, 
+		       rejection_reason,
+		       TO_CHAR(created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as created_at, 
+		       TO_CHAR(updated_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as updated_at
 		FROM field_reports
 		WHERE id = $1
 	`, reportID).Scan(
@@ -643,7 +655,9 @@ func (h *FieldReportsHandler) AddComment(w http.ResponseWriter, r *http.Request)
 	var comment FieldReportComment
 	var createdAt, updatedAt sql.NullString
 	err = h.db.QueryRow(`
-		SELECT id, field_report_id, comment, commented_by, created_at, updated_at
+		SELECT id, field_report_id, comment, commented_by, 
+		       TO_CHAR(created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as created_at, 
+		       TO_CHAR(updated_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as updated_at
 		FROM field_report_comments
 		WHERE id = $1
 	`, commentID).Scan(

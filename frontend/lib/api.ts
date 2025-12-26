@@ -364,6 +364,32 @@ export interface Attendance {
   updated_at: string
 }
 
+export interface AttendanceStats {
+  total_users: number
+  total_attendance: number
+  today_attendance: number
+  this_week_attendance: number
+  this_month_attendance: number
+  attendance_by_user: UserAttendanceStats[]
+}
+
+export interface UserAttendanceStats {
+  user_id: number
+  user_name: string
+  user_email: string
+  user_role: string
+  total_attendance: number
+  today_attendance: number
+  this_week_attendance: number
+  this_month_attendance: number
+  assigned_fields: FieldInfo[]
+}
+
+export interface FieldInfo {
+  id: number
+  name: string
+}
+
 export const fieldReportsAPI = {
   listFieldReports: async (params?: { work_order_id?: number; include_comments?: boolean }): Promise<FieldReport[]> => {
     const queryParams = new URLSearchParams()
@@ -467,6 +493,10 @@ export const attendanceAPI = {
   getTodayAttendance: async (): Promise<Attendance[]> => {
     const response = await api.get<Attendance[]>('/attendance/today')
     return Array.isArray(response.data) ? response.data : []
+  },
+  getAttendanceStats: async (): Promise<AttendanceStats> => {
+    const response = await api.get<AttendanceStats>('/attendance/stats')
+    return response.data
   },
   listAttendance: async (params?: { start_date?: string; end_date?: string }): Promise<Attendance[]> => {
     const queryParams = new URLSearchParams()

@@ -11,8 +11,18 @@ import {
   TrendingUp,
   AlertCircle
 } from 'lucide-react'
-import { fieldReportsAPI, workOrdersAPI, FieldReport, WorkOrder } from '@/lib/api'
+import { fieldReportsAPI, workOrdersAPI, attendanceAPI, FieldReport, WorkOrder, AttendanceStats } from '@/lib/api'
 import { formatDateIndonesian } from '@/lib/dateUtils'
+
+// Helper untuk parse date dengan benar (handle 'Z' suffix)
+function parseDateCorrectly(dateString: string): Date {
+  if (!dateString) return new Date(0)
+  // Jika berakhir dengan 'Z', remove dan treat sebagai local time
+  if (dateString.endsWith('Z')) {
+    return new Date(dateString.slice(0, -1))
+  }
+  return new Date(dateString)
+}
 
 interface DashboardStatsProps {
   className?: string
@@ -31,7 +41,13 @@ export default function DashboardStats({ className }: DashboardStatsProps) {
     todayReports: 0,
     thisWeekReports: 0,
     thisMonthReports: 0,
+    // Attendance stats
+    totalEmployees: 0,
+    todayAttendance: 0,
+    thisWeekAttendance: 0,
+    thisMonthAttendance: 0,
   })
+  const [attendanceStats, setAttendanceStats] = useState<AttendanceStats | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -50,6 +66,15 @@ export default function DashboardStats({ className }: DashboardStatsProps) {
       
       // Load work orders
       const workOrders = await workOrdersAPI.listWorkOrders({})
+      
+      // Load attendance stats (for Level 1/2 only)
+      let attendanceData: AttendanceStats | null = null
+      try {
+        attendanceData = await attendanceAPI.getAttendanceStats()
+        setAttendanceStats(attendanceData)
+      } catch (err) {
+        console.error('Failed to load attendance stats:', err)
+      }
 
       // Calculate stats
       const now = new Date()
@@ -59,19 +84,19 @@ export default function DashboardStats({ className }: DashboardStatsProps) {
 
       const todayReports = reports.filter(r => {
         if (!r.created_at) return false
-        const reportDate = new Date(r.created_at)
+        const reportDate = parseDateCorrectly(r.created_at)
         return reportDate >= today
       }).length
 
       const thisWeekReports = reports.filter(r => {
         if (!r.created_at) return false
-        const reportDate = new Date(r.created_at)
+        const reportDate = parseDateCorrectly(r.created_at)
         return reportDate >= weekAgo
       }).length
 
       const thisMonthReports = reports.filter(r => {
         if (!r.created_at) return false
-        const reportDate = new Date(r.created_at)
+        const reportDate = parseDateCorrectly(r.created_at)
         return reportDate >= monthAgo
       }).length
 
@@ -87,6 +112,11 @@ export default function DashboardStats({ className }: DashboardStatsProps) {
         todayReports,
         thisWeekReports,
         thisMonthReports,
+        // Attendance stats
+        totalEmployees: attendanceData?.total_users || 0,
+        todayAttendance: attendanceData?.today_attendance || 0,
+        thisWeekAttendance: attendanceData?.this_week_attendance || 0,
+        thisMonthAttendance: attendanceData?.this_month_attendance || 0,
       })
     } catch (err) {
       console.error('Failed to load stats:', err)
@@ -289,6 +319,69 @@ export default function DashboardStats({ className }: DashboardStatsProps) {
           </div>
         </div>
       </div>
+
+      {/* Attendance Stats - Only show if data available */}
+      {stats.totalEmployees > 0 && (
+        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-6 border-2 border-emerald-200">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-emerald-500 rounded-lg">
+                <Users className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Statistik Absensi</h2>
+                <p className="text-sm text-gray-600">Ringkasan absensi karyawan Level 3 & 4</p>
+              </div>
+            </div>
+            <span className="text-xs text-gray-500 bg-white px-3 py-1 rounded-full">Real-time</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white rounded-xl shadow-md p-6 border-2 border-emerald-200 hover:border-emerald-400 transition-colors">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium text-gray-600">Total Karyawan</h3>
+                <Users className="w-5 h-5 text-emerald-500" />
+              </div>
+              <p className="text-3xl font-bold text-gray-900">{stats.totalEmployees}</p>
+              <p className="text-xs text-gray-500 mt-2">
+                Level 3 & 4
+              </p>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-md p-6 border-2 border-green-200 hover:border-green-400 transition-colors">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium text-gray-600">Absen Hari Ini</h3>
+                <Clock className="w-5 h-5 text-green-500" />
+              </div>
+              <p className="text-3xl font-bold text-gray-900">{stats.todayAttendance}</p>
+              <p className="text-xs text-gray-500 mt-2">
+                {stats.totalEmployees > 0 ? ((stats.todayAttendance / (stats.totalEmployees * 2)) * 100).toFixed(0) : 0}% dari target
+              </p>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-md p-6 border-2 border-purple-200 hover:border-purple-400 transition-colors">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium text-gray-600">Absen Minggu Ini</h3>
+                <TrendingUp className="w-5 h-5 text-purple-500" />
+              </div>
+              <p className="text-3xl font-bold text-gray-900">{stats.thisWeekAttendance}</p>
+              <p className="text-xs text-gray-500 mt-2">
+                {stats.totalEmployees > 0 ? ((stats.thisWeekAttendance / (stats.totalEmployees * 14)) * 100).toFixed(0) : 0}% dari target
+              </p>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-md p-6 border-2 border-indigo-200 hover:border-indigo-400 transition-colors">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium text-gray-600">Absen Bulan Ini</h3>
+                <CheckCircle className="w-5 h-5 text-indigo-500" />
+              </div>
+              <p className="text-3xl font-bold text-gray-900">{stats.thisMonthAttendance}</p>
+              <p className="text-xs text-gray-500 mt-2">
+                Rata-rata {stats.totalEmployees > 0 ? (stats.thisMonthAttendance / stats.totalEmployees).toFixed(1) : 0} per karyawan
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

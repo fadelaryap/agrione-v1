@@ -12,7 +12,8 @@ import {
   Menu,
   X,
   ClipboardList,
-  FileCheck
+  FileCheck,
+  Building2
 } from 'lucide-react'
 import LogoutButton from '@/components/LogoutButton'
 import NotificationBell from '@/components/notifications/NotificationBell'
@@ -47,9 +48,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
   ]
 
-  // Add approval link only for Level 1 and Level 2
+  // Add approval and HR links only for Level 1 and Level 2
   const navItems = user && (user.role === 'Level 1' || user.role === 'Level 2')
-    ? [...baseNavItems, { href: '/dashboard/field-reports-approval', label: 'Persetujuan Laporan', icon: FileCheck }]
+    ? [
+        ...baseNavItems, 
+        { href: '/dashboard/field-reports-approval', label: 'Persetujuan Laporan', icon: FileCheck },
+        { href: '/dashboard/hr', label: 'Manajemen HR', icon: Building2 }
+      ]
     : baseNavItems
 
   return (

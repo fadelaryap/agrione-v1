@@ -66,7 +66,8 @@ func (h *FieldsHandler) ListFields(w http.ResponseWriter, r *http.Request) {
 		rows, err = h.db.Query(`
 			SELECT f.id, f.name, f.description, f.area, f.coordinates, f.draw_type, 
 			       f.plant_type_id, f.soil_type_id, f.user_id, 
-			       f.created_at, f.updated_at,
+			       TO_CHAR(f.created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as created_at, 
+			       TO_CHAR(f.updated_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as updated_at,
 			       CASE WHEN u.id IS NOT NULL THEN u.first_name || ' ' || u.last_name ELSE NULL END as user_name
 			FROM fields f
 			LEFT JOIN users u ON f.user_id = u.id
@@ -77,7 +78,8 @@ func (h *FieldsHandler) ListFields(w http.ResponseWriter, r *http.Request) {
 		rows, err = h.db.Query(`
 			SELECT f.id, f.name, f.description, f.area, f.coordinates, f.draw_type, 
 			       f.plant_type_id, f.soil_type_id, f.user_id, 
-			       f.created_at, f.updated_at,
+			       TO_CHAR(f.created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as created_at, 
+			       TO_CHAR(f.updated_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as updated_at,
 			       CASE WHEN u.id IS NOT NULL THEN u.first_name || ' ' || u.last_name ELSE NULL END as user_name
 			FROM fields f
 			LEFT JOIN users u ON f.user_id = u.id
@@ -168,7 +170,8 @@ func (h *FieldsHandler) GetField(w http.ResponseWriter, r *http.Request) {
 	err = h.db.QueryRow(`
 		SELECT f.id, f.name, f.description, f.area, f.coordinates, f.draw_type, 
 		       f.plant_type_id, f.soil_type_id, f.user_id, 
-		       f.created_at, f.updated_at,
+		       TO_CHAR(f.created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as created_at, 
+		       TO_CHAR(f.updated_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as updated_at,
 		       CASE WHEN u.id IS NOT NULL THEN u.first_name || ' ' || u.last_name ELSE NULL END as user_name
 		FROM fields f
 		LEFT JOIN users u ON f.user_id = u.id
@@ -418,7 +421,8 @@ func (h *FieldsHandler) UpdateField(w http.ResponseWriter, r *http.Request) {
 	err = h.db.QueryRow(`
 		SELECT f.id, f.name, f.description, f.area, f.coordinates, f.draw_type, 
 		       f.plant_type_id, f.soil_type_id, f.user_id, 
-		       f.created_at, f.updated_at,
+		       TO_CHAR(f.created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as created_at, 
+		       TO_CHAR(f.updated_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as updated_at,
 		       CASE WHEN u.id IS NOT NULL THEN u.first_name || ' ' || u.last_name ELSE NULL END as user_name
 		FROM fields f
 		LEFT JOIN users u ON f.user_id = u.id

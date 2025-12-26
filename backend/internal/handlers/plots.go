@@ -50,7 +50,8 @@ type UpdatePlotRequest struct {
 func (h *PlotsHandler) ListPlots(w http.ResponseWriter, r *http.Request) {
 	rows, err := h.db.Query(`
 		SELECT id, name, description, type, apikey, coordinates, field_ref, 
-		       created_at, updated_at 
+		       TO_CHAR(created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as created_at, 
+		       TO_CHAR(updated_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as updated_at 
 		FROM plots 
 		ORDER BY created_at DESC
 	`)
@@ -118,7 +119,8 @@ func (h *PlotsHandler) GetPlot(w http.ResponseWriter, r *http.Request) {
 
 	err = h.db.QueryRow(`
 		SELECT id, name, description, type, apikey, coordinates, field_ref, 
-		       created_at, updated_at 
+		       TO_CHAR(created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as created_at, 
+		       TO_CHAR(updated_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as updated_at 
 		FROM plots 
 		WHERE id = $1
 	`, id).Scan(
@@ -185,7 +187,9 @@ func (h *PlotsHandler) CreatePlot(w http.ResponseWriter, r *http.Request) {
 	err = h.db.QueryRow(`
 		INSERT INTO plots (name, description, type, apikey, coordinates, field_ref)
 		VALUES ($1, $2, $3, $4, $5, $6)
-		RETURNING id, name, description, type, apikey, coordinates, field_ref, created_at, updated_at
+		RETURNING id, name, description, type, apikey, coordinates, field_ref, 
+		          TO_CHAR(created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as created_at, 
+		          TO_CHAR(updated_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as updated_at
 	`, req.Name, req.Description, req.Type, req.APIKey, string(coordinatesJSON), req.FieldRef).Scan(
 		&p.ID, &p.Name, &description, &p.Type, &p.APIKey, &coordinatesJSONOut,
 		&fieldRef, &createdAt, &updatedAt,
@@ -305,7 +309,8 @@ func (h *PlotsHandler) UpdatePlot(w http.ResponseWriter, r *http.Request) {
 
 	err = h.db.QueryRow(`
 		SELECT id, name, description, type, apikey, coordinates, field_ref, 
-		       created_at, updated_at 
+		       TO_CHAR(created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as created_at, 
+		       TO_CHAR(updated_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as updated_at 
 		FROM plots 
 		WHERE id = $1
 	`, id).Scan(

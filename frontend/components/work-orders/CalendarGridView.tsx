@@ -158,11 +158,21 @@ export default function CalendarGridView({ workOrders }: CalendarGridViewProps) 
           const isCurrentMonth = isSameMonth(day, currentDate)
 
           return (
-            <div
+            <button
               key={day.toISOString()}
-              className={`aspect-square border border-gray-200 rounded-lg p-1 sm:p-2 overflow-hidden ${
+              onClick={() => {
+                if (dayWorkOrders.length > 0) {
+                  // Scroll to accordion view and expand that date
+                  const dateKey = format(day, 'yyyy-MM-dd')
+                  // Trigger parent to switch to accordion and expand
+                  if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('calendar-date-click', { detail: { dateKey } }))
+                  }
+                }
+              }}
+              className={`aspect-square border border-gray-200 rounded-lg p-1 sm:p-2 overflow-hidden text-left ${
                 isCurrentDay ? 'bg-green-50 border-green-500 border-2' : ''
-              } ${!isCurrentMonth ? 'opacity-50' : ''}`}
+              } ${!isCurrentMonth ? 'opacity-50' : ''} ${dayWorkOrders.length > 0 ? 'cursor-pointer hover:bg-gray-50' : ''}`}
             >
               <div className={`text-xs font-medium mb-1 ${isCurrentDay ? 'text-green-700 font-bold' : 'text-gray-700'}`}>
                 {format(day, 'd')}
@@ -191,7 +201,7 @@ export default function CalendarGridView({ workOrders }: CalendarGridViewProps) 
                   </>
                 ) : null}
               </div>
-            </div>
+            </button>
           )
         })}
       </div>

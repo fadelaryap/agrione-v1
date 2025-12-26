@@ -90,7 +90,19 @@ export default function LapanganPage() {
       // Filter by assignee and today's date
       const userFullName = user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() : ''
       const userEmail = user?.email || ''
-      const today = format(new Date(), 'yyyy-MM-dd')
+      
+      // Get today's date in GMT+7 (Asia/Jakarta)
+      const now = new Date()
+      const todayGMT7 = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }))
+      const today = format(todayGMT7, 'yyyy-MM-dd')
+      
+      console.log('[DEBUG] Today filter:', {
+        clientTime: now.toISOString(),
+        clientLocal: now.toLocaleString(),
+        gmt7Time: todayGMT7.toISOString(),
+        gmt7Local: todayGMT7.toLocaleString(),
+        todayString: today
+      })
       
       const todayOrders = allOrders.filter(wo => {
         if (!wo || !wo.assignee) return false

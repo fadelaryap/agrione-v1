@@ -39,7 +39,20 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
 
   const loadTodayAttendance = async () => {
     try {
+      // Debug: Log current date/time
+      const now = new Date()
+      const todayGMT7 = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }))
+      const todayString = format(todayGMT7, 'yyyy-MM-dd')
+      console.log('[DEBUG Attendance] Loading attendance:', {
+        clientTime: now.toISOString(),
+        clientLocal: now.toLocaleString(),
+        gmt7Time: todayGMT7.toISOString(),
+        gmt7Local: todayGMT7.toLocaleString(),
+        todayString: todayString
+      })
+      
       const data = await attendanceAPI.getTodayAttendance()
+      console.log('[DEBUG Attendance] Received data:', data)
       setTodayAttendance(data)
     } catch (err) {
       console.error('Failed to load attendance:', err)
@@ -154,21 +167,38 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
                 <p className="text-sm text-gray-600">
                   Waktu: {formatTimeOnly(pagiAttendance.check_in_time)}
                 </p>
-                {pagiAttendance.selfie_image && (
-                  <img
-                    src={pagiAttendance.selfie_image?.startsWith('http://') || pagiAttendance.selfie_image?.startsWith('https://')
-                      ? pagiAttendance.selfie_image 
-                      : `data:image/jpeg;base64,${pagiAttendance.selfie_image}`}
-                    alt="Selfie pagi"
-                    className="w-full h-32 object-contain rounded-lg border border-gray-200 bg-gray-50 cursor-pointer hover:opacity-80 transition-opacity"
-                    onClick={() => setSelectedImage({
-                      url: pagiAttendance.selfie_image?.startsWith('http://') || pagiAttendance.selfie_image?.startsWith('https://')
+                <div className="grid grid-cols-1 gap-2">
+                  {pagiAttendance.selfie_image && (
+                    <img
+                      src={pagiAttendance.selfie_image?.startsWith('http://') || pagiAttendance.selfie_image?.startsWith('https://')
                         ? pagiAttendance.selfie_image 
-                        : `data:image/jpeg;base64,${pagiAttendance.selfie_image}`,
-                      alt: 'Selfie pagi'
-                    })}
-                  />
-                )}
+                        : `data:image/jpeg;base64,${pagiAttendance.selfie_image}`}
+                      alt="Selfie pagi"
+                      className="w-full h-32 object-contain rounded-lg border border-gray-200 bg-gray-50 cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => setSelectedImage({
+                        url: pagiAttendance.selfie_image?.startsWith('http://') || pagiAttendance.selfie_image?.startsWith('https://')
+                          ? pagiAttendance.selfie_image 
+                          : `data:image/jpeg;base64,${pagiAttendance.selfie_image}`,
+                        alt: 'Selfie pagi'
+                      })}
+                    />
+                  )}
+                  {pagiAttendance.back_camera_image && (
+                    <img
+                      src={pagiAttendance.back_camera_image?.startsWith('http://') || pagiAttendance.back_camera_image?.startsWith('https://')
+                        ? pagiAttendance.back_camera_image 
+                        : `data:image/jpeg;base64,${pagiAttendance.back_camera_image}`}
+                      alt="Kamera belakang pagi"
+                      className="w-full h-32 object-contain rounded-lg border border-gray-200 bg-gray-50 cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => setSelectedImage({
+                        url: pagiAttendance.back_camera_image?.startsWith('http://') || pagiAttendance.back_camera_image?.startsWith('https://')
+                          ? pagiAttendance.back_camera_image 
+                          : `data:image/jpeg;base64,${pagiAttendance.back_camera_image}`,
+                        alt: 'Kamera belakang pagi'
+                      })}
+                    />
+                  )}
+                </div>
                 {pagiAttendance.has_issue && (
                   <div className="flex items-center gap-2 text-sm text-red-600">
                     <AlertCircle className="w-4 h-4" />
@@ -204,23 +234,40 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
             {soreAttendance ? (
               <div className="space-y-2">
                 <p className="text-sm text-gray-600">
-                  Waktu: {format(new Date(soreAttendance.check_in_time), 'HH:mm')}
+                  Waktu: {formatTimeOnly(soreAttendance.check_in_time)}
                 </p>
-                {soreAttendance.selfie_image && (
-                  <img
-                    src={soreAttendance.selfie_image.startsWith('http://') || soreAttendance.selfie_image.startsWith('https://')
-                      ? soreAttendance.selfie_image 
-                      : `data:image/jpeg;base64,${soreAttendance.selfie_image}`}
-                    alt="Selfie sore"
-                    className="w-full h-32 object-contain rounded-lg border border-gray-200 bg-gray-50 cursor-pointer hover:opacity-80 transition-opacity"
-                    onClick={() => setSelectedImage({
-                      url: soreAttendance.selfie_image.startsWith('http://') || soreAttendance.selfie_image.startsWith('https://')
+                <div className="grid grid-cols-1 gap-2">
+                  {soreAttendance.selfie_image && (
+                    <img
+                      src={soreAttendance.selfie_image.startsWith('http://') || soreAttendance.selfie_image.startsWith('https://')
                         ? soreAttendance.selfie_image 
-                        : `data:image/jpeg;base64,${soreAttendance.selfie_image}`,
-                      alt: 'Selfie sore'
-                    })}
-                  />
-                )}
+                        : `data:image/jpeg;base64,${soreAttendance.selfie_image}`}
+                      alt="Selfie sore"
+                      className="w-full h-32 object-contain rounded-lg border border-gray-200 bg-gray-50 cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => setSelectedImage({
+                        url: soreAttendance.selfie_image.startsWith('http://') || soreAttendance.selfie_image.startsWith('https://')
+                          ? soreAttendance.selfie_image 
+                          : `data:image/jpeg;base64,${soreAttendance.selfie_image}`,
+                        alt: 'Selfie sore'
+                      })}
+                    />
+                  )}
+                  {soreAttendance.back_camera_image && (
+                    <img
+                      src={soreAttendance.back_camera_image?.startsWith('http://') || soreAttendance.back_camera_image?.startsWith('https://')
+                        ? soreAttendance.back_camera_image 
+                        : `data:image/jpeg;base64,${soreAttendance.back_camera_image}`}
+                      alt="Kamera belakang sore"
+                      className="w-full h-32 object-contain rounded-lg border border-gray-200 bg-gray-50 cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => setSelectedImage({
+                        url: soreAttendance.back_camera_image?.startsWith('http://') || soreAttendance.back_camera_image?.startsWith('https://')
+                          ? soreAttendance.back_camera_image 
+                          : `data:image/jpeg;base64,${soreAttendance.back_camera_image}`,
+                        alt: 'Kamera belakang sore'
+                      })}
+                    />
+                  )}
+                </div>
                 {soreAttendance.has_issue && (
                   <div className="flex items-center gap-2 text-sm text-red-600">
                     <AlertCircle className="w-4 h-4" />
