@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { 
@@ -11,9 +11,11 @@ import {
   LogOut,
   Menu,
   X,
-  ClipboardList
+  ClipboardList,
+  FileCheck
 } from 'lucide-react'
 import LogoutButton from '@/components/LogoutButton'
+import { authAPI, User } from '@/lib/api'
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -21,14 +23,33 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [user, setUser] = useState<User | null>(null)
   const pathname = usePathname()
 
-  const navItems = [
+  useEffect(() => {
+    loadUser()
+  }, [])
+
+  const loadUser = async () => {
+    try {
+      const profile = await authAPI.getProfile()
+      setUser(profile)
+    } catch (err) {
+      console.error('Failed to load user:', err)
+    }
+  }
+
+  const baseNavItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/dashboard/fields', label: 'Field Management', icon: Map },
     { href: '/dashboard/work-orders', label: 'Work Orders', icon: ClipboardList },
     { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
   ]
+
+  // Add approval link only for Level 1 and Level 2
+  const navItems = user && (user.role === 'Level 1' || user.role === 'Level 2')
+    ? [...baseNavItems, { href: '/dashboard/field-reports-approval', label: 'Persetujuan Laporan', icon: FileCheck }]
+    : baseNavItems
 
   return (
     <div className="min-h-screen bg-gray-50">

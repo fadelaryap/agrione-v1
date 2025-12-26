@@ -6,6 +6,7 @@ import { authAPI, User, fieldsAPI, Field } from '@/lib/api'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import MapWrapper from '@/components/map/MapWrapper'
 import FieldStatisticsChart from '@/components/charts/FieldStatisticsChart'
+import FieldReportsChart from '@/components/charts/FieldReportsChart'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -77,6 +78,11 @@ export default function DashboardPage() {
 
         {/* Statistics Chart */}
         <FieldStatisticsChart fields={fields} />
+
+        {/* Field Reports Chart */}
+        <div className="mt-6">
+          <FieldReportsChart />
+        </div>
       </div>
     </DashboardLayout>
   )
