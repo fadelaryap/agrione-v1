@@ -15,6 +15,7 @@ import {
   FileCheck
 } from 'lucide-react'
 import LogoutButton from '@/components/LogoutButton'
+import NotificationBell from '@/components/notifications/NotificationBell'
 import { authAPI, User } from '@/lib/api'
 
 interface DashboardLayoutProps {
@@ -67,6 +68,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <h1 className="ml-2 lg:ml-0 text-xl font-bold text-gray-900">Agrione</h1>
             </div>
             <div className="flex items-center space-x-4">
+              <NotificationBell userRole={user?.role} />
               <LogoutButton />
             </div>
           </div>

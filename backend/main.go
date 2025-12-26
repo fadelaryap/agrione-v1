@@ -44,6 +44,7 @@ func main() {
 	workOrdersHandler := handlers.NewWorkOrdersHandler(db)
 	fieldReportsHandler := handlers.NewFieldReportsHandler(db)
 	attendanceHandler := handlers.NewAttendanceHandler(db)
+	notificationsHandler := handlers.NewNotificationsHandler(db)
 
 	// Setup router
 	r := mux.NewRouter()
@@ -166,6 +167,9 @@ func main() {
 	protected.HandleFunc("/attendance", attendanceHandler.ListAttendance).Methods("GET")
 	protected.HandleFunc("/attendance/{id}", attendanceHandler.GetAttendance).Methods("GET")
 	protectedPost.HandleFunc("/attendance", attendanceHandler.CreateAttendance).Methods("POST")
+	
+	// Notifications routes
+	protected.HandleFunc("/notifications", notificationsHandler.GetNotifications).Methods("GET")
 
 	// Wrap router
 	http.Handle("/", r)

@@ -7,6 +7,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout'
 import MapWrapper from '@/components/map/MapWrapper'
 import FieldStatisticsChart from '@/components/charts/FieldStatisticsChart'
 import FieldReportsChart from '@/components/charts/FieldReportsChart'
+import DashboardStats from '@/components/dashboard/DashboardStats'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -64,15 +65,20 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-4 sm:p-6 lg:p-8">
+      <div className="p-4 sm:p-6 lg:p-8 pb-20 lg:pb-8">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-2">Welcome back, {user.first_name}!</p>
+          <p className="text-gray-600 mt-2">Selamat datang kembali, {user.first_name}!</p>
+        </div>
+
+        {/* Dashboard Stats - Real-time */}
+        <div className="mb-6">
+          <DashboardStats />
         </div>
 
         {/* Map View - Read Only */}
         <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Fields Overview</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Overview Lahan</h2>
           <MapWrapper isEditMode={false} />
         </div>
 

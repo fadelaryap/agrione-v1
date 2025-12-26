@@ -12,6 +12,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { format, parseISO, startOfDay, eachDayOfInterval, isWithinInterval } from 'date-fns'
 import { id } from 'date-fns/locale'
 
@@ -105,15 +106,16 @@ export default function FieldReportsChart({ className }: FieldReportsChartProps)
       })
 
       // Convert to array format untuk chart (sudah sorted karena days sudah sorted)
+      // Untuk stacked bar: urutan dari bawah ke atas adalah Menunggu -> Ditolak -> Disetujui
+      // Bar yang lebih tinggi totalnya akan lebih tinggi secara keseluruhan
       return days.map(day => {
         const key = format(day, 'yyyy-MM-dd')
         const data = grouped.get(key) || { total: 0, approved: 0, rejected: 0, pending: 0 }
         return {
           date: format(day, 'dd MMM', { locale: id }),
-          'Total Laporan': data.total,
-          'Disetujui': data.approved,
-          'Ditolak': data.rejected,
-          'Menunggu': data.pending,
+          'Menunggu': data.pending,      // Paling bawah (kuning)
+          'Ditolak': data.rejected,      // Tengah (merah)
+          'Disetujui': data.approved,    // Paling atas (hijau)
         }
       })
     } catch (error) {
@@ -205,48 +207,87 @@ export default function FieldReportsChart({ className }: FieldReportsChartProps)
           <p className="text-gray-500">Tidak ada data untuk periode yang dipilih</p>
         </div>
       ) : (
-        <div className="w-full h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="date" 
-                angle={-45}
-                textAnchor="end"
-                height={100}
-                tick={{ fontSize: 12 }}
-              />
-              <YAxis tick={{ fontSize: 12 }} />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'white', 
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '8px'
-                }}
-              />
-              <Legend />
-              <Bar 
-                dataKey="Total Laporan" 
-                fill="#3b82f6" 
-                radius={[8, 8, 0, 0]}
-              />
-              <Bar 
-                dataKey="Disetujui" 
-                fill="#10b981" 
-                radius={[8, 8, 0, 0]}
-              />
-              <Bar 
-                dataKey="Ditolak" 
-                fill="#ef4444" 
-                radius={[8, 8, 0, 0]}
-              />
-              <Bar 
-                dataKey="Menunggu" 
-                fill="#f59e0b" 
-                radius={[8, 8, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+        <div className="relative">
+          {/* Scroll Controls */}
+          <div className="flex items-center justify-between mb-2">
+            <button
+              onClick={() => {
+                const container = document.getElementById('chart-scroll-container')
+                if (container) {
+                  container.scrollBy({ left: -200, behavior: 'smooth' })
+                }
+              }}
+              className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              aria-label="Scroll left"
+            >
+              <ChevronLeft className="w-5 h-5 text-gray-600" />
+            </button>
+            <span className="text-sm text-gray-600">
+              Geser untuk melihat lebih banyak data
+            </span>
+            <button
+              onClick={() => {
+                const container = document.getElementById('chart-scroll-container')
+                if (container) {
+                  container.scrollBy({ left: 200, behavior: 'smooth' })
+                }
+              }}
+              className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              aria-label="Scroll right"
+            >
+              <ChevronRight className="w-5 h-5 text-gray-600" />
+            </button>
+          </div>
+          
+          {/* Scrollable Chart Container */}
+          <div 
+            id="chart-scroll-container"
+            className="w-full overflow-x-auto"
+            style={{ scrollbarWidth: 'thin' }}
+          >
+            <div className="w-full h-80" style={{ minWidth: `${Math.max(800, chartData.length * 60)}px` }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="date" 
+                    angle={-45}
+                    textAnchor="end"
+                    height={100}
+                    tick={{ fontSize: 12 }}
+                  />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'white', 
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Legend />
+                  {/* Stacked bars - urutan dari bawah ke atas */}
+                  <Bar 
+                    dataKey="Menunggu" 
+                    stackId="status"
+                    fill="#f59e0b" 
+                    radius={[0, 0, 0, 0]}
+                  />
+                  <Bar 
+                    dataKey="Ditolak" 
+                    stackId="status"
+                    fill="#ef4444" 
+                    radius={[0, 0, 0, 0]}
+                  />
+                  <Bar 
+                    dataKey="Disetujui" 
+                    stackId="status"
+                    fill="#10b981" 
+                    radius={[8, 8, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
         </div>
       )}
     </div>

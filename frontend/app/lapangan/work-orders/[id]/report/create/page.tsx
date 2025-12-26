@@ -278,9 +278,12 @@ export default function CreateReportPage() {
               type="text"
               value={formData.title}
               onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-gray-50"
               required
+              readOnly
+              title="Judul tidak dapat diubah karena sudah terikat dengan work order"
             />
+            <p className="text-xs text-gray-500 mt-1">Judul mengikuti work order dan tidak dapat diubah</p>
           </div>
 
           <div>

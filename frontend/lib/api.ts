@@ -435,6 +435,28 @@ export const uploadAPI = {
   },
 }
 
+export interface Notification {
+  id: number
+  type: string
+  title: string
+  message: string
+  link: string
+  read: boolean
+  created_at: string
+}
+
+export interface NotificationsResponse {
+  notifications: Notification[]
+  unread_count: number
+}
+
+export const notificationsAPI = {
+  getNotifications: async (): Promise<NotificationsResponse> => {
+    const response = await api.get<NotificationsResponse>('/notifications')
+    return response.data
+  },
+}
+
 export const attendanceAPI = {
   getTodayAttendance: async (): Promise<Attendance[]> => {
     const response = await api.get<Attendance[]>('/attendance/today')

@@ -195,35 +195,56 @@ export default function ReportsPage() {
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                       {report.media.map((media: any, idx: number) => {
-                        const imageUrl = media.type === 'image' && media.data 
+                        // Check if it's an image (photo/image) or video
+                        const isImage = media.type === 'photo' || media.type === 'image' || 
+                                       (media.url && (media.url.match(/\.(jpg|jpeg|png|gif|webp)$/i) || media.url.startsWith('data:image')))
+                        const isVideo = media.type === 'video' || 
+                                       (media.url && (media.url.match(/\.(mp4|webm|mov)$/i) || media.url.startsWith('data:video')))
+                        
+                        const mediaUrl = media.type === 'image' && media.data 
                           ? `data:image/jpeg;base64,${media.data}`
                           : media.url && (media.url.startsWith('http://') || media.url.startsWith('https://'))
                           ? media.url
-                          : null
+                          : media.url
                         
                         return (
                           <div key={idx} className="relative">
-                            {imageUrl ? (
+                            {isImage && mediaUrl ? (
                               <img
-                                src={imageUrl}
+                                src={mediaUrl}
                                 alt={media.filename || `Image ${idx + 1}`}
                                 className="w-full h-24 object-contain rounded-lg border border-gray-200 bg-gray-50 cursor-pointer hover:opacity-80 transition-opacity"
-                                onClick={() => setSelectedImage({ url: imageUrl, filename: media.filename || `Image ${idx + 1}` })}
+                                onClick={() => setSelectedImage({ url: mediaUrl, filename: media.filename || `Image ${idx + 1}` })}
                               />
-                            ) : media.type === 'video' && media.data ? (
+                            ) : isVideo && mediaUrl ? (
                               <video
-                                src={`data:video/webm;base64,${media.data}`}
+                                src={mediaUrl}
                                 className="w-full h-24 object-contain rounded-lg border border-gray-200 bg-gray-50"
-                                controls={false}
+                                controls
+                                preload="metadata"
                               />
-                            ) : media.url && (media.url.startsWith('http://') || media.url.startsWith('https://')) ? (
+                            ) : mediaUrl ? (
+                              // Fallback: try as image first
                               <img
-                                src={media.url}
+                                src={mediaUrl}
                                 alt={media.filename || `Media ${idx + 1}`}
                                 className="w-full h-24 object-contain rounded-lg border border-gray-200 bg-gray-50 cursor-pointer hover:opacity-80 transition-opacity"
-                                onClick={() => setSelectedImage({ url: media.url, filename: media.filename || `Media ${idx + 1}` })}
+                                onClick={() => setSelectedImage({ url: mediaUrl, filename: media.filename || `Media ${idx + 1}` })}
+                                onError={(e) => {
+                                  // If image fails, try as video
+                                  const target = e.target as HTMLImageElement
+                                  const video = document.createElement('video')
+                                  video.src = mediaUrl
+                                  video.className = target.className
+                                  video.controls = true
+                                  video.preload = 'metadata'
+                                  target.parentNode?.replaceChild(video, target)
+                                }}
                               />
                             ) : null}
+                            <div className="absolute bottom-1 right-1 bg-black/70 text-white text-xs px-1 rounded">
+                              {isImage ? <ImageIcon className="w-3 h-3" /> : <Video className="w-3 h-3" />}
+                            </div>
                           </div>
                         )
                       })}
