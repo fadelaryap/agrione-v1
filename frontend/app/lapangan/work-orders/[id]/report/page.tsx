@@ -214,22 +214,10 @@ export default function WorkOrderReportPage() {
                 <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{workOrder.title}</h1>
                 <p className="text-sm text-gray-600 mt-1">{workOrder.category} - {workOrder.activity}</p>
               </div>
-              <div className="flex items-center gap-2">
-                {getStatusBadge(workOrder.status || 'pending')}
-                {field && field.coordinates && (
-                  <button
-                    onClick={openGoogleMaps}
-                    className="flex items-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors shadow-md text-sm"
-                    title="Buka di Google Maps"
-                  >
-                    <Navigation className="w-4 h-4" />
-                    <span className="hidden sm:inline">Maps</span>
-                  </button>
-                )}
-              </div>
+              {getStatusBadge(workOrder.status || 'pending')}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm mb-4">
               <div className="flex items-center gap-2 text-gray-600">
                 <Calendar className="w-4 h-4" />
                 <span>
@@ -248,6 +236,18 @@ export default function WorkOrderReportPage() {
                 <span>{workOrder.assignee}</span>
               </div>
             </div>
+
+            {field && field.coordinates && (
+              <div className="mb-4">
+                <button
+                  onClick={openGoogleMaps}
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors shadow-md font-medium"
+                >
+                  <Navigation className="w-5 h-5" />
+                  Buka di Google Maps
+                </button>
+              </div>
+            )}
 
             {workOrder.description && (
               <div className="mt-4 pt-4 border-t border-gray-200">

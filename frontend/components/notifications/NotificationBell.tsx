@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Bell, X } from 'lucide-react'
+import { Bell, X, CheckCircle, XCircle, Clock, MessageSquare, FileText } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -153,18 +153,33 @@ export default function NotificationBell({ userRole }: NotificationBellProps) {
     router.push(notification.link)
   }
 
-  const getNotificationIcon = (type: string) => {
+  const getNotificationIcon = (type: string, notification: Notification) => {
+    // Check if notification is about approval/rejection
+    if (notification.title.toLowerCase().includes('disetujui') || 
+        notification.title.toLowerCase().includes('approved') ||
+        notification.message.toLowerCase().includes('disetujui') ||
+        notification.message.toLowerCase().includes('approved')) {
+      return <CheckCircle className="w-6 h-6 text-green-600" />
+    }
+    if (notification.title.toLowerCase().includes('ditolak') || 
+        notification.title.toLowerCase().includes('rejected') ||
+        notification.message.toLowerCase().includes('ditolak') ||
+        notification.message.toLowerCase().includes('rejected')) {
+      return <XCircle className="w-6 h-6 text-red-600" />
+    }
+    
+    // Default icons by type
     switch (type) {
       case 'field_report_pending':
-        return '📋'
+        return <Clock className="w-6 h-6 text-amber-600" />
       case 'field_report_comment':
-        return '💬'
+        return <MessageSquare className="w-6 h-6 text-blue-600" />
       case 'work_order_new':
-        return '📝'
+        return <FileText className="w-6 h-6 text-indigo-600" />
       case 'field_report_processed':
-        return '✅'
+        return <CheckCircle className="w-6 h-6 text-green-600" />
       default:
-        return '🔔'
+        return <Bell className="w-6 h-6 text-gray-600" />
     }
   }
 
@@ -199,7 +214,7 @@ export default function NotificationBell({ userRole }: NotificationBellProps) {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-hidden flex flex-col">
+        <div className="fixed sm:absolute right-4 sm:right-0 left-4 sm:left-auto mt-2 sm:w-80 lg:w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-hidden flex flex-col">
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900">Notifikasi</h3>
             <button
@@ -230,8 +245,8 @@ export default function NotificationBell({ userRole }: NotificationBellProps) {
                     className="w-full text-left p-4 hover:bg-gray-50 transition-colors"
                   >
                     <div className="flex items-start gap-3">
-                      <div className="text-2xl flex-shrink-0">
-                        {getNotificationIcon(notification.type)}
+                      <div className="flex-shrink-0">
+                        {getNotificationIcon(notification.type, notification)}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">

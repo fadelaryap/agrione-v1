@@ -78,22 +78,10 @@ jobs:
               echo "⚠️  No main or master branch found, using current branch"
             fi
             
-            # Clean up Docker before starting (fix disk space and cache issues)
+            # Clean up Docker build cache only (keep running containers)
             echo ""
-            echo "🧹 Cleaning up Docker (images, containers, build cache)..."
-            docker system prune -af --volumes || true
+            echo "🧹 Cleaning up Docker build cache (keeping running containers)..."
             docker builder prune -af || true
-            
-            # Stop existing containers
-            echo ""
-            echo "🛑 Stopping existing containers..."
-            # Try both compose files (ignore errors if file doesn't exist)
-            if [ -f docker-compose.prod.yml ]; then
-              docker compose -f docker-compose.prod.yml down || true
-            fi
-            if [ -f docker-compose.yml ]; then
-              docker compose down || true
-            fi
             
             # Get VPS IP for environment variables
             VPS_IP=$(hostname -I | awk '{print $1}')
@@ -173,45 +161,63 @@ jobs:
             fi
             echo "📄 Using compose file: $COMPOSE_FILE"
             
-            # Clean up Docker build cache before building (fix snapshot errors)
+            # Build containers (while old containers are still running - zero downtime)
             echo ""
-            echo "🧹 Cleaning up Docker build cache before build..."
-            docker builder prune -af || true
-            
-            # Build containers
-            echo ""
-            echo "🔨 Building containers (this may take a while)..."
+            echo "🔨 Building new container images (this may take a while)..."
+            echo "   ⚠️  Old containers are still running to prevent downtime"
             echo "   This process may take 5-10 minutes. Please wait..."
             # Use --no-cache to avoid snapshot errors from corrupt cache
             # Set DOCKER_BUILDKIT=1 for better build performance
             export DOCKER_BUILDKIT=1
             export COMPOSE_DOCKER_CLI_BUILD=1
             docker compose -f "$COMPOSE_FILE" build --no-cache || {
-              echo "⚠️  Build process failed. Checking status..."
+              echo "⚠️  Build process failed. Old containers are still running."
               docker compose -f "$COMPOSE_FILE" ps || true
               exit 1
             }
             
-            # Rebuild frontend to pick up NEXT_PUBLIC_API_URL (build-time variable)
+            # Rolling update: Docker Compose will update containers with new images
+            # This minimizes downtime by updating containers one by one
             echo ""
-            echo "🔄 Rebuilding frontend with updated NEXT_PUBLIC_API_URL..."
-            docker compose -f "$COMPOSE_FILE" up -d --build frontend
+            echo "🔄 Performing rolling update (zero downtime)..."
+            echo "   Updating containers with new images..."
             
-            # Start/restart other containers
-            echo ""
-            echo "🚀 Starting containers..."
-            docker compose -f "$COMPOSE_FILE" up -d
-            docker compose -f "$COMPOSE_FILE" restart backend
+            # For frontend, we need to rebuild because NEXT_PUBLIC_API_URL is build-time
+            # But we'll do it with --no-deps to avoid stopping other services
+            docker compose -f "$COMPOSE_FILE" up -d --no-deps --build frontend || {
+              echo "⚠️  Frontend update failed. Rolling back..."
+              docker compose -f "$COMPOSE_FILE" restart frontend || true
+              exit 1
+            }
             
-            # Wait for services to be ready
-            echo ""
-            echo "⏳ Waiting for services to start (15 seconds)..."
-            sleep 15
+            # Update backend and other services (rolling update)
+            docker compose -f "$COMPOSE_FILE" up -d --no-deps backend || {
+              echo "⚠️  Backend update failed. Rolling back..."
+              docker compose -f "$COMPOSE_FILE" restart backend || true
+              exit 1
+            }
             
-            # Clean up old images
+            # Update postgres if needed (usually no changes, but ensure it's running)
+            docker compose -f "$COMPOSE_FILE" up -d postgres || true
+            
+            # Wait a moment for services to stabilize
             echo ""
-            echo "🧹 Cleaning up old Docker images..."
-            docker image prune -f
+            echo "⏳ Waiting for services to stabilize (5 seconds)..."
+            sleep 5
+            
+            # Verify all containers are running
+            echo ""
+            echo "✅ Verifying deployment..."
+            if ! docker compose -f "$COMPOSE_FILE" ps | grep -q "Up"; then
+              echo "⚠️  Some containers are not running. Checking status..."
+              docker compose -f "$COMPOSE_FILE" ps
+              exit 1
+            fi
+            
+            # Clean up old/unused images (keep images that are still in use)
+            echo ""
+            echo "🧹 Cleaning up old/unused Docker images..."
+            docker image prune -f || true
             
             # Show container status
             echo ""

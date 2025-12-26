@@ -402,8 +402,8 @@ export default function WorkOrdersPage() {
 
         {/* Filters and Sort - Compact */}
         <div className="bg-white rounded-lg shadow-lg p-3 mb-4">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-            <div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+            <div className="sm:col-span-1">
               <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>
               <select
                 value={statusFilter}
@@ -418,23 +418,23 @@ export default function WorkOrdersPage() {
               </select>
             </div>
             
-            <div>
+            <div className="sm:col-span-1">
               <label className="block text-xs font-medium text-gray-700 mb-1">Tanggal Mulai</label>
               <input
                 type="date"
                 value={dateRangeFilter.start}
                 onChange={(e) => setDateRangeFilter({ ...dateRangeFilter, start: e.target.value })}
-                className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-green-500"
+                className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-green-500 min-w-0"
               />
             </div>
             
-            <div>
+            <div className="sm:col-span-1">
               <label className="block text-xs font-medium text-gray-700 mb-1">Tanggal Selesai</label>
               <input
                 type="date"
                 value={dateRangeFilter.end}
                 onChange={(e) => setDateRangeFilter({ ...dateRangeFilter, end: e.target.value })}
-                className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-green-500"
+                className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-green-500 min-w-0"
               />
             </div>
             
@@ -526,24 +526,9 @@ export default function WorkOrdersPage() {
                             
                             <div className="space-y-2 text-xs">
                               {wo.field_name && (
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2 text-gray-600">
-                                    <MapPin className="w-3 h-3" />
-                                    <span>{wo.field_name}</span>
-                                  </div>
-                                  {wo.field_id && (
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        openGoogleMapsForField(wo.field_id!)
-                                      }}
-                                      className="flex items-center gap-1 px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs transition-colors"
-                                      title="Buka di Google Maps"
-                                    >
-                                      <Navigation className="w-3 h-3" />
-                                      <span className="hidden sm:inline">Maps</span>
-                                    </button>
-                                  )}
+                                <div className="flex items-center gap-2 text-gray-600">
+                                  <MapPin className="w-3 h-3" />
+                                  <span>{wo.field_name}</span>
                                 </div>
                               )}
                               
@@ -575,13 +560,27 @@ export default function WorkOrdersPage() {
                               )}
                             </div>
                             
-                            <div className="mt-3 flex items-center justify-between pt-3 border-t border-gray-100">
-                              {getPriorityBadge(wo.priority || 'medium')}
-                              {wo.actual_hours && (
-                                <span className="text-xs text-gray-500 flex items-center gap-1">
-                                  <Clock className="w-3 h-3" />
-                                  {wo.actual_hours}h
-                                </span>
+                            <div className="mt-3 space-y-2 pt-3 border-t border-gray-100">
+                              <div className="flex items-center justify-between">
+                                {getPriorityBadge(wo.priority || 'medium')}
+                                {wo.actual_hours && (
+                                  <span className="text-xs text-gray-500 flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    {wo.actual_hours}h
+                                  </span>
+                                )}
+                              </div>
+                              {wo.field_id && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    openGoogleMapsForField(wo.field_id!)
+                                  }}
+                                  className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-xs font-medium"
+                                >
+                                  <Navigation className="w-4 h-4" />
+                                  Buka di Google Maps
+                                </button>
                               )}
                             </div>
                           </div>
