@@ -146,7 +146,9 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
                 </p>
                 {pagiAttendance.selfie_image && (
                   <img
-                    src={`data:image/jpeg;base64,${pagiAttendance.selfie_image}`}
+                    src={pagiAttendance.selfie_image?.startsWith('http://') || pagiAttendance.selfie_image?.startsWith('https://')
+                      ? pagiAttendance.selfie_image 
+                      : `data:image/jpeg;base64,${pagiAttendance.selfie_image}`}
                     alt="Selfie pagi"
                     className="w-full h-32 object-cover rounded-lg border border-gray-200"
                   />
@@ -190,7 +192,9 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
                 </p>
                 {soreAttendance.selfie_image && (
                   <img
-                    src={soreAttendance.selfie_image.startsWith('http') ? soreAttendance.selfie_image : `data:image/jpeg;base64,${soreAttendance.selfie_image}`}
+                    src={soreAttendance.selfie_image.startsWith('http://') || soreAttendance.selfie_image.startsWith('https://')
+                      ? soreAttendance.selfie_image 
+                      : `data:image/jpeg;base64,${soreAttendance.selfie_image}`}
                     alt="Selfie sore"
                     className="w-full h-32 object-cover rounded-lg border border-gray-200"
                   />
