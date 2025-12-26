@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { authAPI, User, fieldsAPI, Field, workOrdersAPI, WorkOrder } from '@/lib/api'
-import { ClipboardList, Calendar, ChevronDown, ChevronUp, MapPin, User as UserIcon, Clock, CheckCircle, XCircle, AlertCircle, Filter, ArrowUpDown } from 'lucide-react'
+import { ClipboardList, Calendar, ChevronDown, ChevronUp, MapPin, User as UserIcon, Clock, CheckCircle, XCircle, AlertCircle, Filter, ArrowUpDown, Navigation } from 'lucide-react'
 import { format, parseISO, startOfDay, isToday, isTomorrow, addDays, isSameDay, eachDayOfInterval, isBefore, isAfter } from 'date-fns'
 import { id } from 'date-fns/locale'
 import { toast } from 'sonner'
@@ -60,6 +60,50 @@ export default function WorkOrdersPage() {
       }
     } catch (err) {
       console.error('Failed to load fields:', err)
+    }
+  }
+
+  const openGoogleMapsForField = async (fieldId: number) => {
+    try {
+      // Find field in loaded fields first
+      let field = fields.find(f => f.id === fieldId)
+      
+      // If not found, load it
+      if (!field) {
+        field = await fieldsAPI.getField(fieldId)
+      }
+      
+      if (!field || !field.coordinates) {
+        toast.error('Koordinat field tidak tersedia')
+        return
+      }
+
+      let lat: number, lng: number
+
+      // Handle different coordinate formats
+      if (field.draw_type === 'circle' && field.coordinates.center) {
+        // Circle: use center
+        lat = field.coordinates.center[0]
+        lng = field.coordinates.center[1]
+      } else if (Array.isArray(field.coordinates) && field.coordinates.length > 0) {
+        // Polygon: use first point
+        lat = field.coordinates[0][0]
+        lng = field.coordinates[0][1]
+      } else if (field.coordinates.latitude && field.coordinates.longitude) {
+        // Point format
+        lat = field.coordinates.latitude
+        lng = field.coordinates.longitude
+      } else {
+        toast.error('Format koordinat tidak didukung')
+        return
+      }
+
+      // Open Google Maps with navigation
+      const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
+      window.open(url, '_blank')
+    } catch (err) {
+      console.error('Failed to open Google Maps:', err)
+      toast.error('Gagal membuka Google Maps')
     }
   }
 
@@ -482,9 +526,24 @@ export default function WorkOrdersPage() {
                             
                             <div className="space-y-2 text-xs">
                               {wo.field_name && (
-                                <div className="flex items-center gap-2 text-gray-600">
-                                  <MapPin className="w-3 h-3" />
-                                  <span>{wo.field_name}</span>
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2 text-gray-600">
+                                    <MapPin className="w-3 h-3" />
+                                    <span>{wo.field_name}</span>
+                                  </div>
+                                  {wo.field_id && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        openGoogleMapsForField(wo.field_id!)
+                                      }}
+                                      className="flex items-center gap-1 px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs transition-colors"
+                                      title="Buka di Google Maps"
+                                    >
+                                      <Navigation className="w-3 h-3" />
+                                      <span className="hidden sm:inline">Maps</span>
+                                    </button>
+                                  )}
                                 </div>
                               )}
                               
