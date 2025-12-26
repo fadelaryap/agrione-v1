@@ -203,6 +203,10 @@ func RunMigrations(db *sql.DB) error {
 		submitted_by VARCHAR(255) NOT NULL,
 		work_order_id INTEGER,
 		media JSONB DEFAULT '[]'::jsonb,
+		status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+		approved_by VARCHAR(255),
+		approved_at TIMESTAMP,
+		rejection_reason TEXT,
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 	);
@@ -224,6 +228,37 @@ func RunMigrations(db *sql.DB) error {
 	CREATE INDEX IF NOT EXISTS idx_field_report_comments_field_report_id ON field_report_comments(field_report_id);
 	CREATE INDEX IF NOT EXISTS idx_field_report_comments_created_at ON field_report_comments(created_at);
 	`
+
+	_, err = db.Exec(createFieldReportsQuery)
+	if err != nil {
+		return fmt.Errorf("failed to create field_reports table: %w", err)
+	}
+
+	// Add new columns to field_reports if table already exists (for existing databases)
+	alterFieldReportsQuery := `
+	DO $$ 
+	BEGIN
+		IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='field_reports' AND column_name='status') THEN
+			ALTER TABLE field_reports ADD COLUMN status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected'));
+		END IF;
+		IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='field_reports' AND column_name='approved_by') THEN
+			ALTER TABLE field_reports ADD COLUMN approved_by VARCHAR(255);
+		END IF;
+		IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='field_reports' AND column_name='approved_at') THEN
+			ALTER TABLE field_reports ADD COLUMN approved_at TIMESTAMP;
+		END IF;
+		IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='field_reports' AND column_name='rejection_reason') THEN
+			ALTER TABLE field_reports ADD COLUMN rejection_reason TEXT;
+		END IF;
+		-- Update existing records to have 'pending' status if status is NULL
+		UPDATE field_reports SET status = 'pending' WHERE status IS NULL;
+	END $$;
+	`
+
+	_, err = db.Exec(alterFieldReportsQuery)
+	if err != nil {
+		log.Printf("Warning: Failed to run alter table migrations for field_reports: %v", err)
+	}
 
 	// Create attendance table
 	createAttendanceQuery := `

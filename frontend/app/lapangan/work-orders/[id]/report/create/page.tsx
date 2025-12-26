@@ -88,20 +88,55 @@ export default function CreateReportPage() {
 
     setGpsRequested(true)
     
-    // Check permission status first (for Safari)
+    // For Safari, we need to check permission first and show proper error
     if ('permissions' in navigator) {
       try {
         const permission = await navigator.permissions.query({ name: 'geolocation' as PermissionName })
+        
+        // Listen for permission changes
+        permission.onchange = () => {
+          if (permission.state === 'granted') {
+            // Retry getting location if permission was granted
+            navigator.geolocation.getCurrentPosition(
+              (position) => {
+                setGpsPermission('granted')
+                setFormData(prev => ({
+                  ...prev,
+                  coordinates: {
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                  },
+                }))
+                toast.success('Lokasi berhasil didapatkan')
+              },
+              (error) => {
+                setGpsPermission('denied')
+                console.log('GPS error after permission granted:', error.message)
+              },
+              {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+              }
+            )
+          } else if (permission.state === 'denied') {
+            setGpsPermission('denied')
+            toast.error('Akses GPS ditolak. Silakan aktifkan di pengaturan browser.')
+          }
+        }
+        
         if (permission.state === 'denied') {
           setGpsPermission('denied')
           toast.error('Akses GPS ditolak. Silakan aktifkan di pengaturan browser.')
           return
         }
       } catch (err) {
-        // Permissions API not supported, continue with getCurrentPosition
+        // Permissions API not supported or error, continue with getCurrentPosition
+        console.log('Permissions API error:', err)
       }
     }
 
+    // Request location (this will trigger permission prompt in Safari if needed)
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setGpsPermission('granted')
@@ -118,16 +153,18 @@ export default function CreateReportPage() {
         setGpsPermission('denied')
         console.log('GPS access denied:', error.message)
         if (error.code === error.PERMISSION_DENIED) {
-          toast.error('Akses GPS ditolak. Silakan aktifkan di pengaturan browser.')
+          toast.error('Akses GPS ditolak. Silakan aktifkan di pengaturan browser. Di Safari, pastikan untuk mengizinkan akses lokasi saat diminta.')
         } else if (error.code === error.POSITION_UNAVAILABLE) {
           toast.error('Lokasi tidak tersedia')
+        } else if (error.code === error.TIMEOUT) {
+          toast.error('Timeout saat mendapatkan lokasi. Silakan coba lagi.')
         } else {
           toast.error('Gagal mendapatkan lokasi')
         }
       },
       {
         enableHighAccuracy: true,
-        timeout: 10000,
+        timeout: 15000, // Increase timeout for Safari
         maximumAge: 0
       }
     )

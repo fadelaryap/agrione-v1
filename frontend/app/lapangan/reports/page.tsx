@@ -152,14 +152,31 @@ export default function ReportsPage() {
                       )}
                     </div>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    report.condition === 'excellent' ? 'bg-green-100 text-green-800' :
-                    report.condition === 'good' ? 'bg-blue-100 text-blue-800' :
-                    report.condition === 'fair' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-red-100 text-red-800'
-                  }`}>
-                    {report.condition?.toUpperCase() || 'N/A'}
-                  </span>
+                  <div className="flex flex-col gap-2 items-end">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      report.status === 'pending' ? 'bg-amber-100 text-amber-800' :
+                      report.status === 'approved' ? 'bg-green-100 text-green-800' :
+                      report.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {report.status === 'pending' ? 'Menunggu' : 
+                       report.status === 'approved' ? 'Disetujui' : 
+                       report.status === 'rejected' ? 'Ditolak' : 
+                       report.status}
+                    </span>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      report.condition === 'excellent' ? 'bg-green-100 text-green-800' :
+                      report.condition === 'good' ? 'bg-blue-100 text-blue-800' :
+                      report.condition === 'fair' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {report.condition === 'excellent' ? 'Sangat Baik' :
+                       report.condition === 'good' ? 'Baik' :
+                       report.condition === 'fair' ? 'Cukup' :
+                       report.condition === 'poor' ? 'Buruk' :
+                       report.condition?.toUpperCase() || 'N/A'}
+                    </span>
+                  </div>
                 </div>
 
                 {report.description && (

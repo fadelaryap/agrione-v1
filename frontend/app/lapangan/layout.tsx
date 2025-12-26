@@ -8,7 +8,7 @@ export default function LapanganLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 pb-16 lg:pb-0">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 pb-20 lg:pb-0" style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom))' }}>
       {children}
       <MobileBottomNav />
     </div>

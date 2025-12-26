@@ -18,18 +18,22 @@ func NewFieldReportsHandler(db *sql.DB) *FieldReportsHandler {
 }
 
 type FieldReport struct {
-	ID          int                    `json:"id"`
-	Title       string                 `json:"title"`
-	Description *string                `json:"description,omitempty"`
-	Condition   string                 `json:"condition"`
-	Coordinates map[string]interface{} `json:"coordinates"`
-	Notes       *string                `json:"notes,omitempty"`
-	SubmittedBy string                 `json:"submitted_by"`
-	WorkOrderID *int                    `json:"work_order_id,omitempty"`
-	Media       []interface{}           `json:"media"`
-	CreatedAt   string                 `json:"created_at"`
-	UpdatedAt   string                 `json:"updated_at"`
-	Comments    []FieldReportComment   `json:"comments,omitempty"`
+	ID             int                    `json:"id"`
+	Title          string                 `json:"title"`
+	Description    *string                `json:"description,omitempty"`
+	Condition      string                 `json:"condition"`
+	Coordinates    map[string]interface{} `json:"coordinates"`
+	Notes          *string                `json:"notes,omitempty"`
+	SubmittedBy    string                 `json:"submitted_by"`
+	WorkOrderID    *int                    `json:"work_order_id,omitempty"`
+	Media          []interface{}           `json:"media"`
+	Status         string                 `json:"status"` // pending, approved, rejected
+	ApprovedBy     *string                `json:"approved_by,omitempty"`
+	ApprovedAt     *string                `json:"approved_at,omitempty"`
+	RejectionReason *string               `json:"rejection_reason,omitempty"`
+	CreatedAt      string                 `json:"created_at"`
+	UpdatedAt      string                 `json:"updated_at"`
+	Comments       []FieldReportComment   `json:"comments,omitempty"`
 }
 
 type FieldReportComment struct {
@@ -67,6 +71,15 @@ type CreateCommentRequest struct {
 	CommentedBy string `json:"commented_by"`
 }
 
+type ApproveFieldReportRequest struct {
+	ApprovedBy string `json:"approved_by"`
+}
+
+type RejectFieldReportRequest struct {
+	RejectedBy      string `json:"rejected_by"`
+	RejectionReason string `json:"rejection_reason"`
+}
+
 func (h *FieldReportsHandler) ListFieldReports(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	workOrderIDStr := query.Get("work_order_id")
@@ -83,7 +96,8 @@ func (h *FieldReportsHandler) ListFieldReports(w http.ResponseWriter, r *http.Re
 		}
 		rows, err = h.db.Query(`
 			SELECT id, title, description, condition, coordinates, notes, 
-			       submitted_by, work_order_id, media, created_at, updated_at
+			       submitted_by, work_order_id, media, status, approved_by, approved_at, rejection_reason,
+			       created_at, updated_at
 			FROM field_reports
 			WHERE work_order_id = $1
 			ORDER BY created_at DESC
@@ -91,7 +105,8 @@ func (h *FieldReportsHandler) ListFieldReports(w http.ResponseWriter, r *http.Re
 	} else {
 		rows, err = h.db.Query(`
 			SELECT id, title, description, condition, coordinates, notes, 
-			       submitted_by, work_order_id, media, created_at, updated_at
+			       submitted_by, work_order_id, media, status, approved_by, approved_at, rejection_reason,
+			       created_at, updated_at
 			FROM field_reports
 			ORDER BY created_at DESC
 		`)
@@ -107,12 +122,13 @@ func (h *FieldReportsHandler) ListFieldReports(w http.ResponseWriter, r *http.Re
 	for rows.Next() {
 		var fr FieldReport
 		var coordinatesJSON, mediaJSON []byte
-		var description, notes, createdAt, updatedAt sql.NullString
+		var description, notes, createdAt, updatedAt, status, approvedBy, approvedAt, rejectionReason sql.NullString
 		var workOrderID sql.NullInt64
 
 		err := rows.Scan(
 			&fr.ID, &fr.Title, &description, &fr.Condition, &coordinatesJSON,
 			&notes, &fr.SubmittedBy, &workOrderID, &mediaJSON,
+			&status, &approvedBy, &approvedAt, &rejectionReason,
 			&createdAt, &updatedAt,
 		)
 		if err != nil {
@@ -135,6 +151,20 @@ func (h *FieldReportsHandler) ListFieldReports(w http.ResponseWriter, r *http.Re
 		}
 		if updatedAt.Valid {
 			fr.UpdatedAt = updatedAt.String
+		}
+		if status.Valid {
+			fr.Status = status.String
+		} else {
+			fr.Status = "pending"
+		}
+		if approvedBy.Valid {
+			fr.ApprovedBy = &approvedBy.String
+		}
+		if approvedAt.Valid {
+			fr.ApprovedAt = &approvedAt.String
+		}
+		if rejectionReason.Valid {
+			fr.RejectionReason = &rejectionReason.String
 		}
 
 		if err := json.Unmarshal(coordinatesJSON, &fr.Coordinates); err != nil {
@@ -172,17 +202,19 @@ func (h *FieldReportsHandler) GetFieldReport(w http.ResponseWriter, r *http.Requ
 
 	var fr FieldReport
 	var coordinatesJSON, mediaJSON []byte
-	var description, notes, createdAt, updatedAt sql.NullString
+	var description, notes, createdAt, updatedAt, status, approvedBy, approvedAt, rejectionReason sql.NullString
 	var workOrderID sql.NullInt64
 
 	err = h.db.QueryRow(`
 		SELECT id, title, description, condition, coordinates, notes, 
-		       submitted_by, work_order_id, media, created_at, updated_at
+		       submitted_by, work_order_id, media, status, approved_by, approved_at, rejection_reason,
+		       created_at, updated_at
 		FROM field_reports
 		WHERE id = $1
 	`, id).Scan(
 		&fr.ID, &fr.Title, &description, &fr.Condition, &coordinatesJSON,
 		&notes, &fr.SubmittedBy, &workOrderID, &mediaJSON,
+		&status, &approvedBy, &approvedAt, &rejectionReason,
 		&createdAt, &updatedAt,
 	)
 
@@ -210,6 +242,20 @@ func (h *FieldReportsHandler) GetFieldReport(w http.ResponseWriter, r *http.Requ
 	}
 	if updatedAt.Valid {
 		fr.UpdatedAt = updatedAt.String
+	}
+	if status.Valid {
+		fr.Status = status.String
+	} else {
+		fr.Status = "pending"
+	}
+	if approvedBy.Valid {
+		fr.ApprovedBy = &approvedBy.String
+	}
+	if approvedAt.Valid {
+		fr.ApprovedAt = &approvedAt.String
+	}
+	if rejectionReason.Valid {
+		fr.RejectionReason = &rejectionReason.String
 	}
 
 	if err := json.Unmarshal(coordinatesJSON, &fr.Coordinates); err != nil {
@@ -257,8 +303,8 @@ func (h *FieldReportsHandler) CreateFieldReport(w http.ResponseWriter, r *http.R
 
 	var reportID int
 	err = h.db.QueryRow(`
-		INSERT INTO field_reports (title, description, condition, coordinates, notes, submitted_by, work_order_id, media)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		INSERT INTO field_reports (title, description, condition, coordinates, notes, submitted_by, work_order_id, media, status)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending')
 		RETURNING id
 	`, req.Title, req.Description, req.Condition, string(coordinatesJSON), req.Notes, req.SubmittedBy, req.WorkOrderID, string(mediaJSON)).Scan(&reportID)
 
@@ -307,17 +353,19 @@ func (h *FieldReportsHandler) CreateFieldReport(w http.ResponseWriter, r *http.R
 	// Fetch and return the created report
 	var fr FieldReport
 	var coordinatesJSONBytes, mediaJSONBytes []byte
-	var description, notes, createdAt, updatedAt sql.NullString
+	var description, notes, createdAt, updatedAt, status, approvedBy, approvedAt, rejectionReason sql.NullString
 	var workOrderID sql.NullInt64
 
 	err = h.db.QueryRow(`
 		SELECT id, title, description, condition, coordinates, notes, 
-		       submitted_by, work_order_id, media, created_at, updated_at
+		       submitted_by, work_order_id, media, status, approved_by, approved_at, rejection_reason,
+		       created_at, updated_at
 		FROM field_reports
 		WHERE id = $1
 	`, reportID).Scan(
 		&fr.ID, &fr.Title, &description, &fr.Condition, &coordinatesJSONBytes,
 		&notes, &fr.SubmittedBy, &workOrderID, &mediaJSONBytes,
+		&status, &approvedBy, &approvedAt, &rejectionReason,
 		&createdAt, &updatedAt,
 	)
 
@@ -341,6 +389,20 @@ func (h *FieldReportsHandler) CreateFieldReport(w http.ResponseWriter, r *http.R
 	}
 	if updatedAt.Valid {
 		fr.UpdatedAt = updatedAt.String
+	}
+	if status.Valid {
+		fr.Status = status.String
+	} else {
+		fr.Status = "pending"
+	}
+	if approvedBy.Valid {
+		fr.ApprovedBy = &approvedBy.String
+	}
+	if approvedAt.Valid {
+		fr.ApprovedAt = &approvedAt.String
+	}
+	if rejectionReason.Valid {
+		fr.RejectionReason = &rejectionReason.String
 	}
 
 	if err := json.Unmarshal(coordinatesJSONBytes, &fr.Coordinates); err != nil {
@@ -553,5 +615,76 @@ func (h *FieldReportsHandler) getComments(fieldReportID int) ([]FieldReportComme
 	}
 
 	return comments, nil
+}
+
+func (h *FieldReportsHandler) ApproveFieldReport(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	idStr := vars["id"]
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid field report ID", http.StatusBadRequest)
+		return
+	}
+
+	var req ApproveFieldReportRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if req.ApprovedBy == "" {
+		http.Error(w, "approved_by is required", http.StatusBadRequest)
+		return
+	}
+
+	// Update field report status to approved
+	_, err = h.db.Exec(`
+		UPDATE field_reports 
+		SET status = 'approved', approved_by = $1, approved_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+		WHERE id = $2
+	`, req.ApprovedBy, id)
+	if err != nil {
+		http.Error(w, "Failed to approve field report", http.StatusInternalServerError)
+		return
+	}
+
+	// Fetch and return the updated report
+	h.GetFieldReport(w, r)
+}
+
+func (h *FieldReportsHandler) RejectFieldReport(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	idStr := vars["id"]
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid field report ID", http.StatusBadRequest)
+		return
+	}
+
+	var req RejectFieldReportRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if req.RejectedBy == "" {
+		http.Error(w, "rejected_by is required", http.StatusBadRequest)
+		return
+	}
+
+	// Update field report status to rejected
+	_, err = h.db.Exec(`
+		UPDATE field_reports 
+		SET status = 'rejected', approved_by = $1, approved_at = CURRENT_TIMESTAMP, 
+		    rejection_reason = $2, updated_at = CURRENT_TIMESTAMP
+		WHERE id = $3
+	`, req.RejectedBy, req.RejectionReason, id)
+	if err != nil {
+		http.Error(w, "Failed to reject field report", http.StatusInternalServerError)
+		return
+	}
+
+	// Fetch and return the updated report
+	h.GetFieldReport(w, r)
 }
 

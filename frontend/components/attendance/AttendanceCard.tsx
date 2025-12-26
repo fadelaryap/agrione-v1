@@ -24,6 +24,7 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
   const [backCameraFile, setBackCameraFile] = useState<File | null>(null) // File object untuk upload
   const [hasIssue, setHasIssue] = useState<boolean>(false)
   const [description, setDescription] = useState<string>('')
+  const [selectedImage, setSelectedImage] = useState<{ url: string; alt: string } | null>(null)
 
   useEffect(() => {
     loadTodayAttendance()
@@ -152,7 +153,13 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
                       ? pagiAttendance.selfie_image 
                       : `data:image/jpeg;base64,${pagiAttendance.selfie_image}`}
                     alt="Selfie pagi"
-                    className="w-full h-32 object-contain rounded-lg border border-gray-200 bg-gray-50"
+                    className="w-full h-32 object-contain rounded-lg border border-gray-200 bg-gray-50 cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => setSelectedImage({
+                      url: pagiAttendance.selfie_image?.startsWith('http://') || pagiAttendance.selfie_image?.startsWith('https://')
+                        ? pagiAttendance.selfie_image 
+                        : `data:image/jpeg;base64,${pagiAttendance.selfie_image}`,
+                      alt: 'Selfie pagi'
+                    })}
                   />
                 )}
                 {pagiAttendance.has_issue && (
@@ -198,7 +205,13 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
                       ? soreAttendance.selfie_image 
                       : `data:image/jpeg;base64,${soreAttendance.selfie_image}`}
                     alt="Selfie sore"
-                    className="w-full h-32 object-contain rounded-lg border border-gray-200 bg-gray-50"
+                    className="w-full h-32 object-contain rounded-lg border border-gray-200 bg-gray-50 cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => setSelectedImage({
+                      url: soreAttendance.selfie_image.startsWith('http://') || soreAttendance.selfie_image.startsWith('https://')
+                        ? soreAttendance.selfie_image 
+                        : `data:image/jpeg;base64,${soreAttendance.selfie_image}`,
+                      alt: 'Selfie sore'
+                    })}
                   />
                 )}
                 {soreAttendance.has_issue && (
@@ -455,6 +468,30 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image Popup Modal */}
+      {selectedImage && (
+        <div 
+          className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div className="relative max-w-7xl max-h-full">
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white rounded-full p-2 z-10 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <img
+              src={selectedImage.url}
+              alt={selectedImage.alt}
+              className="max-w-full max-h-[90vh] object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <p className="text-white text-center mt-2 text-sm">{selectedImage.alt}</p>
           </div>
         </div>
       )}

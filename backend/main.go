@@ -158,6 +158,8 @@ func main() {
 	protectedPut.HandleFunc("/field-reports/{id}", fieldReportsHandler.UpdateFieldReport).Methods("PUT")
 	protectedDelete.HandleFunc("/field-reports/{id}", fieldReportsHandler.DeleteFieldReport).Methods("DELETE")
 	protectedPost.HandleFunc("/field-reports/{id}/comments", fieldReportsHandler.AddComment).Methods("POST")
+	protectedPost.HandleFunc("/field-reports/{id}/approve", fieldReportsHandler.ApproveFieldReport).Methods("POST")
+	protectedPost.HandleFunc("/field-reports/{id}/reject", fieldReportsHandler.RejectFieldReport).Methods("POST")
 	
 	// Attendance routes
 	protected.HandleFunc("/attendance/today", attendanceHandler.GetTodayAttendance).Methods("GET")

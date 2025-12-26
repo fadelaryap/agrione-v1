@@ -329,6 +329,10 @@ export interface FieldReport {
     size: number
     uploadedAt: string
   }>
+  status: 'pending' | 'approved' | 'rejected'
+  approved_by?: string
+  approved_at?: string
+  rejection_reason?: string
   created_at: string
   updated_at: string
   comments?: FieldReportComment[]
@@ -391,6 +395,19 @@ export const fieldReportsAPI = {
     const response = await api.post<FieldReportComment>(`/field-reports/${fieldReportId}/comments`, {
       comment,
       commented_by: commentedBy,
+    })
+    return response.data
+  },
+  approveFieldReport: async (id: number, approvedBy: string): Promise<FieldReport> => {
+    const response = await api.post<FieldReport>(`/field-reports/${id}/approve`, {
+      approved_by: approvedBy,
+    })
+    return response.data
+  },
+  rejectFieldReport: async (id: number, rejectedBy: string, rejectionReason: string): Promise<FieldReport> => {
+    const response = await api.post<FieldReport>(`/field-reports/${id}/reject`, {
+      rejected_by: rejectedBy,
+      rejection_reason: rejectionReason,
     })
     return response.data
   },
