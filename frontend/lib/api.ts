@@ -397,35 +397,18 @@ export const fieldReportsAPI = {
 }
 
 export const uploadAPI = {
-  // Get signed URL from backend, then upload directly to GCS
+  // Upload file directly to GCS (frontend-only, no backend)
+  // Note: You need to configure GCS in frontend (e.g., Firebase Storage or public bucket)
   uploadFile: async (file: File): Promise<string> => {
-    // Step 1: Request signed URL from backend
-    const signedURLResponse = await api.post<{
-      signed_url: string
-      object_name: string
-      public_url: string
-    }>('/upload/signed-url', {
-      filename: file.name,
-      content_type: file.type,
-    })
-
-    const { signed_url, public_url } = signedURLResponse.data
-
-    // Step 2: Upload file directly to GCS using signed URL
-    const uploadResponse = await fetch(signed_url, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': file.type,
-      },
-      body: file,
-    })
-
-    if (!uploadResponse.ok) {
-      throw new Error(`Failed to upload to GCS: ${uploadResponse.statusText}`)
-    }
-
-    // Step 3: Return public URL
-    return public_url
+    // TODO: Implement GCS upload in frontend
+    // Options:
+    // 1. Use Firebase Storage SDK
+    // 2. Use GCS JavaScript library with public bucket
+    // 3. Use signed URL from external service
+    
+    // For now, return a placeholder
+    // You should implement actual GCS upload here
+    throw new Error('GCS upload not implemented in frontend yet. Please configure Firebase Storage or GCS JavaScript SDK.')
   },
 }
 

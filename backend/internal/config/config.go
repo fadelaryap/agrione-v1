@@ -13,8 +13,6 @@ type Config struct {
 	JWTSecret            string
 	CSRFSecret           string
 	CORSOrigin           string
-	GCSBucketName        string
-	GoogleCredentialsPath string // Path to GCS credentials JSON file
 }
 
 func Load() *Config {
@@ -27,8 +25,6 @@ func Load() *Config {
 		JWTSecret:             getEnv("JWT_SECRET", "your-super-secret-jwt-key-change-in-production"),
 		CSRFSecret:            getEnv("CSRF_SECRET", "your-csrf-secret-key-change-in-production"),
 		CORSOrigin:            getEnv("CORS_ORIGIN", "http://localhost:3000"),
-		GCSBucketName:         getEnv("GCS_BUCKET_NAME", ""),
-		GoogleCredentialsPath: getEnv("GOOGLE_APPLICATION_CREDENTIALS", ""),
 	}
 }
 

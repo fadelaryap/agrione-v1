@@ -40,13 +40,6 @@ func main() {
 	workOrdersHandler := handlers.NewWorkOrdersHandler(db)
 	fieldReportsHandler := handlers.NewFieldReportsHandler(db)
 	attendanceHandler := handlers.NewAttendanceHandler(db)
-	
-	// Initialize upload handler (GCS)
-	uploadHandler, err := handlers.NewUploadHandler(cfg)
-	if err != nil {
-		log.Printf("Warning: Failed to initialize upload handler (GCS): %v. Will use base64 fallback.", err)
-		uploadHandler = &handlers.UploadHandler{} // Empty handler for fallback
-	}
 
 	// Setup router
 	r := mux.NewRouter()
@@ -132,7 +125,6 @@ func main() {
 	protectedPost.HandleFunc("/plots", plotsHandler.CreatePlot).Methods("POST")
 	protectedPost.HandleFunc("/plant-types", plantTypesHandler.CreatePlantType).Methods("POST")
 	protectedPost.HandleFunc("/work-orders", workOrdersHandler.CreateWorkOrder).Methods("POST")
-	protectedPost.HandleFunc("/upload/signed-url", uploadHandler.GenerateSignedURL).Methods("POST")
 	
 	// Protected PUT routes (require both auth and CSRF)
 	protectedPut := api.PathPrefix("").Subrouter()
