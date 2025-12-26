@@ -62,7 +62,7 @@ func (h *NotificationsHandler) GetNotifications(w http.ResponseWriter, r *http.R
 
 	// Get pending field reports count
 	var pendingReportsCount int
-	err := h.db.QueryRow(`
+	err = h.db.QueryRow(`
 		SELECT COUNT(*) FROM field_reports 
 		WHERE status = 'pending'
 	`).Scan(&pendingReportsCount)
