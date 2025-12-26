@@ -398,11 +398,12 @@ export const fieldReportsAPI = {
 
 export const uploadAPI = {
   // Upload file via Next.js API route (simple approach)
+  // Using /upload instead of /api/upload to avoid conflict with Go backend
   uploadFile: async (file: File): Promise<string> => {
     const formData = new FormData()
     formData.append('file', file)
 
-    const response = await fetch('/api/upload', {
+    const response = await fetch('/upload', {
       method: 'POST',
       body: formData,
     })
