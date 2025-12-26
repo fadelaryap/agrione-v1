@@ -8,6 +8,7 @@ import (
 	"agrione/backend/internal/config"
 	"agrione/backend/internal/middleware"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/websocket"
 )
 
@@ -21,9 +22,29 @@ var upgrader = websocket.Upgrader{
 // HandleWebSocket handles WebSocket connections
 func HandleWebSocket(hub *Hub, cfg *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Authenticate user
+		// Try to get user ID from context (if authenticated via middleware)
 		userID, ok := r.Context().Value(middleware.UserIDKey).(int)
+		
+		// If not in context, try to get from Authorization header or query param
 		if !ok {
+			// Try Authorization header
+			authHeader := r.Header.Get("Authorization")
+			if authHeader != "" && len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+				tokenString := authHeader[7:]
+				// Parse JWT token to get user ID
+				userID, ok = parseTokenForUserID(tokenString, cfg)
+			}
+			
+			// If still not found, try query parameter
+			if !ok {
+				tokenParam := r.URL.Query().Get("token")
+				if tokenParam != "" {
+					userID, ok = parseTokenForUserID(tokenParam, cfg)
+				}
+			}
+		}
+		
+		if !ok || userID == 0 {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
@@ -50,6 +71,34 @@ func HandleWebSocket(hub *Hub, cfg *config.Config) http.HandlerFunc {
 		go client.writePump()
 		go client.readPump()
 	}
+}
+
+// parseTokenForUserID parses JWT token and returns user ID
+func parseTokenForUserID(tokenString string, cfg *config.Config) (int, bool) {
+	// Import jwt here to avoid circular dependency
+	// We'll use a simple approach: decode and verify token
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, jwt.ErrSignatureInvalid
+		}
+		return []byte(cfg.JWTSecret), nil
+	})
+	
+	if err != nil || !token.Valid {
+		return 0, false
+	}
+	
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return 0, false
+	}
+	
+	userID, ok := claims["user_id"].(float64)
+	if !ok {
+		return 0, false
+	}
+	
+	return int(userID), true
 }
 
 // CreateNotification creates a notification in the database and sends it via WebSocket

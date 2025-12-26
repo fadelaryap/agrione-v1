@@ -38,17 +38,14 @@ class WebSocketClient {
     } else if (wsUrl.startsWith('https://')) {
       wsUrl = wsUrl.replace('https://', 'wss://')
     }
-    wsUrl = wsUrl + '/api/ws'
+    // Add token as query parameter for authentication
+    wsUrl = wsUrl + '/api/ws?token=' + encodeURIComponent(token)
 
     this.ws = new WebSocket(wsUrl)
 
     this.ws.onopen = () => {
       console.log('WebSocket connected')
       this.reconnectAttempts = 0
-      // Send authentication token
-      if (this.token) {
-        this.ws?.send(JSON.stringify({ type: 'auth', token: this.token }))
-      }
     }
 
     this.ws.onmessage = (event) => {
