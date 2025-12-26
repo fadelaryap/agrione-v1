@@ -84,6 +84,14 @@ else
     else
         echo "NEXT_PUBLIC_API_URL=http://$VPS_IP:8000" >> .env
     fi
+    
+    # GCS Configuration (jika belum ada)
+    if ! grep -q "^GCS_BUCKET_NAME=" .env; then
+        echo "GCS_BUCKET_NAME=" >> .env
+    fi
+    if ! grep -q "^GOOGLE_APPLICATION_CREDENTIALS=" .env; then
+        echo "GOOGLE_APPLICATION_CREDENTIALS=/opt/gcs-credentials.json" >> .env
+    fi
 fi
 
 echo -e "${GREEN}✅ Environment configured:${NC}"

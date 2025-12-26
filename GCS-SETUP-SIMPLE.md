@@ -28,7 +28,11 @@ GCS_BUCKET_NAME=agrione-media
 GOOGLE_APPLICATION_CREDENTIALS=/opt/gcs-credentials.json
 ```
 
-**Catatan:** Path `/opt/gcs-credentials.json` adalah path **di dalam container** (setelah di-mount dari `/opt/agrione/gcs-credentials.json` di VPS).
+**Catatan Penting:**
+- File di VPS: `/opt/agrione/gcs-credentials.json` (file asli)
+- File di container: `/opt/gcs-credentials.json` (setelah di-mount)
+- Environment variable `GOOGLE_APPLICATION_CREDENTIALS` harus pakai path **di dalam container**: `/opt/gcs-credentials.json`
+- Docker Compose akan otomatis mount dari `/opt/agrione/gcs-credentials.json` (VPS) ke `/opt/gcs-credentials.json` (container)
 
 **Selesai!** ✅
 
