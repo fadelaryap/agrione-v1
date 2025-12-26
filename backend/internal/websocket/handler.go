@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
-	"strconv"
 
 	"agrione/backend/internal/config"
 	"agrione/backend/internal/middleware"
