@@ -52,14 +52,15 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        # NEXT_PUBLIC_API_URL harus di-set dengan domain HTTPS (include /api)
+        # Ini adalah build-time variable, harus di-set saat build
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://agrione.agrihub.id/api}
     container_name: agrione_frontend
     ports:
       - "3000:3000"
     environment:
-      # NEXT_PUBLIC_API_URL harus di-set dengan domain HTTPS (include /api)
-      # Contoh: https://agrione.agrihub.id/api
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://agrione.agrihub.id/api}
-      # GCS Configuration (for Next.js API route)
+      # GCS Configuration (for Next.js API route) - runtime variables
       GCS_BUCKET_NAME: ${GCS_BUCKET_NAME:-}
       GOOGLE_CLIENT_EMAIL: ${GOOGLE_CLIENT_EMAIL:-}
       GOOGLE_PRIVATE_KEY: ${GOOGLE_PRIVATE_KEY:-}
@@ -67,14 +68,11 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_PROJECT_ID: ${GOOGLE_PROJECT_ID:-mystical-moon-469502-m5}
       JWT_SECRET: ${JWT_SECRET}
+      NODE_ENV: production
     depends_on:
       - backend
     networks:
       - agrione_network
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - /app/.next
     restart: always
 
 networks:
