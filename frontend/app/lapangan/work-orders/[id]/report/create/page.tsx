@@ -28,6 +28,7 @@ export default function CreateReportPage() {
   
   const [mediaFiles, setMediaFiles] = useState<File[]>([])
   const [gpsPermission, setGpsPermission] = useState<'granted' | 'denied' | 'prompt'>('prompt')
+  const [gpsRequested, setGpsRequested] = useState(false)
 
   useEffect(() => {
     if (!workOrderId) {
@@ -40,9 +41,15 @@ export default function CreateReportPage() {
   useEffect(() => {
     if (user && workOrderId) {
       loadWorkOrder()
-      getCurrentLocation()
     }
   }, [user, workOrderId])
+
+  useEffect(() => {
+    if (workOrder) {
+      // Set progress dari work order terakhir
+      setFormData(prev => ({ ...prev, progress: workOrder.progress || 0 }))
+    }
+  }, [workOrder])
 
 
   const checkAuth = async () => {
@@ -72,27 +79,58 @@ export default function CreateReportPage() {
     }
   }
 
-  const getCurrentLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setGpsPermission('granted')
-          setFormData(prev => ({
-            ...prev,
-            coordinates: {
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude,
-            },
-          }))
-        },
-        (error) => {
-          setGpsPermission('denied')
-          console.log('GPS access denied:', error.message)
-        }
-      )
-    } else {
+  const getCurrentLocation = async () => {
+    if (!navigator.geolocation) {
       setGpsPermission('denied')
+      toast.error('GPS tidak didukung di browser ini')
+      return
     }
+
+    setGpsRequested(true)
+    
+    // Check permission status first (for Safari)
+    if ('permissions' in navigator) {
+      try {
+        const permission = await navigator.permissions.query({ name: 'geolocation' as PermissionName })
+        if (permission.state === 'denied') {
+          setGpsPermission('denied')
+          toast.error('Akses GPS ditolak. Silakan aktifkan di pengaturan browser.')
+          return
+        }
+      } catch (err) {
+        // Permissions API not supported, continue with getCurrentPosition
+      }
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setGpsPermission('granted')
+        setFormData(prev => ({
+          ...prev,
+          coordinates: {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          },
+        }))
+        toast.success('Lokasi berhasil didapatkan')
+      },
+      (error) => {
+        setGpsPermission('denied')
+        console.log('GPS access denied:', error.message)
+        if (error.code === error.PERMISSION_DENIED) {
+          toast.error('Akses GPS ditolak. Silakan aktifkan di pengaturan browser.')
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          toast.error('Lokasi tidak tersedia')
+        } else {
+          toast.error('Gagal mendapatkan lokasi')
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    )
   }
 
 
@@ -338,12 +376,36 @@ export default function CreateReportPage() {
           {/* GPS Status */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Status Lokasi</label>
-            {gpsPermission === 'denied' && (
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 border border-red-200">
-                <MapPin className="w-4 h-4 text-red-600" />
-                <p className="text-sm text-red-600">
-                  Akses GPS ditolak. Lokasi tidak akan terdeteksi secara otomatis.
+            {!gpsRequested && (
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={getCurrentLocation}
+                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium flex items-center justify-center gap-2"
+                >
+                  <MapPin className="w-4 h-4" />
+                  Dapatkan Lokasi GPS
+                </button>
+                <p className="text-xs text-gray-500">
+                  Klik tombol di atas untuk mendapatkan lokasi GPS. Pastikan browser mengizinkan akses lokasi.
                 </p>
+              </div>
+            )}
+            {gpsPermission === 'denied' && gpsRequested && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 border border-red-200">
+                  <MapPin className="w-4 h-4 text-red-600" />
+                  <p className="text-sm text-red-600">
+                    Akses GPS ditolak. Silakan aktifkan di pengaturan browser.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={getCurrentLocation}
+                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+                >
+                  Coba Lagi
+                </button>
               </div>
             )}
             {gpsPermission === 'granted' && (
@@ -354,7 +416,7 @@ export default function CreateReportPage() {
                 </p>
               </div>
             )}
-            {gpsPermission === 'prompt' && (
+            {gpsPermission === 'prompt' && gpsRequested && (
               <div className="flex items-center gap-2 p-3 rounded-lg bg-yellow-50 border border-yellow-200">
                 <MapPin className="w-4 h-4 text-yellow-600" />
                 <p className="text-sm text-yellow-600">

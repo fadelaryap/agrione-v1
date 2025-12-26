@@ -277,11 +277,26 @@ func (h *FieldReportsHandler) CreateFieldReport(w http.ResponseWriter, r *http.R
 			progress = 100
 		}
 
-		_, err = h.db.Exec(`
-			UPDATE work_orders 
-			SET progress = $1, updated_at = CURRENT_TIMESTAMP
-			WHERE id = $2
-		`, progress, *req.WorkOrderID)
+		// Auto-update status based on progress
+		var statusUpdate string
+		if progress == 100 {
+			statusUpdate = "status = 'completed', completed_date = CURRENT_TIMESTAMP"
+		} else if progress > 0 {
+			// Check current status - only update to in-progress if currently pending
+			var currentStatus string
+			err := h.db.QueryRow("SELECT status FROM work_orders WHERE id = $1", *req.WorkOrderID).Scan(&currentStatus)
+			if err == nil && currentStatus == "pending" {
+				statusUpdate = "status = 'in-progress'"
+			}
+		}
+
+		updateQuery := "UPDATE work_orders SET progress = $1, updated_at = CURRENT_TIMESTAMP"
+		if statusUpdate != "" {
+			updateQuery += ", " + statusUpdate
+		}
+		updateQuery += " WHERE id = $2"
+
+		_, err = h.db.Exec(updateQuery, progress, *req.WorkOrderID)
 		if err != nil {
 			// Log error but don't fail the report creation
 			// In production, you might want to log this to a logging service

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { authAPI, User, workOrdersAPI, WorkOrder, fieldReportsAPI, FieldReport, FieldReportComment } from '@/lib/api'
 import DashboardLayout from '@/components/layout/DashboardLayout'
-import { Calendar, MapPin, User as UserIcon, Clock, CheckCircle, AlertCircle, MessageSquare, Send, Camera, Video, ArrowLeft, Image as ImageIcon } from 'lucide-react'
+import { Calendar, MapPin, User as UserIcon, Clock, CheckCircle, AlertCircle, MessageSquare, Send, Camera, Video, ArrowLeft, Image as ImageIcon, X } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 
 export default function WorkOrderDetailPage() {
@@ -18,6 +18,7 @@ export default function WorkOrderDetailPage() {
   const [loading, setLoading] = useState(true)
   const [newComment, setNewComment] = useState<{ [reportId: number]: string }>({})
   const [submittingComment, setSubmittingComment] = useState<number | null>(null)
+  const [selectedImage, setSelectedImage] = useState<{ url: string; filename: string } | null>(null)
 
   useEffect(() => {
     if (!workOrderId) {
@@ -236,29 +237,39 @@ export default function WorkOrderDetailPage() {
                         </span>
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        {report.media.map((media: any, idx: number) => (
-                          <div key={idx} className="relative">
-                            {media.type === 'image' && media.data ? (
-                              <img
-                                src={`data:image/jpeg;base64,${media.data}`}
-                                alt={media.filename || `Image ${idx + 1}`}
-                                className="w-full h-32 object-contain rounded-lg border border-gray-200 bg-gray-50"
-                              />
-                            ) : media.type === 'video' && media.data ? (
-                              <video
-                                src={`data:video/webm;base64,${media.data}`}
-                                className="w-full h-32 object-contain rounded-lg border border-gray-200 bg-gray-50"
-                                controls
-                              />
-                            ) : media.url ? (
-                              <img
-                                src={media.url}
-                                alt={media.filename || `Media ${idx + 1}`}
-                                className="w-full h-32 object-contain rounded-lg border border-gray-200 bg-gray-50"
-                              />
-                            ) : null}
-                          </div>
-                        ))}
+                        {report.media.map((media: any, idx: number) => {
+                          const imageUrl = media.type === 'image' && media.data 
+                            ? `data:image/jpeg;base64,${media.data}`
+                            : media.url && (media.url.startsWith('http://') || media.url.startsWith('https://'))
+                            ? media.url
+                            : null
+                          
+                          return (
+                            <div key={idx} className="relative">
+                              {imageUrl ? (
+                                <img
+                                  src={imageUrl}
+                                  alt={media.filename || `Image ${idx + 1}`}
+                                  className="w-full h-32 object-contain rounded-lg border border-gray-200 bg-gray-50 cursor-pointer hover:opacity-80 transition-opacity"
+                                  onClick={() => setSelectedImage({ url: imageUrl, filename: media.filename || `Image ${idx + 1}` })}
+                                />
+                              ) : media.type === 'video' && media.data ? (
+                                <video
+                                  src={`data:video/webm;base64,${media.data}`}
+                                  className="w-full h-32 object-contain rounded-lg border border-gray-200 bg-gray-50"
+                                  controls
+                                />
+                              ) : media.url && (media.url.startsWith('http://') || media.url.startsWith('https://')) ? (
+                                <img
+                                  src={media.url}
+                                  alt={media.filename || `Media ${idx + 1}`}
+                                  className="w-full h-32 object-contain rounded-lg border border-gray-200 bg-gray-50 cursor-pointer hover:opacity-80 transition-opacity"
+                                  onClick={() => setSelectedImage({ url: media.url, filename: media.filename || `Media ${idx + 1}` })}
+                                />
+                              ) : null}
+                            </div>
+                          )
+                        })}
                       </div>
                     </div>
                   )}
@@ -333,6 +344,30 @@ export default function WorkOrderDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Image Popup Modal */}
+      {selectedImage && (
+        <div 
+          className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div className="relative max-w-7xl max-h-full">
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white rounded-full p-2 z-10 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <img
+              src={selectedImage.url}
+              alt={selectedImage.filename}
+              className="max-w-full max-h-[90vh] object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <p className="text-white text-center mt-2 text-sm">{selectedImage.filename}</p>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   )
 }

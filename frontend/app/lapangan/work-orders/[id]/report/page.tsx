@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { authAPI, User, workOrdersAPI, WorkOrder, fieldReportsAPI, FieldReport, FieldReportComment } from '@/lib/api'
-import { Calendar, MapPin, User as UserIcon, Clock, CheckCircle, AlertCircle, MessageSquare, Send, Camera, Video } from 'lucide-react'
+import { Calendar, MapPin, User as UserIcon, Clock, CheckCircle, AlertCircle, MessageSquare, Send, Camera, Video, X } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { id } from 'date-fns/locale'
 import { toast } from 'sonner'
@@ -20,6 +20,7 @@ export default function WorkOrderReportPage() {
   const [loading, setLoading] = useState(true)
   const [newComment, setNewComment] = useState<{ [reportId: number]: string }>({})
   const [submittingComment, setSubmittingComment] = useState<number | null>(null)
+  const [selectedImage, setSelectedImage] = useState<{ url: string; filename: string } | null>(null)
 
   useEffect(() => {
     if (!workOrderId) {
@@ -257,26 +258,39 @@ export default function WorkOrderReportPage() {
                   <div className="mb-4">
                     <h4 className="text-sm font-medium text-gray-700 mb-2">Media ({report.media.length})</h4>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      {report.media.map((media, idx) => (
-                        <div key={idx} className="relative">
-                          {media.type === 'photo' ? (
-                            <img
-                              src={media.url}
-                              alt={media.filename}
-                              className="w-full h-24 object-contain rounded-lg border border-gray-200 bg-gray-50"
-                            />
-                          ) : (
-                            <video
-                              src={media.url}
-                              className="w-full h-24 object-contain rounded-lg border border-gray-200 bg-gray-50"
-                              controls={false}
-                            />
-                          )}
-                          <div className="absolute bottom-1 right-1 bg-black/70 text-white text-xs px-1 rounded">
-                            {media.type === 'photo' ? <Camera className="w-3 h-3" /> : <Video className="w-3 h-3" />}
+                      {report.media.map((media, idx) => {
+                        const imageUrl = media.type === 'photo' && media.url && (media.url.startsWith('http://') || media.url.startsWith('https://'))
+                          ? media.url
+                          : null
+                        
+                        return (
+                          <div key={idx} className="relative">
+                            {media.type === 'photo' && imageUrl ? (
+                              <img
+                                src={imageUrl}
+                                alt={media.filename}
+                                className="w-full h-24 object-contain rounded-lg border border-gray-200 bg-gray-50 cursor-pointer hover:opacity-80 transition-opacity"
+                                onClick={() => setSelectedImage({ url: imageUrl, filename: media.filename })}
+                              />
+                            ) : media.type === 'photo' ? (
+                              <img
+                                src={media.url}
+                                alt={media.filename}
+                                className="w-full h-24 object-contain rounded-lg border border-gray-200 bg-gray-50"
+                              />
+                            ) : (
+                              <video
+                                src={media.url}
+                                className="w-full h-24 object-contain rounded-lg border border-gray-200 bg-gray-50"
+                                controls={false}
+                              />
+                            )}
+                            <div className="absolute bottom-1 right-1 bg-black/70 text-white text-xs px-1 rounded">
+                              {media.type === 'photo' ? <Camera className="w-3 h-3" /> : <Video className="w-3 h-3" />}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        )
+                      })}
                     </div>
                   </div>
                 )}
@@ -348,6 +362,30 @@ export default function WorkOrderReportPage() {
           )}
         </div>
       </div>
+
+      {/* Image Popup Modal */}
+      {selectedImage && (
+        <div 
+          className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div className="relative max-w-7xl max-h-full">
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white rounded-full p-2 z-10 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <img
+              src={selectedImage.url}
+              alt={selectedImage.filename}
+              className="max-w-full max-h-[90vh] object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <p className="text-white text-center mt-2 text-sm">{selectedImage.filename}</p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
