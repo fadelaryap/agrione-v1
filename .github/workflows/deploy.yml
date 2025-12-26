@@ -73,6 +73,12 @@ jobs:
               echo "⚠️  No main or master branch found, using current branch"
             fi
             
+            # Clean up Docker before starting (fix disk space and cache issues)
+            echo ""
+            echo "🧹 Cleaning up Docker (images, containers, build cache)..."
+            docker system prune -af --volumes || true
+            docker builder prune -af || true
+            
             # Stop existing containers
             echo ""
             echo "🛑 Stopping existing containers..."
@@ -162,11 +168,16 @@ jobs:
             fi
             echo "📄 Using compose file: $COMPOSE_FILE"
             
+            # Clean up Docker build cache before building (fix snapshot errors)
+            echo ""
+            echo "🧹 Cleaning up Docker build cache before build..."
+            docker builder prune -af || true
+            
             # Build containers
             echo ""
             echo "🔨 Building containers (this may take a while)..."
-            # Use cache for faster builds (remove --no-cache unless needed)
-            docker compose -f "$COMPOSE_FILE" build
+            # Use --no-cache to avoid snapshot errors from corrupt cache
+            docker compose -f "$COMPOSE_FILE" build --no-cache
             
             # Rebuild frontend to pick up NEXT_PUBLIC_API_URL (build-time variable)
             echo ""
