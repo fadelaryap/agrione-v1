@@ -126,6 +126,8 @@ func main() {
 	protected.HandleFunc("/plant-types/{id}", plantTypesHandler.GetPlantType).Methods("GET")
 	protected.HandleFunc("/work-orders", workOrdersHandler.ListWorkOrders).Methods("GET")
 	protected.HandleFunc("/work-orders/{id}", workOrdersHandler.GetWorkOrder).Methods("GET")
+	protected.HandleFunc("/cultivation-seasons", cultivationSeasonsHandler.ListCultivationSeasons).Methods("GET")
+	protected.HandleFunc("/cultivation-seasons/{id}", cultivationSeasonsHandler.GetCultivationSeason).Methods("GET")
 	
 	// Protected POST routes (require both auth and CSRF)
 	protectedPost := api.PathPrefix("").Subrouter()

@@ -103,10 +103,7 @@ export default function HarvestStats({ className }: HarvestStatsProps) {
     )
   }
 
-  if (stats.totalReports === 0) {
-    return null // Don't show if no harvest reports
-  }
-
+  // Always show the component, even if there are no harvest reports
   return (
     <div className={`bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl shadow-sm border border-amber-200 p-6 ${className || ''}`}>
       <div className="flex items-center justify-between mb-6">
@@ -160,7 +157,7 @@ export default function HarvestStats({ className }: HarvestStatsProps) {
         </div>
       </div>
 
-      {stats.averageQuality !== '-' && (
+      {stats.averageQuality !== '-' && stats.totalReports > 0 && (
         <div className="mt-4 pt-4 border-t border-amber-200">
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium text-gray-700">Kualitas Rata-rata</p>
