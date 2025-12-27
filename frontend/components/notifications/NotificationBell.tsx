@@ -202,7 +202,7 @@ export default function NotificationBell({ userRole }: NotificationBellProps) {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+        className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors z-50"
         aria-label="Notifications"
       >
         <Bell className="w-6 h-6" />
@@ -214,7 +214,7 @@ export default function NotificationBell({ userRole }: NotificationBellProps) {
       </button>
 
       {isOpen && (
-        <div className="fixed sm:absolute right-4 sm:right-0 left-4 sm:left-auto mt-2 sm:w-80 lg:w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-hidden flex flex-col">
+        <div className="fixed top-16 right-4 sm:right-4 left-4 sm:left-auto sm:w-80 lg:w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-[100] max-h-[calc(100vh-5rem)] overflow-hidden flex flex-col" style={{ position: 'fixed' }}>
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900">Notifikasi</h3>
             <button

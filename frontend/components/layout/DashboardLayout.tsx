@@ -60,7 +60,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Top Navbar - Desktop */}
-      <nav className="bg-white border-b border-gray-200 shadow-sm">
+      <nav className="bg-white border-b border-gray-200 shadow-sm fixed top-0 left-0 right-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
@@ -80,10 +80,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
       </nav>
 
-      <div className="flex">
+      <div className="flex pt-16">
         {/* Sidebar - Desktop */}
         <aside className="hidden lg:flex lg:flex-shrink-0">
-          <div className="w-64 bg-white border-r border-gray-200 min-h-screen">
+          <div className="w-64 bg-white border-r border-gray-200 min-h-[calc(100vh-4rem)]">
             <nav className="mt-8 px-4 space-y-2">
               {navItems.map((item) => {
                 const Icon = item.icon
@@ -145,7 +145,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 lg:ml-0">
+        <main className="flex-1 lg:ml-0 w-full">
           {children}
         </main>
       </div>

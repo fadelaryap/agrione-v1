@@ -28,7 +28,7 @@ export default function LapanganHeader({ title = 'Agrione' }: LapanganHeaderProp
   }
 
   return (
-    <header className="bg-white border-b-2 border-green-200 shadow-sm sticky top-0 z-40">
+    <header className="bg-white border-b-2 border-green-200 shadow-sm fixed top-0 left-0 right-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
