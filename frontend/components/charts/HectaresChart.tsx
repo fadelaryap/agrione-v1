@@ -55,7 +55,7 @@ export default function HectaresChart({ fields }: HectaresChartProps) {
     // Group fields by date and sum hectares
     const grouped = new Map<string, number>()
     
-    // Initialize all dates in range with 0
+    // Initialize all dates in range with 0 (oldest to newest)
     const dates: string[] = []
     for (let i = 0; i < dateRange; i++) {
       let date: Date
@@ -70,6 +70,7 @@ export default function HectaresChart({ fields }: HectaresChartProps) {
       dates.push(key)
       grouped.set(key, 0)
     }
+    // dates are now from oldest to newest (we don't reverse)
 
     // Sum hectares by date (cumulative)
     let cumulativeHectares = 0
@@ -96,7 +97,8 @@ export default function HectaresChart({ fields }: HectaresChartProps) {
       grouped.set(date, cumulativeHectares)
     })
 
-    return dates.reverse().map((date) => ({
+    // Return data from oldest to newest (dates array is already in correct order)
+    return dates.map((date) => ({
       date,
       hectares: Number((grouped.get(date) || 0).toFixed(2)),
     }))

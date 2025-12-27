@@ -56,7 +56,7 @@ export default function FieldStatisticsChart({ fields }: FieldStatisticsChartPro
     // Group fields by date
     const grouped = new Map<string, number>()
     
-    // Initialize all dates in range with 0
+    // Initialize all dates in range with 0 (oldest to newest)
     const dates: string[] = []
     for (let i = 0; i < dateRange; i++) {
       let date: Date
@@ -71,6 +71,7 @@ export default function FieldStatisticsChart({ fields }: FieldStatisticsChartPro
       dates.push(key)
       grouped.set(key, 0)
     }
+    // dates are now from oldest to newest (we don't reverse)
 
     // Count fields by date
     fields.forEach((field) => {
@@ -84,8 +85,8 @@ export default function FieldStatisticsChart({ fields }: FieldStatisticsChartPro
       }
     })
 
-    // Convert to array format for chart
-    return dates.reverse().map((date) => ({
+    // Convert to array format for chart (oldest to newest)
+    return dates.map((date) => ({
       date,
       count: grouped.get(date) || 0,
     }))

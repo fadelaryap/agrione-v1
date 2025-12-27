@@ -189,108 +189,99 @@ export default function DashboardStats({ className }: DashboardStatsProps) {
   }
 
   return (
-    <div className={`${className || ''}`}>
-      {/* Compact Stats Grid - 2 rows, 8 columns on desktop */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-        {/* Field Reports */}
-        <StatCard 
-          icon={FileText} 
-          label="Total Laporan" 
-          value={stats.totalReports}
-          subtext={`${stats.thisMonthReports} bulan ini`}
-          color="blue"
-          iconBg="blue"
-        />
-        <StatCard 
-          icon={Clock} 
-          label="Menunggu" 
-          value={stats.pendingReports}
-          subtext="Perlu persetujuan"
-          color="amber"
-          iconBg="amber"
-        />
-        <StatCard 
-          icon={CheckCircle} 
-          label="Disetujui" 
-          value={stats.approvedReports}
-          subtext={`${approvalRate}% rate`}
-          color="green"
-          iconBg="green"
-        />
-        <StatCard 
-          icon={XCircle} 
-          label="Ditolak" 
-          value={stats.rejectedReports}
-          subtext="Perlu revisi"
-          color="red"
-          iconBg="red"
-        />
-
-        {/* Work Orders */}
-        <StatCard 
-          icon={ClipboardList} 
-          label="Total WO" 
-          value={stats.totalWorkOrders}
-          subtext="Semua work orders"
-          color="indigo"
-          iconBg="indigo"
-        />
-        <StatCard 
-          icon={Clock} 
-          label="Pending WO" 
-          value={stats.pendingWorkOrders}
-          subtext="Belum dimulai"
-          color="amber"
-          iconBg="amber"
-        />
-        <StatCard 
-          icon={TrendingUp} 
-          label="In Progress" 
-          value={stats.inProgressWorkOrders}
-          subtext="Sedang dikerjakan"
-          color="blue"
-          iconBg="blue"
-        />
-        <StatCard 
-          icon={CheckCircle} 
-          label="Selesai" 
-          value={stats.completedWorkOrders}
-          subtext={`${completionRate}% rate`}
-          color="green"
-          iconBg="green"
-        />
+    <div className={`${className || ''} space-y-4`}>
+      {/* Group 1: Field Reports */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+          <FileText className="w-4 h-4 text-blue-500" />
+          Laporan Lapangan
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <StatCard 
+            icon={FileText} 
+            label="Total Laporan" 
+            value={stats.totalReports}
+            subtext={`${stats.thisMonthReports} bulan ini`}
+            color="blue"
+            iconBg="blue"
+          />
+          <StatCard 
+            icon={Clock} 
+            label="Menunggu" 
+            value={stats.pendingReports}
+            subtext="Perlu persetujuan"
+            color="amber"
+            iconBg="amber"
+          />
+          <StatCard 
+            icon={CheckCircle} 
+            label="Disetujui" 
+            value={stats.approvedReports}
+            subtext={`${approvalRate}% rate`}
+            color="green"
+            iconBg="green"
+          />
+          <StatCard 
+            icon={XCircle} 
+            label="Ditolak" 
+            value={stats.rejectedReports}
+            subtext="Perlu revisi"
+            color="red"
+            iconBg="red"
+          />
+        </div>
       </div>
 
-      {/* Second Row - Activity & Attendance */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 mt-3">
-        <StatCard 
-          icon={AlertCircle} 
-          label="Hari Ini" 
-          value={stats.todayReports}
-          subtext="Laporan"
-          color="gray"
-          iconBg="gray"
-        />
-        <StatCard 
-          icon={TrendingUp} 
-          label="7 Hari" 
-          value={stats.thisWeekReports}
-          subtext="Laporan"
-          color="gray"
-          iconBg="gray"
-        />
-        <StatCard 
-          icon={FileText} 
-          label="30 Hari" 
-          value={stats.thisMonthReports}
-          subtext="Laporan"
-          color="gray"
-          iconBg="gray"
-        />
+      {/* Group 2: Work Orders */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+          <ClipboardList className="w-4 h-4 text-indigo-500" />
+          Work Orders
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <StatCard 
+            icon={ClipboardList} 
+            label="Total WO" 
+            value={stats.totalWorkOrders}
+            subtext="Semua work orders"
+            color="indigo"
+            iconBg="indigo"
+          />
+          <StatCard 
+            icon={Clock} 
+            label="Pending WO" 
+            value={stats.pendingWorkOrders}
+            subtext="Belum dimulai"
+            color="amber"
+            iconBg="amber"
+          />
+          <StatCard 
+            icon={TrendingUp} 
+            label="In Progress" 
+            value={stats.inProgressWorkOrders}
+            subtext="Sedang dikerjakan"
+            color="blue"
+            iconBg="blue"
+          />
+          <StatCard 
+            icon={CheckCircle} 
+            label="Selesai" 
+            value={stats.completedWorkOrders}
+            subtext={`${completionRate}% rate`}
+            color="green"
+            iconBg="green"
+          />
+        </div>
+      </div>
 
-        {/* Attendance Stats - Only show if available */}
-        {stats.totalEmployees > 0 && (
-          <>
+      {/* Group 3: Attendance - Only show if available */}
+      {stats.totalEmployees > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+            <Users className="w-4 h-4 text-purple-500" />
+            Kehadiran Karyawan
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <StatCard 
               icon={Users} 
               label="Karyawan" 
@@ -323,9 +314,9 @@ export default function DashboardStats({ className }: DashboardStatsProps) {
               color="indigo"
               iconBg="indigo"
             />
-          </>
-        )}
-      </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

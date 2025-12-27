@@ -46,7 +46,7 @@ export default function LoginPage() {
       if (role === 'superadmin') {
         router.push('/suadm')
       } else if (role === 'Level 1' || role === 'Level 2') {
-        router.push('/dashboard/fields')
+        router.push('/dashboard')
       } else if (role === 'Level 3' || role === 'Level 4') {
         router.push('/lapangan')
       } else {

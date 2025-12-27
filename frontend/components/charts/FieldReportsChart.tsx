@@ -23,15 +23,21 @@ interface FieldReportsChartProps {
 export default function FieldReportsChart({ className }: FieldReportsChartProps) {
   const [reports, setReports] = useState<FieldReport[]>([])
   const [loading, setLoading] = useState(true)
-  const [startDate, setStartDate] = useState<string>(() => {
-    // Default: 30 hari terakhir
+  const [daysToShow, setDaysToShow] = useState(30) // Show last 30 days
+  const [currentOffset, setCurrentOffset] = useState(0) // Offset for navigating dates
+  
+  // Calculate start and end date based on daysToShow and offset
+  const startDate = useMemo(() => {
     const date = new Date()
-    date.setDate(date.getDate() - 30)
+    date.setDate(date.getDate() - daysToShow - currentOffset)
     return format(date, 'yyyy-MM-dd')
-  })
-  const [endDate, setEndDate] = useState<string>(() => {
-    return format(new Date(), 'yyyy-MM-dd')
-  })
+  }, [daysToShow, currentOffset])
+  
+  const endDate = useMemo(() => {
+    const date = new Date()
+    date.setDate(date.getDate() - currentOffset)
+    return format(date, 'yyyy-MM-dd')
+  }, [currentOffset])
 
   useEffect(() => {
     loadReports()
@@ -161,20 +167,24 @@ export default function FieldReportsChart({ className }: FieldReportsChartProps)
           <h3 className="text-base font-bold text-gray-900">Statistik Laporan</h3>
           <p className="text-xs text-gray-500 mt-0.5">Status laporan lapangan</p>
         </div>
-        <div className="flex gap-2">
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-500">
+            {format(parseISO(startDate), 'dd MMM', { locale: id })} - {format(parseISO(endDate), 'dd MMM', { locale: id })}
+          </span>
+          <select
+            value={daysToShow}
+            onChange={(e) => {
+              setDaysToShow(parseInt(e.target.value))
+              setCurrentOffset(0)
+            }}
             className="px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            max={format(new Date(), 'yyyy-MM-dd')}
-            className="px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
+          >
+            <option value="7">7 hari</option>
+            <option value="14">14 hari</option>
+            <option value="30">30 hari</option>
+            <option value="60">60 hari</option>
+            <option value="90">90 hari</option>
+          </select>
         </div>
       </div>
 
@@ -205,103 +215,90 @@ export default function FieldReportsChart({ className }: FieldReportsChartProps)
         </div>
       ) : (
         <div className="relative">
-          {/* Scroll Controls - Compact */}
+          {/* Date Navigation Controls */}
           <div className="flex items-center justify-between mb-2">
             <button
-              onClick={() => {
-                const container = document.getElementById('chart-scroll-container')
-                if (container) {
-                  container.scrollBy({ left: -200, behavior: 'smooth' })
-                }
-              }}
-              className="p-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-              aria-label="Scroll left"
+              onClick={() => setCurrentOffset(prev => prev + daysToShow)}
+              className="p-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg transition-colors flex items-center gap-1"
+              aria-label="Lihat periode sebelumnya"
             >
-              <ChevronLeft className="w-4 h-4 text-gray-600" />
+              <ChevronLeft className="w-4 h-4" />
+              <span className="text-xs font-medium">Sebelumnya</span>
             </button>
             <span className="text-xs text-gray-500">
-              Geser untuk melihat lebih banyak
+              {format(parseISO(startDate), 'dd MMM', { locale: id })} - {format(parseISO(endDate), 'dd MMM', { locale: id })}
             </span>
             <button
-              onClick={() => {
-                const container = document.getElementById('chart-scroll-container')
-                if (container) {
-                  container.scrollBy({ left: 200, behavior: 'smooth' })
-                }
-              }}
-              className="p-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-              aria-label="Scroll right"
+              onClick={() => setCurrentOffset(prev => Math.max(0, prev - daysToShow))}
+              disabled={currentOffset === 0}
+              className="p-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Lihat periode berikutnya"
             >
-              <ChevronRight className="w-4 h-4 text-gray-600" />
+              <span className="text-xs font-medium">Berikutnya</span>
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
           
-          {/* Scrollable Chart Container */}
-          <div 
-            id="chart-scroll-container"
-            className="w-full overflow-x-auto"
-            style={{ scrollbarWidth: 'thin' }}
-          >
-            <div className="w-full h-64" style={{ minWidth: `${Math.max(600, chartData.length * 50)}px` }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
-                  <defs>
-                    <linearGradient id="colorPending" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.2}/>
-                    </linearGradient>
-                    <linearGradient id="colorRejected" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0.2}/>
-                    </linearGradient>
-                    <linearGradient id="colorApproved" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0.2}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis 
-                    dataKey="date" 
-                    angle={-45}
-                    textAnchor="end"
-                    height={80}
-                    tick={{ fontSize: 10, fill: '#6b7280' }}
-                    axisLine={{ stroke: '#e5e7eb' }}
-                  />
-                  <YAxis 
-                    tick={{ fontSize: 10, fill: '#6b7280' }}
-                    axisLine={{ stroke: '#e5e7eb' }}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'white', 
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      fontSize: '12px'
-                    }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: '12px' }} />
-                  <Bar 
-                    dataKey="Menunggu" 
-                    stackId="status"
-                    fill="url(#colorPending)"
-                    radius={[0, 0, 0, 0]}
-                  />
-                  <Bar 
-                    dataKey="Ditolak" 
-                    stackId="status"
-                    fill="url(#colorRejected)"
-                    radius={[0, 0, 0, 0]}
-                  />
-                  <Bar 
-                    dataKey="Disetujui" 
-                    stackId="status"
-                    fill="url(#colorApproved)"
-                    radius={[6, 6, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+          {/* Chart Container */}
+          <div className="w-full h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+                <defs>
+                  <linearGradient id="colorPending" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.2}/>
+                  </linearGradient>
+                  <linearGradient id="colorRejected" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0.2}/>
+                  </linearGradient>
+                  <linearGradient id="colorApproved" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.2}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis 
+                  dataKey="date" 
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                  tick={{ fontSize: 10, fill: '#6b7280' }}
+                  axisLine={{ stroke: '#e5e7eb' }}
+                />
+                <YAxis 
+                  tick={{ fontSize: 10, fill: '#6b7280' }}
+                  axisLine={{ stroke: '#e5e7eb' }}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'white', 
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    fontSize: '12px'
+                  }}
+                />
+                <Legend wrapperStyle={{ fontSize: '12px' }} />
+                <Bar 
+                  dataKey="Menunggu" 
+                  stackId="status"
+                  fill="url(#colorPending)"
+                  radius={[0, 0, 0, 0]}
+                />
+                <Bar 
+                  dataKey="Ditolak" 
+                  stackId="status"
+                  fill="url(#colorRejected)"
+                  radius={[0, 0, 0, 0]}
+                />
+                <Bar 
+                  dataKey="Disetujui" 
+                  stackId="status"
+                  fill="url(#colorApproved)"
+                  radius={[6, 6, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
       )}

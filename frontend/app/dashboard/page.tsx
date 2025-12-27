@@ -55,7 +55,7 @@ export default function DashboardPage() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <p className="mt-4 text-gray-600">Memuat...</p>
         </div>
       </div>
     )
@@ -67,7 +67,7 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-gray-50 pb-20 lg:pb-8">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="p-4 sm:p-6 lg:p-8">
           {/* Header - Compact */}
           <div className="mb-6">
