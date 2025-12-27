@@ -177,6 +177,7 @@ export interface WorkOrder {
   assignee: string
   field_id?: number
   field_name?: string
+  cultivation_season_id?: number
   start_date: string
   end_date: string
   progress: number
@@ -310,6 +311,61 @@ export const workOrdersAPI = {
   },
   deleteWorkOrder: async (id: number): Promise<void> => {
     await api.delete(`/work-orders/${id}`)
+  },
+}
+
+export interface CultivationSeason {
+  id: number
+  field_id: number
+  field_name?: string
+  name: string
+  planting_date: string
+  status: 'active' | 'completed'
+  completed_date?: string
+  notes?: string
+  created_by: string
+  created_at: string
+  updated_at: string
+}
+
+export const cultivationSeasonsAPI = {
+  listCultivationSeasons: async (params?: {
+    field_id?: number
+    status?: string
+  }): Promise<CultivationSeason[]> => {
+    const queryParams = new URLSearchParams()
+    if (params?.field_id) queryParams.append('field_id', params.field_id.toString())
+    if (params?.status) queryParams.append('status', params.status)
+    
+    const url = `/cultivation-seasons${queryParams.toString() ? '?' + queryParams.toString() : ''}`
+    const response = await api.get<CultivationSeason[]>(url)
+    return Array.isArray(response.data) ? response.data : []
+  },
+  getCultivationSeason: async (id: number): Promise<CultivationSeason> => {
+    const response = await api.get<CultivationSeason>(`/cultivation-seasons/${id}`)
+    return response.data
+  },
+  createCultivationSeason: async (data: {
+    field_id: number
+    name: string
+    planting_date: string
+    notes?: string
+    created_by: string
+  }): Promise<CultivationSeason> => {
+    const response = await api.post<CultivationSeason>('/cultivation-seasons', data)
+    return response.data
+  },
+  updateCultivationSeason: async (id: number, data: {
+    name?: string
+    status?: 'active' | 'completed'
+    completed_date?: string
+    notes?: string
+  }): Promise<CultivationSeason> => {
+    const response = await api.put<CultivationSeason>(`/cultivation-seasons/${id}`, data)
+    return response.data
+  },
+  deleteCultivationSeason: async (id: number): Promise<void> => {
+    await api.delete(`/cultivation-seasons/${id}`)
   },
 }
 

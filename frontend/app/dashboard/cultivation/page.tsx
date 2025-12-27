@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { authAPI, User, fieldsAPI, Field, workOrdersAPI, WorkOrder } from '@/lib/api'
+import { authAPI, User, fieldsAPI, Field, workOrdersAPI, WorkOrder, cultivationSeasonsAPI, CultivationSeason } from '@/lib/api'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import { Plus, Calendar, FileText, Save, Download, Upload, GanttChart, Grid3x3, MapPin, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
@@ -23,6 +23,7 @@ export default function CultivationPage() {
   const [user, setUser] = useState<User | null>(null)
   const [fields, setFields] = useState<Field[]>([])
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([])
+  const [cultivationSeasons, setCultivationSeasons] = useState<CultivationSeason[]>([])
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<'gantt' | 'card'>('gantt')
   const [selectedField, setSelectedField] = useState<number | null>(null)
@@ -32,6 +33,8 @@ export default function CultivationPage() {
   const [showPlanningModal, setShowPlanningModal] = useState(false)
   const [templates, setTemplates] = useState<CultivationTemplate[]>([])
   const [plantingDate, setPlantingDate] = useState<string>('')
+  const [filter, setFilter] = useState<'all' | 'has-active' | 'no-active'>('all')
+  const [sortBy, setSortBy] = useState<'name' | 'area' | 'status'>('name')
 
   useEffect(() => {
     checkAuth()
@@ -41,8 +44,19 @@ export default function CultivationPage() {
   useEffect(() => {
     if (user) {
       loadWorkOrders()
+      loadCultivationSeasons()
     }
   }, [user])
+  
+  const loadCultivationSeasons = async () => {
+    try {
+      const data = await cultivationSeasonsAPI.listCultivationSeasons({ status: 'active' })
+      setCultivationSeasons(data || [])
+    } catch (err) {
+      console.error('Failed to load cultivation seasons:', err)
+      setCultivationSeasons([])
+    }
+  }
 
   useEffect(() => {
     if (plantingDate) {
@@ -105,30 +119,57 @@ export default function CultivationPage() {
     }
   }
 
-  // Check if field has active work orders (not all completed)
-  const fieldHasActiveWorkOrders = (fieldId: number): boolean => {
-    const fieldWorkOrders = workOrders.filter(wo => wo.field_id === fieldId)
-    if (fieldWorkOrders.length === 0) return false
-    
-    // Check if all work orders are completed
-    const allCompleted = fieldWorkOrders.every(wo => wo.status === 'completed')
-    return !allCompleted
+  // Check if field has active cultivation season
+  const fieldHasActiveSeason = (fieldId: number): boolean => {
+    return cultivationSeasons.some(season => season.field_id === fieldId && season.status === 'active')
   }
 
-  // Calculate fields with work order status
+  // Calculate fields with cultivation season status
   const fieldsWithStatus = useMemo(() => {
-    return fields.map(field => ({
-      ...field,
-      hasActiveWorkOrders: fieldHasActiveWorkOrders(field.id),
-      workOrderCount: workOrders.filter(wo => wo.field_id === field.id).length,
-      completedCount: workOrders.filter(wo => wo.field_id === field.id && wo.status === 'completed').length
-    }))
-  }, [fields, workOrders])
+    let filtered = fields.map(field => {
+      const hasActiveSeason = fieldHasActiveSeason(field.id)
+      const fieldWorkOrders = workOrders.filter(wo => wo.field_id === field.id)
+      
+      return {
+        ...field,
+        hasActiveSeason,
+        workOrderCount: fieldWorkOrders.length,
+        completedCount: fieldWorkOrders.filter(wo => wo.status === 'completed').length
+      }
+    })
+    
+    // Apply filter
+    if (filter === 'has-active') {
+      filtered = filtered.filter(f => f.hasActiveSeason)
+    } else if (filter === 'no-active') {
+      filtered = filtered.filter(f => !f.hasActiveSeason)
+    }
+    
+    // Apply sort
+    filtered.sort((a, b) => {
+      if (sortBy === 'name') {
+        return a.name.localeCompare(b.name)
+      } else if (sortBy === 'area') {
+        const areaA = a.area || 0
+        const areaB = b.area || 0
+        return areaB - areaA
+      } else if (sortBy === 'status') {
+        // Sort by hasActiveSeason (active first)
+        if (a.hasActiveSeason !== b.hasActiveSeason) {
+          return a.hasActiveSeason ? -1 : 1
+        }
+        return a.name.localeCompare(b.name)
+      }
+      return 0
+    })
+    
+    return filtered
+  }, [fields, workOrders, cultivationSeasons, filter, sortBy])
 
   const openPlanningModal = (fieldId: number) => {
-    // Check if field has active work orders
-    if (fieldHasActiveWorkOrders(fieldId)) {
-      toast.error('Lahan ini masih memiliki work order yang aktif. Silakan selesaikan semua work order terlebih dahulu sebelum membuat masa tanam baru.')
+    // Check if field has active cultivation season
+    if (fieldHasActiveSeason(fieldId)) {
+      toast.error('Lahan ini masih memiliki masa tanam yang aktif. Silakan selesaikan masa tanam terlebih dahulu sebelum membuat masa tanam baru.')
       return
     }
     
@@ -213,9 +254,9 @@ export default function CultivationPage() {
       return
     }
 
-    // Check if field already has active work orders
-    if (fieldHasActiveWorkOrders(selectedField)) {
-      toast.error('Lahan ini masih memiliki work order yang aktif. Silakan selesaikan semua work order terlebih dahulu.')
+    // Check if field already has active cultivation season
+    if (fieldHasActiveSeason(selectedField)) {
+      toast.error('Lahan ini masih memiliki masa tanam yang aktif. Silakan selesaikan masa tanam terlebih dahulu.')
       return
     }
 
@@ -263,7 +304,25 @@ export default function CultivationPage() {
         return
       }
 
-      // Generate work orders untuk setiap activity
+      // Generate season name (e.g., "MT 1 2025")
+      const plantingDateObj = new Date(plantingDate)
+      const year = plantingDateObj.getFullYear()
+      
+      // Get existing seasons for this field to determine next season number
+      const existingSeasons = await cultivationSeasonsAPI.listCultivationSeasons({ field_id: selectedField })
+      const seasonNumber = existingSeasons.length + 1
+      const seasonName = `MT ${seasonNumber} ${year}`
+
+      // Create cultivation season first
+      const season = await cultivationSeasonsAPI.createCultivationSeason({
+        field_id: selectedField,
+        name: seasonName,
+        planting_date: plantingDate,
+        notes: `Masa tanam dengan ${activities.length} aktivitas`,
+        created_by: user?.email || '',
+      })
+
+      // Generate work orders untuk setiap activity and link to season
       const promises = activities.map(async (activity) => {
         const workOrderData: Partial<WorkOrder> = {
           title: activity.title || activity.activity,
@@ -273,6 +332,7 @@ export default function CultivationPage() {
           priority: (activity.priority || 'medium') as 'low' | 'medium' | 'high',
           assignee: assigneeName,
           field_id: selectedField,
+          cultivation_season_id: season.id,
           start_date: activity.startDate,
           end_date: activity.endDate,
           description: activity.description || `Aktivitas: ${activity.activity}`,
@@ -283,9 +343,10 @@ export default function CultivationPage() {
       })
 
       await Promise.all(promises)
-      toast.success(`${activities.length} work order berhasil dibuat`)
+      toast.success(`Masa tanam "${seasonName}" dengan ${activities.length} work order berhasil dibuat`)
       
-      // Reload work orders and close modal
+      // Reload cultivation seasons and work orders, then close modal
+      await loadCultivationSeasons()
       await loadWorkOrders()
       closePlanningModal()
       router.push('/dashboard/work-orders')
@@ -329,12 +390,12 @@ export default function CultivationPage() {
                 <div
                   key={field.id}
                   className={`bg-white rounded-lg shadow-lg p-6 border-2 transition-all hover:shadow-xl ${
-                    field.hasActiveWorkOrders 
+                    field.hasActiveSeason 
                       ? 'border-amber-200 cursor-not-allowed opacity-75' 
                       : 'border-gray-200 hover:border-indigo-300 cursor-pointer'
                   }`}
                   onClick={() => {
-                    if (!field.hasActiveWorkOrders) {
+                    if (!field.hasActiveSeason) {
                       openPlanningModal(field.id)
                     }
                   }}
@@ -354,15 +415,15 @@ export default function CultivationPage() {
                     </div>
                   </div>
 
-                  {field.hasActiveWorkOrders ? (
+                  {field.hasActiveSeason ? (
                     <div className="space-y-3">
                       <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
                         <p className="text-sm font-medium text-amber-800 mb-1">Masa Tanam Aktif</p>
                         <p className="text-xs text-amber-700">
-                          Lahan ini masih memiliki {field.workOrderCount - field.completedCount} work order aktif
+                          Lahan ini masih memiliki masa tanam yang aktif
                         </p>
                         <p className="text-xs text-amber-600 mt-1">
-                          Selesaikan semua work order terlebih dahulu sebelum membuat masa tanam baru
+                          Selesaikan masa tanam terlebih dahulu sebelum membuat masa tanam baru
                         </p>
                       </div>
                       <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-200">

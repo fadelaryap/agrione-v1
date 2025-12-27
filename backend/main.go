@@ -50,6 +50,7 @@ func main() {
 	fieldReportsHandler := handlers.NewFieldReportsHandler(db, hub)
 	attendanceHandler := handlers.NewAttendanceHandler(db)
 	notificationsHandler := handlers.NewNotificationsHandler(db, hub)
+	cultivationSeasonsHandler := handlers.NewCultivationSeasonsHandler(db)
 
 	// Setup router
 	r := mux.NewRouter()
@@ -135,6 +136,7 @@ func main() {
 	protectedPost.HandleFunc("/plots", plotsHandler.CreatePlot).Methods("POST")
 	protectedPost.HandleFunc("/plant-types", plantTypesHandler.CreatePlantType).Methods("POST")
 	protectedPost.HandleFunc("/work-orders", workOrdersHandler.CreateWorkOrder).Methods("POST")
+	protectedPost.HandleFunc("/cultivation-seasons", cultivationSeasonsHandler.CreateCultivationSeason).Methods("POST")
 	
 	// Protected PUT routes (require both auth and CSRF)
 	protectedPut := api.PathPrefix("").Subrouter()
@@ -147,6 +149,7 @@ func main() {
 	protectedPut.HandleFunc("/plots/{id}", plotsHandler.UpdatePlot).Methods("PUT")
 	protectedPut.HandleFunc("/plant-types/{id}", plantTypesHandler.UpdatePlantType).Methods("PUT")
 	protectedPut.HandleFunc("/work-orders/{id}", workOrdersHandler.UpdateWorkOrder).Methods("PUT")
+	protectedPut.HandleFunc("/cultivation-seasons/{id}", cultivationSeasonsHandler.UpdateCultivationSeason).Methods("PUT")
 	
 	// Protected DELETE routes (require both auth and CSRF)
 	protectedDelete := api.PathPrefix("").Subrouter()
@@ -156,6 +159,7 @@ func main() {
 	protectedDelete.HandleFunc("/plots/{id}", plotsHandler.DeletePlot).Methods("DELETE")
 	protectedDelete.HandleFunc("/plant-types/{id}", plantTypesHandler.DeletePlantType).Methods("DELETE")
 	protectedDelete.HandleFunc("/work-orders/{id}", workOrdersHandler.DeleteWorkOrder).Methods("DELETE")
+	protectedDelete.HandleFunc("/cultivation-seasons/{id}", cultivationSeasonsHandler.DeleteCultivationSeason).Methods("DELETE")
 
 	// Field Reports routes
 	protected.HandleFunc("/field-reports", fieldReportsHandler.ListFieldReports).Methods("GET")

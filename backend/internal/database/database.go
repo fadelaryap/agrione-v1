@@ -403,6 +403,47 @@ func RunMigrations(db *sql.DB) error {
 		return fmt.Errorf("failed to create work_orders table: %w", err)
 	}
 
+	// Create cultivation_seasons table
+	createCultivationSeasonsQuery := `
+	CREATE TABLE IF NOT EXISTS cultivation_seasons (
+		id SERIAL PRIMARY KEY,
+		field_id INTEGER REFERENCES fields(id) ON DELETE CASCADE,
+		name VARCHAR(255) NOT NULL,
+		planting_date DATE NOT NULL,
+		status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'completed')),
+		completed_date TIMESTAMP,
+		notes TEXT,
+		created_by VARCHAR(255) NOT NULL,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	);
+
+	CREATE INDEX IF NOT EXISTS idx_cultivation_seasons_field_id ON cultivation_seasons(field_id);
+	CREATE INDEX IF NOT EXISTS idx_cultivation_seasons_status ON cultivation_seasons(status);
+	CREATE INDEX IF NOT EXISTS idx_cultivation_seasons_planting_date ON cultivation_seasons(planting_date);
+	`
+
+	_, err = db.Exec(createCultivationSeasonsQuery)
+	if err != nil {
+		return fmt.Errorf("failed to create cultivation_seasons table: %w", err)
+	}
+
+	// Add cultivation_season_id column to work_orders table
+	alterWorkOrdersQuery := `
+	DO $$ 
+	BEGIN
+		IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='work_orders' AND column_name='cultivation_season_id') THEN
+			ALTER TABLE work_orders ADD COLUMN cultivation_season_id INTEGER REFERENCES cultivation_seasons(id) ON DELETE SET NULL;
+			CREATE INDEX IF NOT EXISTS idx_work_orders_cultivation_season_id ON work_orders(cultivation_season_id);
+		END IF;
+	END $$;
+	`
+
+	_, err = db.Exec(alterWorkOrdersQuery)
+	if err != nil {
+		return fmt.Errorf("failed to add cultivation_season_id to work_orders: %w", err)
+	}
+
 	log.Println("Database migrations completed")
 	return nil
 }
