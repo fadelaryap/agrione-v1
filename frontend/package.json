@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "check-gcs": "node scripts/check-gcs-config.js"
   },
   "dependencies": {
     "@google-cloud/storage": "^7.7.0",
