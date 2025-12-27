@@ -4,8 +4,9 @@ import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { authAPI, User, fieldsAPI, Field, workOrdersAPI, WorkOrder } from '@/lib/api'
 import DashboardLayout from '@/components/layout/DashboardLayout'
-import { MapPin, ClipboardList, LayoutGrid, BarChart3 } from 'lucide-react'
+import { MapPin, ClipboardList, LayoutGrid, BarChart3, GanttChart as GanttChartIcon } from 'lucide-react'
 import { parseISO, format, startOfDay, differenceInDays } from 'date-fns'
+import WorkOrdersGanttChart from '@/components/work-orders/WorkOrdersGanttChart'
 
 export default function WorkOrdersPage() {
   const router = useRouter()
@@ -222,7 +223,7 @@ export default function WorkOrdersPage() {
                 ))}
               </div>
             ) : (
-              <GanttChartView workOrders={workOrders} />
+              <WorkOrdersGanttChart workOrders={workOrders} fields={fields} />
             )}
           </div>
         )}
@@ -322,118 +323,3 @@ export default function WorkOrdersPage() {
   )
 }
 
-// Gantt Chart Component
-function GanttChartView({ workOrders }: { workOrders: WorkOrder[] }) {
-  if (!workOrders || workOrders.length === 0) {
-      return (
-        <div className="text-center py-8 text-gray-500">
-          Tidak ada work order untuk ditampilkan
-        </div>
-      )
-  }
-
-  // Calculate date range
-  const dates = workOrders
-    .filter(wo => wo.start_date && wo.end_date)
-    .flatMap(wo => [parseISO(wo.start_date!), parseISO(wo.end_date!)])
-  
-  if (dates.length === 0) {
-      return (
-        <div className="text-center py-8 text-gray-500">
-          Tidak ada tanggal valid dalam work order
-        </div>
-      )
-  }
-
-  const minDate = startOfDay(new Date(Math.min(...dates.map(d => d.getTime()))))
-  const maxDate = startOfDay(new Date(Math.max(...dates.map(d => d.getTime()))))
-  const totalDays = differenceInDays(maxDate, minDate) + 1
-
-  // Group by field
-  const workOrdersByField = workOrders.reduce((acc, wo) => {
-    const fieldId = wo.field_id || 0
-    if (!acc[fieldId]) {
-      acc[fieldId] = []
-    }
-    acc[fieldId].push(wo)
-    return acc
-  }, {} as Record<number, WorkOrder[]>)
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return 'bg-green-500'
-      case 'in-progress': return 'bg-blue-500'
-      case 'pending': return 'bg-amber-500'
-      case 'overdue': return 'bg-red-500'
-      default: return 'bg-gray-500'
-    }
-  }
-
-  return (
-    <div className="overflow-x-auto">
-      <div className="min-w-full">
-        {/* Header with dates */}
-        <div className="flex border-b border-gray-200">
-          <div className="w-64 flex-shrink-0 p-3 font-semibold text-sm text-gray-700 border-r border-gray-200">
-            Work Order
-          </div>
-          <div className="flex-1 flex">
-            {Array.from({ length: Math.min(totalDays, 30) }).map((_, idx) => {
-              const date = new Date(minDate)
-              date.setDate(date.getDate() + idx)
-              return (
-                <div
-                  key={idx}
-                  className="flex-1 p-2 text-xs text-center border-r border-gray-200"
-                  style={{ minWidth: '60px' }}
-                >
-                  {format(date, 'MMM dd')}
-                </div>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Rows */}
-        {Object.entries(workOrdersByField).map(([fieldId, orders]) => (
-          <div key={fieldId} className="border-b border-gray-200">
-            {orders.map(wo => {
-              if (!wo.start_date || !wo.end_date) return null
-              
-              const startDate = parseISO(wo.start_date)
-              const endDate = parseISO(wo.end_date)
-              const startOffset = differenceInDays(startDate, minDate)
-              const duration = differenceInDays(endDate, startDate) + 1
-              const progress = wo.progress || 0
-
-              return (
-                <div key={wo.id} className="flex border-b border-gray-100 hover:bg-gray-50">
-                  <div className="w-64 flex-shrink-0 p-3 text-sm border-r border-gray-200">
-                    <div className="font-medium text-gray-900">{wo.title}</div>
-                    <div className="text-xs text-gray-500">{wo.category} - {wo.activity}</div>
-                    <div className="text-xs text-gray-400 mt-1">{progress}% complete</div>
-                  </div>
-                  <div className="flex-1 relative" style={{ minHeight: '60px' }}>
-                    <div
-                      className={`absolute top-2 h-8 rounded ${getStatusColor(wo.status || 'pending')} opacity-80`}
-                      style={{
-                        left: `${(startOffset / totalDays) * 100}%`,
-                        width: `${(duration / totalDays) * 100}%`,
-                        minWidth: '4px',
-                      }}
-                      title={`${wo.title} (${format(startDate, 'MMM dd')} - ${format(endDate, 'MMM dd')})`}
-                    >
-                      <div className="h-full bg-white bg-opacity-30 flex items-center justify-center text-xs text-white font-medium px-1">
-                        {progress}%
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}

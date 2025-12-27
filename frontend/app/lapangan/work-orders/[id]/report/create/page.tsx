@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { authAPI, User, workOrdersAPI, WorkOrder, fieldReportsAPI, FieldReport, uploadAPI } from '@/lib/api'
 import { Camera, Video, MapPin, ArrowLeft, X } from 'lucide-react'
-import { format, parseISO } from 'date-fns'
+import { format, parseISO, startOfDay } from 'date-fns'
 import { toast } from 'sonner'
 
 export default function CreateReportPage() {
@@ -83,6 +83,28 @@ export default function CreateReportPage() {
       setWorkOrder(wo)
       // Pre-fill title with work order title
       setFormData(prev => ({ ...prev, title: wo.title || '' }))
+      
+      // Check if today matches work order date
+      const today = startOfDay(new Date())
+      const workOrderStartDate = wo.start_date ? startOfDay(parseISO(wo.start_date)) : null
+      const workOrderEndDate = wo.end_date ? startOfDay(parseISO(wo.end_date)) : null
+      
+      if (workOrderStartDate) {
+        const todayStr = format(today, 'yyyy-MM-dd')
+        const woStartStr = format(workOrderStartDate, 'yyyy-MM-dd')
+        const woEndStr = workOrderEndDate ? format(workOrderEndDate, 'yyyy-MM-dd') : woStartStr
+        
+        // Check if today is between start_date and end_date (inclusive)
+        const isDateValid = todayStr >= woStartStr && todayStr <= woEndStr
+        
+        if (!isDateValid) {
+          const dateRange = woEndStr === woStartStr 
+            ? format(workOrderStartDate, 'dd MMM yyyy')
+            : `${format(workOrderStartDate, 'dd MMM yyyy')} - ${format(workOrderEndDate!, 'dd MMM yyyy')}`
+          toast.error(`Laporan hanya bisa dibuat pada tanggal work order: ${dateRange}`)
+          setTimeout(() => router.push(`/lapangan/work-orders/${workOrderId}`), 2000)
+        }
+      }
     } catch (err) {
       console.error('Failed to load work order:', err)
     }
@@ -188,9 +210,31 @@ export default function CreateReportPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!formData.title || !formData.description || !workOrderId || !user) {
+    if (!formData.title || !formData.description || !workOrderId || !user || !workOrder) {
       toast.error('Harap isi semua field yang wajib diisi')
       return
+    }
+
+    // Validate that today matches work order date
+    const today = startOfDay(new Date())
+    const workOrderStartDate = workOrder.start_date ? startOfDay(parseISO(workOrder.start_date)) : null
+    const workOrderEndDate = workOrder.end_date ? startOfDay(parseISO(workOrder.end_date)) : null
+    
+    if (workOrderStartDate) {
+      const todayStr = format(today, 'yyyy-MM-dd')
+      const woStartStr = format(workOrderStartDate, 'yyyy-MM-dd')
+      const woEndStr = workOrderEndDate ? format(workOrderEndDate, 'yyyy-MM-dd') : woStartStr
+      
+      // Check if today is between start_date and end_date (inclusive)
+      const isDateValid = todayStr >= woStartStr && todayStr <= woEndStr
+      
+      if (!isDateValid) {
+        const dateRange = woEndStr === woStartStr 
+          ? format(workOrderStartDate, 'dd MMM yyyy')
+          : `${format(workOrderStartDate, 'dd MMM yyyy')} - ${format(workOrderEndDate!, 'dd MMM yyyy')}`
+        toast.error(`Laporan hanya bisa dibuat pada tanggal work order: ${dateRange}`)
+        return
+      }
     }
 
     setSubmitting(true)

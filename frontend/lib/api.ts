@@ -507,18 +507,34 @@ export const uploadAPI = {
     const formData = new FormData()
     formData.append('file', file)
 
-    const response = await fetch('/upload', {
-      method: 'POST',
-      body: formData,
-    })
+    try {
+      const response = await fetch('/upload', {
+        method: 'POST',
+        body: formData,
+        // Don't use signal to avoid AbortSignal errors
+        credentials: 'same-origin',
+      })
 
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || 'Failed to upload file')
+      if (!response.ok) {
+        const errorText = await response.text()
+        let errorData
+        try {
+          errorData = JSON.parse(errorText)
+        } catch {
+          errorData = { error: errorText || 'Failed to upload file' }
+        }
+        throw new Error(errorData.error || errorData.details || 'Failed to upload file')
+      }
+
+      const data = await response.json()
+      return data.url
+    } catch (error: any) {
+      // Handle specific AbortSignal errors
+      if (error.name === 'AbortError' || error.message?.includes('AbortSignal')) {
+        throw new Error('Upload dibatalkan. Silakan coba lagi.')
+      }
+      throw error
     }
-
-    const data = await response.json()
-    return data.url
   },
 }
 
