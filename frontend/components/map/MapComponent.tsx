@@ -653,7 +653,7 @@ export default function MapComponent({ isEditMode = true, userId }: MapComponent
 
       {/* Field Dialog */}
       {isFieldDialogOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]">
           <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
             <h2 className="text-2xl font-bold mb-4">Create Field</h2>
             <div className="space-y-4">
@@ -740,7 +740,7 @@ export default function MapComponent({ isEditMode = true, userId }: MapComponent
 
       {/* Plot Dialog */}
       {isPlotDialogOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]">
           <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
             <h2 className="text-2xl font-bold mb-4">Create Plot</h2>
             <div className="space-y-4">
@@ -826,7 +826,7 @@ export default function MapComponent({ isEditMode = true, userId }: MapComponent
 
       {/* Assign Field Dialog */}
       {isAssignDialogOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]">
           <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
             <h2 className="text-2xl font-bold mb-4">Assign Field to User</h2>
             <div className="space-y-4">
