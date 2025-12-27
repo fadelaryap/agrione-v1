@@ -548,11 +548,35 @@ export default function WorkOrdersPage() {
                       
                         {isExpanded && (
                           <div className="border-t border-gray-200 p-4 space-y-3">
-                            {orders.map(wo => (
+                            {orders.map(wo => {
+                              // Check if work order date matches today - only allow clicking if it's today
+                              const today = startOfDay(new Date())
+                              const woStartDate = wo.start_date ? startOfDay(parseISO(wo.start_date)) : null
+                              const woEndDate = wo.end_date ? startOfDay(parseISO(wo.end_date)) : null
+                              
+                              let isToday = false
+                              if (woStartDate) {
+                                const todayStr = format(today, 'yyyy-MM-dd')
+                                const woStartStr = format(woStartDate, 'yyyy-MM-dd')
+                                const woEndStr = woEndDate ? format(woEndDate, 'yyyy-MM-dd') : woStartStr
+                                isToday = todayStr >= woStartStr && todayStr <= woEndStr
+                              }
+                              
+                              return (
                               <div
                                 key={wo.id}
-                                className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                                onClick={() => router.push(`/lapangan/work-orders/${wo.id}/report`)}
+                                className={`border border-gray-200 rounded-lg p-4 transition-shadow ${
+                                  isToday 
+                                    ? 'hover:shadow-md cursor-pointer' 
+                                    : 'opacity-60 cursor-not-allowed'
+                                }`}
+                                onClick={() => {
+                                  if (isToday) {
+                                    router.push(`/lapangan/work-orders/${wo.id}/report`)
+                                  } else {
+                                    toast.error('Work order ini hanya bisa diakses pada tanggal yang sesuai')
+                                  }
+                                }}
                               >
                                 <div className="flex items-start justify-between mb-2">
                                   <div className="flex-1">
@@ -628,7 +652,8 @@ export default function WorkOrdersPage() {
                                   )}
                                 </div>
                               </div>
-                            ))}
+                              )
+                            })}
                           </div>
                         )}
                       </div>
@@ -687,11 +712,15 @@ export default function WorkOrdersPage() {
                                   
                                   {isDateExpanded && (
                                     <div className="p-3 space-y-2 bg-white">
-                                      {orders.map(wo => (
+                                      {orders.map(wo => {
+                                        // Past dates are not clickable
+                                        return (
                                         <div
                                           key={wo.id}
-                                          className="border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer"
-                                          onClick={() => router.push(`/lapangan/work-orders/${wo.id}/report`)}
+                                          className="border border-gray-200 rounded-lg p-3 opacity-60 cursor-not-allowed"
+                                          onClick={() => {
+                                            toast.error('Work order ini sudah lewat tanggalnya, tidak bisa diakses')
+                                          }}
                                         >
                                           <div className="flex items-start justify-between mb-2">
                                             <div className="flex-1">
@@ -712,7 +741,8 @@ export default function WorkOrdersPage() {
                                             {getPriorityBadge(wo.priority || 'medium')}
                                           </div>
                                         </div>
-                                      ))}
+                                        )
+                                      })}
                                     </div>
                                   )}
                                 </div>

@@ -84,7 +84,7 @@ export default function CreateReportPage() {
       // Pre-fill title with work order title
       setFormData(prev => ({ ...prev, title: wo.title || '' }))
       
-      // Check if today matches work order date
+      // Check if today matches work order date (STRICT - hanya bisa buat laporan di hari yang sama)
       const today = startOfDay(new Date())
       const workOrderStartDate = wo.start_date ? startOfDay(parseISO(wo.start_date)) : null
       const workOrderEndDate = wo.end_date ? startOfDay(parseISO(wo.end_date)) : null
@@ -94,7 +94,7 @@ export default function CreateReportPage() {
         const woStartStr = format(workOrderStartDate, 'yyyy-MM-dd')
         const woEndStr = workOrderEndDate ? format(workOrderEndDate, 'yyyy-MM-dd') : woStartStr
         
-        // Check if today is between start_date and end_date (inclusive)
+        // STRICT: Check if today is between start_date and end_date (inclusive)
         const isDateValid = todayStr >= woStartStr && todayStr <= woEndStr
         
         if (!isDateValid) {
@@ -102,7 +102,7 @@ export default function CreateReportPage() {
             ? format(workOrderStartDate, 'dd MMM yyyy')
             : `${format(workOrderStartDate, 'dd MMM yyyy')} - ${format(workOrderEndDate!, 'dd MMM yyyy')}`
           toast.error(`Laporan hanya bisa dibuat pada tanggal work order: ${dateRange}`)
-          setTimeout(() => router.push(`/lapangan/work-orders/${workOrderId}`), 2000)
+          setTimeout(() => router.push(`/lapangan/work-orders/${workOrderId}/report`), 2000)
         }
       }
     } catch (err) {
@@ -215,7 +215,7 @@ export default function CreateReportPage() {
       return
     }
 
-    // Validate that today matches work order date
+    // STRICT: Validate that today matches work order date
     const today = startOfDay(new Date())
     const workOrderStartDate = workOrder.start_date ? startOfDay(parseISO(workOrder.start_date)) : null
     const workOrderEndDate = workOrder.end_date ? startOfDay(parseISO(workOrder.end_date)) : null
@@ -225,7 +225,7 @@ export default function CreateReportPage() {
       const woStartStr = format(workOrderStartDate, 'yyyy-MM-dd')
       const woEndStr = workOrderEndDate ? format(workOrderEndDate, 'yyyy-MM-dd') : woStartStr
       
-      // Check if today is between start_date and end_date (inclusive)
+      // STRICT: Check if today is between start_date and end_date (inclusive)
       const isDateValid = todayStr >= woStartStr && todayStr <= woEndStr
       
       if (!isDateValid) {
@@ -233,6 +233,7 @@ export default function CreateReportPage() {
           ? format(workOrderStartDate, 'dd MMM yyyy')
           : `${format(workOrderStartDate, 'dd MMM yyyy')} - ${format(workOrderEndDate!, 'dd MMM yyyy')}`
         toast.error(`Laporan hanya bisa dibuat pada tanggal work order: ${dateRange}`)
+        setSubmitting(false)
         return
       }
     }

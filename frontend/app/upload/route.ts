@@ -73,37 +73,18 @@ export async function POST(request: NextRequest) {
     // Convert File to Buffer
     const buffer = Buffer.from(await file.arrayBuffer())
 
-    // Upload to GCS using createWriteStream (no ACL for uniform bucket-level access)
+    // Upload to GCS using file.save() - this uses simple upload (non-resumable) for files under 5MB
+    // This avoids AbortSignal issues that occur with resumable uploads in Next.js production builds
     const fileUpload = bucket.file(filename)
     
-    // Create write stream with metadata (no ACL options)
-    const stream = fileUpload.createWriteStream({
+    // Use save() method which uses simple upload for smaller files (avoids resumable upload that causes AbortSignal issues)
+    await fileUpload.save(buffer, {
       metadata: {
         contentType: file.type,
         cacheControl: 'public, max-age=31536000',
       },
       // Don't set predefinedAcl - uniform bucket-level access handles permissions
-      // This prevents the "Cannot insert legacy ACL" error
     })
-    
-    // Write buffer to stream and wait for completion
-    await new Promise<void>((resolve, reject) => {
-      stream.on('error', (error: Error) => {
-        reject(error)
-      })
-      
-      stream.on('finish', () => {
-        resolve()
-      })
-      
-      stream.end(buffer)
-    })
-    
-    // Verify file was uploaded
-    const [exists] = await fileUpload.exists()
-    if (!exists) {
-      throw new Error('File upload failed - file does not exist after upload')
-    }
     
     // Return public URL
     const publicUrl = `https://storage.googleapis.com/${bucketName}/${filename}`
