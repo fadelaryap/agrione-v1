@@ -33,13 +33,13 @@ export default function FieldStatisticsChart({ fields }: FieldStatisticsChartPro
     const now = new Date()
     let startDate: Date
     let formatStr: string
-    let groupBy: (date: Date) => string
+    let groupBy: (date: string) => string
 
     switch (filterType) {
       case 'day':
         startDate = startOfDay(subDays(now, dateRange - 1))
         formatStr = 'MMM dd'
-        groupBy = (date) => format(startOfDay(parseISO(date)), formatStr)
+        groupBy = (date: string) => format(startOfDay(parseISO(date)), formatStr)
         break
       case 'month':
         startDate = startOfMonth(subMonths(now, dateRange - 1))

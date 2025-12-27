@@ -297,9 +297,7 @@ export default function WorkOrderDetailPage() {
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                         {report.media.map((media: any, idx: number) => {
-                          const imageUrl = media.type === 'image' && media.data 
-                            ? `data:image/jpeg;base64,${media.data}`
-                            : media.url && (media.url.startsWith('http://') || media.url.startsWith('https://'))
+                          const imageUrl = media.url && (media.url.startsWith('http://') || media.url.startsWith('https://'))
                             ? media.url
                             : null
                           

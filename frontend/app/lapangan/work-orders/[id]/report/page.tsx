@@ -313,8 +313,8 @@ export default function WorkOrderReportPage() {
                     <h4 className="text-sm font-medium text-gray-700 mb-2">Media ({report.media.length})</h4>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                       {report.media.map((media, idx) => {
-                        // Check if it's an image (photo/image) or video
-                        const isImage = media.type === 'photo' || media.type === 'image' || 
+                        // Check if it's an image (photo) or video
+                        const isImage = media.type === 'photo' || 
                                        (media.url && (media.url.match(/\.(jpg|jpeg|png|gif|webp)$/i) || media.url.startsWith('data:image')))
                         const isVideo = media.type === 'video' || 
                                        (media.url && (media.url.match(/\.(mp4|webm|mov)$/i) || media.url.startsWith('data:video')))

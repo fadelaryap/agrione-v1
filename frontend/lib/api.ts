@@ -322,6 +322,7 @@ export interface FieldReport {
   notes?: string
   submitted_by: string
   work_order_id?: number
+  progress?: number
   media: Array<{
     type: 'photo' | 'video'
     url: string

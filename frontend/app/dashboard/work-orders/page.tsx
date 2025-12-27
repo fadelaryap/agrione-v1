@@ -614,9 +614,9 @@ export default function WorkOrdersPage() {
         {selectedFieldId && workOrders.length === 0 && (
           <div className="bg-white rounded-lg shadow-lg p-8 text-center">
             <ClipboardList className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Work Orders</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Tidak Ada Work Orders</h3>
             <p className="text-gray-600">
-              This field doesn't have any work orders yet.
+              Field ini belum memiliki work orders.
             </p>
           </div>
         )}

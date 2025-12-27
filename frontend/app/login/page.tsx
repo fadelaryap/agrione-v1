@@ -35,9 +35,11 @@ export default function LoginPage() {
     try {
       const response = await authAPI.login(data)
       // Store token in localStorage
-      localStorage.setItem('token', response.token)
-      // Also set cookie for compatibility
-      document.cookie = `token=${response.token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`
+      if (response.token) {
+        localStorage.setItem('token', response.token)
+        // Also set cookie for compatibility
+        document.cookie = `token=${response.token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`
+      }
       
       // Redirect based on role
       const role = response.user.role

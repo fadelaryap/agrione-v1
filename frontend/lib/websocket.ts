@@ -132,6 +132,10 @@ class WebSocketClient {
   isConnected(): boolean {
     return this.ws !== null && this.ws.readyState === WebSocket.OPEN
   }
+
+  updateCallbacks(callbacks: WebSocketCallbacks) {
+    this.callbacks = { ...this.callbacks, ...callbacks }
+  }
 }
 
 export const wsClient = new WebSocketClient()

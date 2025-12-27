@@ -228,7 +228,7 @@ export default function MapComponent({ isEditMode = true, userId }: MapComponent
 
       // Update layer metadata
       if (lastCreatedLayerRef.current) {
-        lastCreatedLayerRef.current._meta = {
+        ;(lastCreatedLayerRef.current as any)._meta = {
           id: saved.id,
           type: 'field',
           name: saved.name,
@@ -351,7 +351,7 @@ export default function MapComponent({ isEditMode = true, userId }: MapComponent
       }
 
       if (layer) {
-        layer._meta = { id: field.id, type: 'field', name: field.name }
+        ;(layer as any)._meta = { id: field.id, type: 'field', name: field.name }
         layer.bindPopup(`
           <div>
             <strong>${field.name}</strong><br/>
@@ -374,7 +374,7 @@ export default function MapComponent({ isEditMode = true, userId }: MapComponent
         const marker = L.marker([plot.coordinates[0], plot.coordinates[1]], {
           icon: createPlotIcon(plot.type),
         })
-        marker._meta = { id: plot.id, type: 'plot', name: plot.name }
+        ;(marker as any)._meta = { id: plot.id, type: 'plot', name: plot.name }
         marker.bindPopup(`
           <div>
             <strong>${plot.name}</strong><br/>
