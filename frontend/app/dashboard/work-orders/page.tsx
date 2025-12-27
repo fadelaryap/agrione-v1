@@ -118,6 +118,14 @@ export default function WorkOrdersPage() {
       const field = fields.find(f => f.id === fieldId)
       if (!field) return
 
+      // Check if field already has work orders
+      const existingWorkOrders = await workOrdersAPI.listWorkOrders({ field_id: fieldId })
+      if (existingWorkOrders.length > 0) {
+        alert(`Lahan ini sudah memiliki ${existingWorkOrders.length} work order. Satu lahan hanya bisa memiliki satu set work order. Silakan gunakan halaman Perencanaan Budidaya untuk membuat work order baru.`)
+        setGenerating(null)
+        return
+      }
+
       // Get Level 3/4 users for assignment
       const { usersAPI } = await import('@/lib/api')
       const usersData = await usersAPI.listUsers(1, 100)
@@ -126,7 +134,7 @@ export default function WorkOrdersPage() {
         : []
 
       if (level34Users.length === 0) {
-        alert('No Level 3/4 users found. Please assign a user to this field first.')
+        alert('Tidak ditemukan pengguna Level 3/4. Silakan tetapkan pengguna ke lahan ini terlebih dahulu.')
         setGenerating(null)
         return
       }
@@ -137,7 +145,7 @@ export default function WorkOrdersPage() {
         : level34Users[0]
       
       if (!assignee) {
-        alert('No user available for assignment.')
+        alert('Tidak ada pengguna yang tersedia untuk penugasan.')
         setGenerating(null)
         return
       }
@@ -366,10 +374,10 @@ export default function WorkOrdersPage() {
 
       // Reload data
       await loadWorkOrders()
-      alert(`Successfully generated ${workOrdersToCreate.length} work orders for this field!`)
+      alert(`Berhasil membuat ${workOrdersToCreate.length} work order untuk lahan ini!`)
     } catch (err: any) {
       console.error('Failed to generate work orders:', err)
-      alert('Failed to generate work orders: ' + (err.response?.data?.error || err.message))
+      alert('Gagal membuat work order: ' + (err.response?.data?.error || err.message))
     } finally {
       setGenerating(null)
     }
@@ -381,7 +389,7 @@ export default function WorkOrdersPage() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <p className="mt-4 text-gray-600">Memuat...</p>
         </div>
       </div>
     )
@@ -397,8 +405,8 @@ export default function WorkOrdersPage() {
         <div className="mb-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Work Orders</h1>
-              <p className="text-gray-600 mt-2">Manage work orders for each field</p>
+              <h1 className="text-3xl font-bold text-gray-900">Work Order</h1>
+              <p className="text-gray-600 mt-2">Kelola work order untuk setiap lahan</p>
             </div>
             {/* View Toggle - Only show when viewing work orders (not fields) */}
             {selectedFieldId && workOrders.length > 0 && (
@@ -412,7 +420,7 @@ export default function WorkOrdersPage() {
                   }`}
                 >
                   <LayoutGrid className="w-4 h-4" />
-                  Card
+                  Kartu
                 </button>
                 <button
                   onClick={() => setViewMode('gantt')}
@@ -423,7 +431,7 @@ export default function WorkOrdersPage() {
                   }`}
                 >
                   <BarChart3 className="w-4 h-4" />
-                  Gantt
+                  Gantt Chart
                 </button>
               </div>
             )}
@@ -436,14 +444,14 @@ export default function WorkOrdersPage() {
             <div className="flex items-center gap-2">
               <MapPin className="w-5 h-5 text-indigo-600" />
               <span className="text-sm font-medium text-indigo-900">
-                Showing work orders for: {fields.find(f => f.id === selectedFieldId)?.name || 'Field'}
+                Menampilkan work order untuk: {fields.find(f => f.id === selectedFieldId)?.name || 'Lahan'}
               </span>
             </div>
             <button
               onClick={() => setSelectedFieldId(null)}
               className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
             >
-              Clear Filter
+              Hapus Filter
             </button>
           </div>
         )}
@@ -452,7 +460,7 @@ export default function WorkOrdersPage() {
         {selectedFieldId && workOrders.length > 0 && (
           <div className="mb-6 bg-white rounded-lg shadow-lg p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              Work Orders ({workOrders.length})
+              Work Order ({workOrders.length})
             </h2>
             {viewMode === 'card' ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -509,7 +517,7 @@ export default function WorkOrdersPage() {
                   }`}
                   onClick={() => {
                     if (!field.hasWorkOrders) {
-                      if (confirm(`Generate work orders for one planting season for "${field.name}"?`)) {
+                            if (confirm(`Buat work order untuk satu musim tanam untuk "${field.name}"?`)) {
                         generateWorkOrders(field.id)
                       }
                     }
@@ -546,11 +554,11 @@ export default function WorkOrdersPage() {
                       {/* Stats */}
                       <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-200">
                         <div>
-                          <p className="text-xs text-gray-500">Total Orders</p>
+                          <p className="text-xs text-gray-500">Total Work Order</p>
                           <p className="text-lg font-semibold text-gray-900">{field.totalOrders}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500">Completed</p>
+                          <p className="text-xs text-gray-500">Selesai</p>
                           <p className="text-lg font-semibold text-green-600">{field.completedOrders}</p>
                         </div>
                       </div>
@@ -564,7 +572,7 @@ export default function WorkOrdersPage() {
                         }}
                         className="w-full mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
                       >
-                        View Details
+                        Lihat Detail
                       </button>
                     </div>
                   ) : (
@@ -572,26 +580,26 @@ export default function WorkOrdersPage() {
                       <div className="mb-4">
                         <Sparkles className="w-12 h-12 text-gray-400 mx-auto" />
                       </div>
-                      <p className="text-sm text-gray-600 mb-2">No work orders yet</p>
+                      <p className="text-sm text-gray-600 mb-2">Belum ada work order</p>
                       <p className="text-xs text-gray-500 mb-4">
-                        Click to generate work orders for one planting season
+                        Klik untuk membuat work order untuk satu musim tanam
                       </p>
                       {generating === field.id ? (
                         <div className="flex items-center justify-center gap-2 text-indigo-600">
                           <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                          <span className="text-sm">Generating...</span>
+                          <span className="text-sm">Membuat...</span>
                         </div>
                       ) : (
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
-                            if (confirm(`Generate work orders for one planting season for "${field.name}"?`)) {
+                            if (confirm(`Buat work order untuk satu musim tanam untuk "${field.name}"?`)) {
                               generateWorkOrders(field.id)
                             }
                           }}
                           className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
                         >
-                          Generate Work Orders
+                          Buat Work Orders
                         </button>
                       )}
                     </div>
@@ -602,9 +610,9 @@ export default function WorkOrdersPage() {
           ) : (
             <div className="bg-white rounded-lg shadow-lg p-8 text-center">
               <MapPin className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No Fields Found</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Tidak Ada Lahan</h3>
               <p className="text-gray-600">
-                Create a field first to manage work orders.
+                Buat lahan terlebih dahulu untuk mengelola work order.
               </p>
             </div>
           )
@@ -628,11 +636,11 @@ export default function WorkOrdersPage() {
 // Gantt Chart Component
 function GanttChartView({ workOrders }: { workOrders: WorkOrder[] }) {
   if (!workOrders || workOrders.length === 0) {
-    return (
-      <div className="text-center py-8 text-gray-500">
-        No work orders to display
-      </div>
-    )
+      return (
+        <div className="text-center py-8 text-gray-500">
+          Tidak ada work order untuk ditampilkan
+        </div>
+      )
   }
 
   // Calculate date range
@@ -641,11 +649,11 @@ function GanttChartView({ workOrders }: { workOrders: WorkOrder[] }) {
     .flatMap(wo => [parseISO(wo.start_date!), parseISO(wo.end_date!)])
   
   if (dates.length === 0) {
-    return (
-      <div className="text-center py-8 text-gray-500">
-        No valid dates found in work orders
-      </div>
-    )
+      return (
+        <div className="text-center py-8 text-gray-500">
+          Tidak ada tanggal valid dalam work order
+        </div>
+      )
   }
 
   const minDate = startOfDay(new Date(Math.min(...dates.map(d => d.getTime()))))

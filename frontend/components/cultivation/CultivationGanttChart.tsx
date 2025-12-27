@@ -74,7 +74,15 @@ export default function CultivationGanttChart({
     setDraggingId(activityId)
     const rect = containerRef.current?.getBoundingClientRect()
     if (rect) {
-      setDragOffset(e.clientX - rect.left)
+      // Calculate offset from the start of the activity bar, not from mouse position
+      const activity = activities.find(a => a.id === activityId)
+      if (activity) {
+        const activityStart = parseISO(activity.startDate)
+        const activityPosition = ((activityStart.getTime() - dateRange.start.getTime()) / (dateRange.end.getTime() - dateRange.start.getTime())) * rect.width
+        setDragOffset(e.clientX - rect.left - activityPosition)
+      } else {
+        setDragOffset(e.clientX - rect.left)
+      }
     }
   }
 
@@ -109,27 +117,45 @@ export default function CultivationGanttChart({
 
   useEffect(() => {
     if (draggingId) {
-      const handleMouseMove = (e: MouseEvent) => {
-        if (containerRef.current) {
-          const rect = containerRef.current.getBoundingClientRect()
-          const x = e.clientX - rect.left - dragOffset
-          const percent = (x / rect.width) * 100
-          const daysOffset = Math.round((percent / 100) * differenceInDays(dateRange.end, dateRange.start))
-          
-          const activity = activities.find(a => a.id === draggingId)
-          if (activity) {
-            const newStart = new Date(dateRange.start)
-            newStart.setDate(newStart.getDate() + daysOffset)
-            const duration = differenceInDays(parseISO(activity.endDate), parseISO(activity.startDate))
-            const newEnd = new Date(newStart)
-            newEnd.setDate(newEnd.getDate() + duration)
+      let lastDayOffset = -1
+      let lastUpdateTime = 0
+      const UPDATE_THROTTLE = 16 // ~60fps
 
-            setActivities(activities.map(a => 
-              a.id === draggingId 
-                ? { ...a, startDate: format(newStart, 'yyyy-MM-dd'), endDate: format(newEnd, 'yyyy-MM-dd') }
-                : a
-            ))
-          }
+      const handleMouseMove = (e: MouseEvent) => {
+        if (!containerRef.current) return
+        
+        const now = Date.now()
+        if (now - lastUpdateTime < UPDATE_THROTTLE) return
+        lastUpdateTime = now
+
+        const rect = containerRef.current.getBoundingClientRect()
+        const x = e.clientX - rect.left - dragOffset
+        const percent = Math.max(0, Math.min(100, (x / rect.width) * 100))
+        
+        const totalDays = differenceInDays(dateRange.end, dateRange.start)
+        const exactDaysOffset = (percent / 100) * totalDays
+        
+        // Snap langsung ke hari terdekat - sekali geser = satu hari
+        // Ini membuat drag & drop lebih smooth dan predictable
+        const dayOffset = Math.round(exactDaysOffset)
+        
+        // Prevent unnecessary updates jika masih di hari yang sama
+        if (dayOffset === lastDayOffset) return
+        lastDayOffset = dayOffset
+        
+        const activity = activities.find(a => a.id === draggingId)
+        if (activity) {
+          const newStart = new Date(dateRange.start)
+          newStart.setDate(newStart.getDate() + dayOffset)
+          const duration = differenceInDays(parseISO(activity.endDate), parseISO(activity.startDate))
+          const newEnd = new Date(newStart)
+          newEnd.setDate(newEnd.getDate() + duration)
+
+          setActivities(activities.map(a => 
+            a.id === draggingId 
+              ? { ...a, startDate: format(newStart, 'yyyy-MM-dd'), endDate: format(newEnd, 'yyyy-MM-dd') }
+              : a
+          ))
         }
       }
 
@@ -225,7 +251,7 @@ export default function CultivationGanttChart({
                     <div className="flex items-center gap-1 ml-2">
                       <button
                         onMouseDown={(e) => handleDragStart(e, activity.id)}
-                        className="p-1 text-gray-400 hover:text-gray-600 cursor-move"
+                        className="p-1 text-gray-400 hover:text-gray-600 cursor-move touch-none"
                         title="Geser timeline"
                       >
                         <GripVertical className="w-4 h-4" />
@@ -250,7 +276,9 @@ export default function CultivationGanttChart({
                     style={{
                       left: `${position.left}%`,
                       width: `${position.width}%`,
-                      minWidth: '60px'
+                      minWidth: '60px',
+                      userSelect: 'none',
+                      WebkitUserSelect: 'none'
                     }}
                     onMouseDown={(e) => handleDragStart(e, activity.id)}
                   >
@@ -273,7 +301,7 @@ export default function CultivationGanttChart({
 
       {activities.length === 0 && (
         <div className="text-center py-12 text-gray-500">
-          <p>Tidak ada activity untuk ditampilkan</p>
+          <p>Belum ada activity untuk ditampilkan</p>
         </div>
       )}
     </div>

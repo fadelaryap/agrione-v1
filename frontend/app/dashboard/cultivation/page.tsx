@@ -28,13 +28,22 @@ export default function CultivationPage() {
   const [showTemplateModal, setShowTemplateModal] = useState(false)
   const [showCustomModal, setShowCustomModal] = useState(false)
   const [templates, setTemplates] = useState<CultivationTemplate[]>([])
-  const [plantingDate, setPlantingDate] = useState<string>(new Date().toISOString().split('T')[0])
+  const [plantingDate, setPlantingDate] = useState<string>('')
+  const [fieldHasWorkOrders, setFieldHasWorkOrders] = useState<boolean>(false)
+
+  // Check if planting date is required
+  const isPlantingDateRequired = () => {
+    return !plantingDate
+  }
 
   useEffect(() => {
     checkAuth()
     loadFields()
-    loadTemplates()
   }, [])
+
+  useEffect(() => {
+    loadTemplates()
+  }, [plantingDate])
 
   const checkAuth = async () => {
     try {
@@ -70,16 +79,38 @@ export default function CultivationPage() {
       const saved = localStorage.getItem('cultivation_templates')
       const savedTemplates = saved ? JSON.parse(saved) : []
       
-      // Add default template
-      const defaultTemplate = getDefaultCultivationTemplate(plantingDate)
-      setTemplates([defaultTemplate, ...savedTemplates])
+      // Add default template only if planting date is set
+      if (plantingDate) {
+        const defaultTemplate = getDefaultCultivationTemplate(plantingDate)
+        setTemplates([defaultTemplate, ...savedTemplates])
+      } else {
+        setTemplates(savedTemplates)
+      }
     } catch (err) {
       console.error('Failed to load templates:', err)
-      // Fallback to default template only
-      const defaultTemplate = getDefaultCultivationTemplate(plantingDate)
-      setTemplates([defaultTemplate])
+      setTemplates([])
     }
   }
+
+  // Check if selected field already has work orders
+  useEffect(() => {
+    const checkFieldWorkOrders = async () => {
+      if (!selectedField) {
+        setFieldHasWorkOrders(false)
+        return
+      }
+
+      try {
+        const existingWorkOrders = await workOrdersAPI.listWorkOrders({ field_id: selectedField })
+        setFieldHasWorkOrders(existingWorkOrders.length > 0)
+      } catch (err) {
+        console.error('Failed to check field work orders:', err)
+        setFieldHasWorkOrders(false)
+      }
+    }
+
+    checkFieldWorkOrders()
+  }, [selectedField])
 
   const saveTemplate = (template: Omit<CultivationTemplate, 'id' | 'createdAt'>) => {
     const newTemplate: CultivationTemplate = {
@@ -94,6 +125,11 @@ export default function CultivationPage() {
   }
 
   const loadTemplate = (template: CultivationTemplate) => {
+    if (!plantingDate) {
+      toast.error('Harap tentukan tanggal tanam (HST 0) terlebih dahulu')
+      return
+    }
+
     // Recalculate dates based on HST
     const templatePlantingDate = template.plantingDate || plantingDate
     const currentPlantingDate = plantingDate
@@ -135,13 +171,24 @@ export default function CultivationPage() {
 
   const generateWorkOrders = async () => {
     if (activities.length === 0) {
-      toast.error('Tidak ada activity untuk di-generate')
+      toast.error('Tidak ada aktivitas untuk di-generate')
       return
     }
 
     if (!selectedField) {
       toast.error('Pilih lahan terlebih dahulu')
       return
+    }
+
+    // Check if field already has work orders
+    try {
+      const existingWorkOrders = await workOrdersAPI.listWorkOrders({ field_id: selectedField })
+      if (existingWorkOrders.length > 0) {
+        toast.error(`Lahan ini sudah memiliki ${existingWorkOrders.length} work order. Satu lahan hanya bisa memiliki satu set work order. Silakan hapus work order yang ada terlebih dahulu jika ingin membuat yang baru.`)
+        return
+      }
+    } catch (err) {
+      console.error('Failed to check existing work orders:', err)
     }
 
     try {
@@ -163,7 +210,7 @@ export default function CultivationPage() {
           field_id: selectedField,
           start_date: activity.startDate,
           end_date: activity.endDate,
-          description: activity.description || `Activity: ${activity.activity}`,
+          description: activity.description || `Aktivitas: ${activity.activity}`,
           created_by: user?.email || '',
         }
 
@@ -171,14 +218,15 @@ export default function CultivationPage() {
       })
 
       await Promise.all(promises)
-      toast.success(`${activities.length} work orders berhasil dibuat`)
+      toast.success(`${activities.length} work order berhasil dibuat`)
       
       // Reset activities
       setActivities([])
+      setFieldHasWorkOrders(true)
       router.push('/dashboard/work-orders')
     } catch (err: any) {
       console.error('Failed to generate work orders:', err)
-      toast.error('Gagal membuat work orders: ' + (err.response?.data?.error || err.message))
+      toast.error('Gagal membuat work order: ' + (err.response?.data?.error || err.message))
     }
   }
 
@@ -187,7 +235,7 @@ export default function CultivationPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <p className="mt-4 text-gray-600">Memuat...</p>
         </div>
       </div>
     )
@@ -205,7 +253,7 @@ export default function CultivationPage() {
           <div className="mb-6">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Cultivation Planning</h1>
+                <h1 className="text-2xl font-bold text-gray-900">Perencanaan Budidaya</h1>
                 <p className="text-sm text-gray-500 mt-1">Rencanakan aktivitas budidaya untuk lahan</p>
               </div>
               <div className="flex items-center gap-3">
@@ -218,7 +266,7 @@ export default function CultivationPage() {
                         ? 'bg-indigo-500 text-white' 
                         : 'text-gray-600 hover:bg-gray-100'
                     }`}
-                    title="Gantt Chart View"
+                    title="Tampilan Gantt Chart"
                   >
                     <GanttChart className="w-5 h-5" />
                   </button>
@@ -229,7 +277,7 @@ export default function CultivationPage() {
                         ? 'bg-indigo-500 text-white' 
                         : 'text-gray-600 hover:bg-gray-100'
                     }`}
-                    title="Card View"
+                    title="Tampilan Kartu"
                   >
                     <Grid3x3 className="w-5 h-5" />
                   </button>
@@ -243,7 +291,9 @@ export default function CultivationPage() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex flex-wrap items-end gap-4 flex-1">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Tanggal Tanam (HST 0)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tanggal Tanam (HST 0) <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="date"
                     value={plantingDate}
@@ -265,7 +315,9 @@ export default function CultivationPage() {
                       }
                     }}
                     className="w-full sm:w-auto min-w-[180px] px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    required
                   />
+                  <p className="text-xs text-gray-500 mt-1">Wajib diisi sebelum menambah activity</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Pilih Lahan</label>
@@ -294,10 +346,17 @@ export default function CultivationPage() {
                   Template
                 </button>
                 
-                {/* Add Custom Activity */}
+                {/* Add Activity (Custom) */}
                 <button
-                  onClick={() => setShowCustomModal(true)}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium flex items-center gap-2"
+                  onClick={() => {
+                    if (isPlantingDateRequired()) {
+                      toast.error('Harap tentukan tanggal tanam (HST 0) terlebih dahulu')
+                      return
+                    }
+                    setShowCustomModal(true)
+                  }}
+                  disabled={isPlantingDateRequired()}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Plus className="w-4 h-4" />
                   Tambah Activity
@@ -311,7 +370,7 @@ export default function CultivationPage() {
                       if (name) {
                         saveTemplate({
                           name,
-                          description: `Template dengan ${activities.length} activities`,
+                          description: `Template dengan ${activities.length} aktivitas`,
                           activities
                         })
                       }
@@ -330,7 +389,7 @@ export default function CultivationPage() {
                   className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Calendar className="w-4 h-4" />
-                  Generate Work Orders
+                  Buat Work Order
                 </button>
               </div>
             </div>
@@ -341,19 +400,33 @@ export default function CultivationPage() {
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
               <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Belum ada activity</h3>
-              <p className="text-sm text-gray-500 mb-6">Mulai dengan memilih template atau membuat activity custom</p>
+              <p className="text-sm text-gray-500 mb-6">Mulai dengan memilih template atau menambah activity</p>
               <div className="flex items-center justify-center gap-3">
                 <button
-                  onClick={() => setShowTemplateModal(true)}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                  onClick={() => {
+                    if (isPlantingDateRequired()) {
+                      toast.error('Harap tentukan tanggal tanam (HST 0) terlebih dahulu')
+                      return
+                    }
+                    setShowTemplateModal(true)
+                  }}
+                  disabled={isPlantingDateRequired()}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Pilih Template
                 </button>
                 <button
-                  onClick={() => setShowCustomModal(true)}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+                  onClick={() => {
+                    if (isPlantingDateRequired()) {
+                      toast.error('Harap tentukan tanggal tanam (HST 0) terlebih dahulu')
+                      return
+                    }
+                    setShowCustomModal(true)
+                  }}
+                  disabled={isPlantingDateRequired()}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Buat Custom
+                  Tambah Activity
                 </button>
               </div>
             </div>
@@ -416,7 +489,8 @@ function TemplateModal({
       <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-gray-900">Pilih Template</h2>
+              <h2 className="text-xl font-bold text-gray-900">Pilih Template</h2>
+              <p className="text-sm text-gray-500 mt-1">Template akan dimuat berdasarkan tanggal tanam yang telah ditentukan</p>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600"
@@ -443,7 +517,7 @@ function TemplateModal({
                     <p className="text-sm text-gray-500 mb-2">{template.description}</p>
                   )}
                   <p className="text-xs text-gray-400">
-                    {template.activities.length} activities
+                    {template.activities.length} aktivitas
                   </p>
                 </button>
               ))}
@@ -494,6 +568,13 @@ function CustomActivityModal({
       parameters: formData.parameters,
     }
 
+    // Calculate dates relative to planting date if not provided
+    if (!formData.startDate || !formData.endDate) {
+      const today = new Date().toISOString().split('T')[0]
+      activity.startDate = formData.startDate || today
+      activity.endDate = formData.endDate || today
+    }
+
     onAdd(activity)
     toast.success('Activity berhasil ditambahkan')
   }
@@ -503,7 +584,7 @@ function CustomActivityModal({
       <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-gray-900">Tambah Activity Custom</h2>
+            <h2 className="text-xl font-bold text-gray-900">Tambah Activity</h2>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600"
@@ -514,7 +595,7 @@ function CustomActivityModal({
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Activity Type *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Jenis Activity *</label>
               <select
                 value={formData.activity || ''}
                 onChange={(e) => setFormData({ ...formData, activity: e.target.value as CultivationActivity })}
