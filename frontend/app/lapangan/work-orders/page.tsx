@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { authAPI, User, fieldsAPI, Field, workOrdersAPI, WorkOrder } from '@/lib/api'
-import { ClipboardList, Calendar, ChevronDown, ChevronUp, MapPin, User as UserIcon, Clock, CheckCircle, XCircle, AlertCircle, Filter, ArrowUpDown, Navigation } from 'lucide-react'
+import { ClipboardList, Calendar, ChevronDown, ChevronUp, MapPin, User as UserIcon, Clock, CheckCircle, XCircle, AlertCircle, Filter, ArrowUpDown, Navigation, CalendarDays } from 'lucide-react'
 import { format, parseISO, startOfDay, isToday, isTomorrow, addDays, isSameDay, eachDayOfInterval, isBefore, isAfter } from 'date-fns'
 import { id } from 'date-fns/locale'
 import { toast } from 'sonner'
@@ -422,7 +422,7 @@ export default function WorkOrdersPage() {
         {/* Filters and Sort - Compact */}
         <div className="bg-white rounded-lg shadow-lg p-3 mb-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
-            <div className="sm:col-span-1">
+            <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>
               <select
                 value={statusFilter}
@@ -437,24 +437,33 @@ export default function WorkOrdersPage() {
               </select>
             </div>
             
-            <div className="sm:col-span-1">
-              <label className="block text-xs font-medium text-gray-700 mb-1">Mulai</label>
-              <input
-                type="date"
-                value={dateRangeFilter.start}
-                onChange={(e) => setDateRangeFilter({ ...dateRangeFilter, start: e.target.value })}
-                className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-green-500 min-w-0"
-              />
-            </div>
-            
-            <div className="sm:col-span-1">
-              <label className="block text-xs font-medium text-gray-700 mb-1">Selesai</label>
-              <input
-                type="date"
-                value={dateRangeFilter.end}
-                onChange={(e) => setDateRangeFilter({ ...dateRangeFilter, end: e.target.value })}
-                className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-green-500 min-w-0"
-              />
+            {/* Date inputs - compact, 2 columns on mobile */}
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-1 sm:gap-0">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Tanggal Mulai</label>
+                <div className="relative">
+                  <CalendarDays className="absolute left-1 top-1/2 transform -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none z-10" />
+                  <input
+                    type="date"
+                    value={dateRangeFilter.start}
+                    onChange={(e) => setDateRangeFilter({ ...dateRangeFilter, start: e.target.value })}
+                    className="w-full pl-5 pr-1 py-1 border border-gray-300 rounded text-[9px] sm:text-xs focus:ring-1 focus:ring-green-500 min-w-0"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Tanggal Selesai</label>
+                <div className="relative">
+                  <CalendarDays className="absolute left-1 top-1/2 transform -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none z-10" />
+                  <input
+                    type="date"
+                    value={dateRangeFilter.end}
+                    onChange={(e) => setDateRangeFilter({ ...dateRangeFilter, end: e.target.value })}
+                    className="w-full pl-5 pr-1 py-1 border border-gray-300 rounded text-[9px] sm:text-xs focus:ring-1 focus:ring-green-500 min-w-0"
+                  />
+                </div>
+              </div>
             </div>
             
             <div>

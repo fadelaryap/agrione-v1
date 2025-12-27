@@ -423,13 +423,13 @@ export default function ReportsPage() {
           className="fixed inset-0 bg-black/90 z-[100] flex items-center justify-center p-4"
           onClick={() => setSelectedImage(null)}
         >
+          <button
+            onClick={() => setSelectedImage(null)}
+            className="fixed top-4 right-4 bg-white/10 hover:bg-white/20 text-white rounded-full p-2 z-[101] transition-colors"
+          >
+            <X className="w-6 h-6" />
+          </button>
           <div className="relative max-w-7xl max-h-full">
-            <button
-              onClick={() => setSelectedImage(null)}
-              className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white rounded-full p-2 z-10 transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
             <img
               src={selectedImage.url}
               alt={selectedImage.filename}
