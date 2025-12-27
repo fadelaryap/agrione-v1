@@ -81,8 +81,9 @@ func (h *AttendanceHandler) CreateAttendance(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	// Get today's date
-	today := time.Now().Format("2006-01-02")
+	// Get today's date in GMT+7 (Asia/Jakarta timezone) - must match GetTodayAttendance
+	loc, _ := time.LoadLocation("Asia/Jakarta")
+	today := time.Now().In(loc).Format("2006-01-02")
 
 	// Check if attendance already exists for this user, date, and session
 	var existingID int
