@@ -270,6 +270,17 @@ func RunMigrations(db *sql.DB) error {
 		-- Update existing records to have 'pending' status if status is NULL
 		UPDATE field_reports SET status = 'pending' WHERE status IS NULL;
 	END $$;
+
+	-- Add harvest quantity and quality columns for Panen activity
+	DO $$ 
+	BEGIN
+		IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='field_reports' AND column_name='harvest_quantity') THEN
+			ALTER TABLE field_reports ADD COLUMN harvest_quantity DOUBLE PRECISION;
+		END IF;
+		IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='field_reports' AND column_name='harvest_quality') THEN
+			ALTER TABLE field_reports ADD COLUMN harvest_quality VARCHAR(100);
+		END IF;
+	END $$;
 	`
 
 	// Add notifications table columns if already exists

@@ -113,3 +113,4 @@ location /api/ws {
 3. **Test connection**: Buka browser console dan cek apakah WebSocket connected
 4. **Monitor logs**: Cek Nginx dan backend logs untuk error messages
 
+

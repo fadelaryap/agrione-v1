@@ -13,7 +13,8 @@ import {
   X,
   ClipboardList,
   FileCheck,
-  Building2
+  Building2,
+  Calendar
 } from 'lucide-react'
 import LogoutButton from '@/components/LogoutButton'
 import NotificationBell from '@/components/notifications/NotificationBell'
@@ -44,6 +45,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const baseNavItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/dashboard/fields', label: 'Field Management', icon: Map },
+    { href: '/dashboard/cultivation', label: 'Cultivation Planning', icon: Calendar },
     { href: '/dashboard/work-orders', label: 'Work Orders', icon: ClipboardList },
     { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
   ]

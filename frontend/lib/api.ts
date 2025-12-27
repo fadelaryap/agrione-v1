@@ -334,6 +334,8 @@ export interface FieldReport {
   approved_by?: string
   approved_at?: string
   rejection_reason?: string
+  harvest_quantity?: number // For Panen activity (in ton/kg)
+  harvest_quality?: string // For Panen activity
   created_at: string
   updated_at: string
   comments?: FieldReportComment[]

@@ -77,3 +77,4 @@ echo "1. Pastikan .env file punya GCS_BUCKET_NAME dan GOOGLE_APPLICATION_CREDENT
 echo "2. Pastikan file /opt/agrione/gcs-credentials.json ada dan readable"
 echo "3. Restart backend: docker compose restart backend"
 
+

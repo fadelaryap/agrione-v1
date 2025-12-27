@@ -14,3 +14,4 @@ docker exec -e PGPASSWORD=agrione123 agrione_postgres psql -U agrione -d agrione
 Write-Host "`nIf both tests pass, the database and password are correct." -ForegroundColor Green
 Write-Host "The issue is likely with the client application (DBeaver/VS Code) settings." -ForegroundColor Yellow
 
+

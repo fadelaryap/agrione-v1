@@ -155,60 +155,57 @@ export default function FieldReportsChart({ className }: FieldReportsChartProps)
   }
 
   return (
-    <div className={`bg-white rounded-lg shadow-lg p-6 ${className || ''}`}>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4 sm:mb-0">Statistik Laporan Lapangan</h2>
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700">Dari:</label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700">Sampai:</label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              max={format(new Date(), 'yyyy-MM-dd')}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
+    <div className={`bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow ${className || ''}`}>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
+        <div className="mb-3 sm:mb-0">
+          <h3 className="text-base font-bold text-gray-900">Statistik Laporan</h3>
+          <p className="text-xs text-gray-500 mt-0.5">Status laporan lapangan</p>
+        </div>
+        <div className="flex gap-2">
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            max={format(new Date(), 'yyyy-MM-dd')}
+            className="px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-sm text-blue-600 font-medium">Total Laporan</p>
-          <p className="text-3xl font-bold text-blue-900">{totalStats.total}</p>
+      {/* Compact Stats */}
+      <div className="grid grid-cols-4 gap-2 mb-4">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <p className="text-xs text-blue-600 font-medium mb-1">Total</p>
+          <p className="text-lg font-bold text-blue-900">{totalStats.total}</p>
         </div>
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <p className="text-sm text-green-600 font-medium">Disetujui</p>
-          <p className="text-3xl font-bold text-green-900">{totalStats.approved}</p>
+        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+          <p className="text-xs text-green-600 font-medium mb-1">Disetujui</p>
+          <p className="text-lg font-bold text-green-900">{totalStats.approved}</p>
         </div>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-sm text-red-600 font-medium">Ditolak</p>
-          <p className="text-3xl font-bold text-red-900">{totalStats.rejected}</p>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+          <p className="text-xs text-red-600 font-medium mb-1">Ditolak</p>
+          <p className="text-lg font-bold text-red-900">{totalStats.rejected}</p>
         </div>
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-          <p className="text-sm text-amber-600 font-medium">Menunggu</p>
-          <p className="text-3xl font-bold text-amber-900">{totalStats.pending}</p>
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+          <p className="text-xs text-amber-600 font-medium mb-1">Menunggu</p>
+          <p className="text-lg font-bold text-amber-900">{totalStats.pending}</p>
         </div>
       </div>
 
       {/* Chart */}
       {chartData.length === 0 ? (
-        <div className="w-full h-80 flex items-center justify-center bg-gray-50 rounded-lg">
-          <p className="text-gray-500">Tidak ada data untuk periode yang dipilih</p>
+        <div className="w-full h-64 flex items-center justify-center bg-gray-50 rounded-lg">
+          <p className="text-sm text-gray-500">Tidak ada data untuk periode yang dipilih</p>
         </div>
       ) : (
         <div className="relative">
-          {/* Scroll Controls */}
+          {/* Scroll Controls - Compact */}
           <div className="flex items-center justify-between mb-2">
             <button
               onClick={() => {
@@ -217,13 +214,13 @@ export default function FieldReportsChart({ className }: FieldReportsChartProps)
                   container.scrollBy({ left: -200, behavior: 'smooth' })
                 }
               }}
-              className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              className="p-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
               aria-label="Scroll left"
             >
-              <ChevronLeft className="w-5 h-5 text-gray-600" />
+              <ChevronLeft className="w-4 h-4 text-gray-600" />
             </button>
-            <span className="text-sm text-gray-600">
-              Geser untuk melihat lebih banyak data
+            <span className="text-xs text-gray-500">
+              Geser untuk melihat lebih banyak
             </span>
             <button
               onClick={() => {
@@ -232,10 +229,10 @@ export default function FieldReportsChart({ className }: FieldReportsChartProps)
                   container.scrollBy({ left: 200, behavior: 'smooth' })
                 }
               }}
-              className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              className="p-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
               aria-label="Scroll right"
             >
-              <ChevronRight className="w-5 h-5 text-gray-600" />
+              <ChevronRight className="w-4 h-4 text-gray-600" />
             </button>
           </div>
           
@@ -245,44 +242,62 @@ export default function FieldReportsChart({ className }: FieldReportsChartProps)
             className="w-full overflow-x-auto"
             style={{ scrollbarWidth: 'thin' }}
           >
-            <div className="w-full h-80" style={{ minWidth: `${Math.max(800, chartData.length * 60)}px` }}>
+            <div className="w-full h-64" style={{ minWidth: `${Math.max(600, chartData.length * 50)}px` }}>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
+                <BarChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+                  <defs>
+                    <linearGradient id="colorPending" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.2}/>
+                    </linearGradient>
+                    <linearGradient id="colorRejected" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0.2}/>
+                    </linearGradient>
+                    <linearGradient id="colorApproved" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0.2}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis 
                     dataKey="date" 
                     angle={-45}
                     textAnchor="end"
-                    height={100}
-                    tick={{ fontSize: 12 }}
+                    height={80}
+                    tick={{ fontSize: 10, fill: '#6b7280' }}
+                    axisLine={{ stroke: '#e5e7eb' }}
                   />
-                  <YAxis tick={{ fontSize: 12 }} />
+                  <YAxis 
+                    tick={{ fontSize: 10, fill: '#6b7280' }}
+                    axisLine={{ stroke: '#e5e7eb' }}
+                  />
                   <Tooltip 
                     contentStyle={{ 
                       backgroundColor: 'white', 
                       border: '1px solid #e5e7eb',
-                      borderRadius: '8px'
+                      borderRadius: '8px',
+                      fontSize: '12px'
                     }}
                   />
-                  <Legend />
-                  {/* Stacked bars - urutan dari bawah ke atas */}
+                  <Legend wrapperStyle={{ fontSize: '12px' }} />
                   <Bar 
                     dataKey="Menunggu" 
                     stackId="status"
-                    fill="#f59e0b" 
+                    fill="url(#colorPending)"
                     radius={[0, 0, 0, 0]}
                   />
                   <Bar 
                     dataKey="Ditolak" 
                     stackId="status"
-                    fill="#ef4444" 
+                    fill="url(#colorRejected)"
                     radius={[0, 0, 0, 0]}
                   />
                   <Bar 
                     dataKey="Disetujui" 
                     stackId="status"
-                    fill="#10b981" 
-                    radius={[8, 8, 0, 0]}
+                    fill="url(#colorApproved)"
+                    radius={[6, 6, 0, 0]}
                   />
                 </BarChart>
               </ResponsiveContainer>

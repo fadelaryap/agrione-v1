@@ -44,3 +44,4 @@ echo ""
 echo "✅ Done! Frontend is rebuilding with domain configuration."
 echo "   Check logs: docker compose logs -f frontend"
 
+

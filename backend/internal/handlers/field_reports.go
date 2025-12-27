@@ -35,6 +35,8 @@ type FieldReport struct {
 	ApprovedBy     *string                `json:"approved_by,omitempty"`
 	ApprovedAt     *string                `json:"approved_at,omitempty"`
 	RejectionReason *string               `json:"rejection_reason,omitempty"`
+	HarvestQuantity *float64              `json:"harvest_quantity,omitempty"` // For Panen activity (in ton/kg)
+	HarvestQuality  *string               `json:"harvest_quality,omitempty"`   // For Panen activity
 	CreatedAt      string                 `json:"created_at"`
 	UpdatedAt      string                 `json:"updated_at"`
 	Comments       []FieldReportComment   `json:"comments,omitempty"`
@@ -50,15 +52,17 @@ type FieldReportComment struct {
 }
 
 type CreateFieldReportRequest struct {
-	Title       string                 `json:"title"`
-	Description *string                `json:"description,omitempty"`
-	Condition   string                 `json:"condition"`
-	Coordinates map[string]interface{} `json:"coordinates"`
-	Notes       *string                `json:"notes,omitempty"`
-	SubmittedBy string                 `json:"submitted_by"`
-	WorkOrderID *int                    `json:"work_order_id,omitempty"`
-	Media       []interface{}           `json:"media,omitempty"`
-	Progress    *int                    `json:"progress,omitempty"` // Progress percentage for work order (0-100)
+	Title          string                 `json:"title"`
+	Description    *string                `json:"description,omitempty"`
+	Condition      string                 `json:"condition"`
+	Coordinates    map[string]interface{} `json:"coordinates"`
+	Notes          *string                `json:"notes,omitempty"`
+	SubmittedBy    string                 `json:"submitted_by"`
+	WorkOrderID    *int                    `json:"work_order_id,omitempty"`
+	Media          []interface{}           `json:"media,omitempty"`
+	Progress       *int                    `json:"progress,omitempty"` // Progress percentage for work order (0-100)
+	HarvestQuantity *float64               `json:"harvest_quantity,omitempty"` // For Panen activity (in ton/kg)
+	HarvestQuality  *string                `json:"harvest_quality,omitempty"`   // For Panen activity
 }
 
 type UpdateFieldReportRequest struct {
@@ -102,7 +106,7 @@ func (h *FieldReportsHandler) ListFieldReports(w http.ResponseWriter, r *http.Re
 			SELECT id, title, description, condition, coordinates, notes, 
 			       submitted_by, work_order_id, media, status, approved_by, 
 			       TO_CHAR(approved_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as approved_at, 
-			       rejection_reason,
+			       rejection_reason, harvest_quantity, harvest_quality,
 			       TO_CHAR(created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as created_at, 
 			       TO_CHAR(updated_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as updated_at
 			FROM field_reports
@@ -114,7 +118,7 @@ func (h *FieldReportsHandler) ListFieldReports(w http.ResponseWriter, r *http.Re
 			SELECT id, title, description, condition, coordinates, notes, 
 			       submitted_by, work_order_id, media, status, approved_by, 
 			       TO_CHAR(approved_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as approved_at, 
-			       rejection_reason,
+			       rejection_reason, harvest_quantity, harvest_quality,
 			       TO_CHAR(created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as created_at, 
 			       TO_CHAR(updated_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as updated_at
 			FROM field_reports
@@ -132,13 +136,15 @@ func (h *FieldReportsHandler) ListFieldReports(w http.ResponseWriter, r *http.Re
 	for rows.Next() {
 		var fr FieldReport
 		var coordinatesJSON, mediaJSON []byte
-		var description, notes, createdAt, updatedAt, status, approvedBy, approvedAt, rejectionReason sql.NullString
+		var description, notes, createdAt, updatedAt, status, approvedBy, approvedAt, rejectionReason, harvestQuality sql.NullString
 		var workOrderID sql.NullInt64
+		var harvestQuantity sql.NullFloat64
 
 		err := rows.Scan(
 			&fr.ID, &fr.Title, &description, &fr.Condition, &coordinatesJSON,
 			&notes, &fr.SubmittedBy, &workOrderID, &mediaJSON,
 			&status, &approvedBy, &approvedAt, &rejectionReason,
+			&harvestQuantity, &harvestQuality,
 			&createdAt, &updatedAt,
 		)
 		if err != nil {
@@ -176,6 +182,12 @@ func (h *FieldReportsHandler) ListFieldReports(w http.ResponseWriter, r *http.Re
 		if rejectionReason.Valid {
 			fr.RejectionReason = &rejectionReason.String
 		}
+		if harvestQuantity.Valid {
+			fr.HarvestQuantity = &harvestQuantity.Float64
+		}
+		if harvestQuality.Valid {
+			fr.HarvestQuality = &harvestQuality.String
+		}
 
 		if err := json.Unmarshal(coordinatesJSON, &fr.Coordinates); err != nil {
 			http.Error(w, "Failed to parse coordinates", http.StatusInternalServerError)
@@ -212,14 +224,15 @@ func (h *FieldReportsHandler) GetFieldReport(w http.ResponseWriter, r *http.Requ
 
 	var fr FieldReport
 	var coordinatesJSON, mediaJSON []byte
-	var description, notes, createdAt, updatedAt, status, approvedBy, approvedAt, rejectionReason sql.NullString
+	var description, notes, createdAt, updatedAt, status, approvedBy, approvedAt, rejectionReason, harvestQuality sql.NullString
 	var workOrderID sql.NullInt64
+	var harvestQuantity sql.NullFloat64
 
 	err = h.db.QueryRow(`
 		SELECT id, title, description, condition, coordinates, notes, 
 		       submitted_by, work_order_id, media, status, approved_by, 
 		       TO_CHAR(approved_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as approved_at, 
-		       rejection_reason,
+		       rejection_reason, harvest_quantity, harvest_quality,
 		       TO_CHAR(created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as created_at, 
 		       TO_CHAR(updated_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as updated_at
 		FROM field_reports
@@ -228,6 +241,7 @@ func (h *FieldReportsHandler) GetFieldReport(w http.ResponseWriter, r *http.Requ
 		&fr.ID, &fr.Title, &description, &fr.Condition, &coordinatesJSON,
 		&notes, &fr.SubmittedBy, &workOrderID, &mediaJSON,
 		&status, &approvedBy, &approvedAt, &rejectionReason,
+		&harvestQuantity, &harvestQuality,
 		&createdAt, &updatedAt,
 	)
 
@@ -269,6 +283,12 @@ func (h *FieldReportsHandler) GetFieldReport(w http.ResponseWriter, r *http.Requ
 	}
 	if rejectionReason.Valid {
 		fr.RejectionReason = &rejectionReason.String
+	}
+	if harvestQuantity.Valid {
+		fr.HarvestQuantity = &harvestQuantity.Float64
+	}
+	if harvestQuality.Valid {
+		fr.HarvestQuality = &harvestQuality.String
 	}
 
 	if err := json.Unmarshal(coordinatesJSON, &fr.Coordinates); err != nil {
@@ -390,14 +410,15 @@ func (h *FieldReportsHandler) CreateFieldReport(w http.ResponseWriter, r *http.R
 	// Fetch and return the created report
 	var fr FieldReport
 	var coordinatesJSONBytes, mediaJSONBytes []byte
-	var description, notes, createdAt, updatedAt, status, approvedBy, approvedAt, rejectionReason sql.NullString
+	var description, notes, createdAt, updatedAt, status, approvedBy, approvedAt, rejectionReason, harvestQuality sql.NullString
 	var workOrderID sql.NullInt64
+	var harvestQuantity sql.NullFloat64
 
 	err = h.db.QueryRow(`
 		SELECT id, title, description, condition, coordinates, notes, 
 		       submitted_by, work_order_id, media, status, approved_by, 
 		       TO_CHAR(approved_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as approved_at, 
-		       rejection_reason,
+		       rejection_reason, harvest_quantity, harvest_quality,
 		       TO_CHAR(created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as created_at, 
 		       TO_CHAR(updated_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as updated_at
 		FROM field_reports
@@ -406,6 +427,7 @@ func (h *FieldReportsHandler) CreateFieldReport(w http.ResponseWriter, r *http.R
 		&fr.ID, &fr.Title, &description, &fr.Condition, &coordinatesJSONBytes,
 		&notes, &fr.SubmittedBy, &workOrderID, &mediaJSONBytes,
 		&status, &approvedBy, &approvedAt, &rejectionReason,
+		&harvestQuantity, &harvestQuality,
 		&createdAt, &updatedAt,
 	)
 
@@ -443,6 +465,12 @@ func (h *FieldReportsHandler) CreateFieldReport(w http.ResponseWriter, r *http.R
 	}
 	if rejectionReason.Valid {
 		fr.RejectionReason = &rejectionReason.String
+	}
+	if harvestQuantity.Valid {
+		fr.HarvestQuantity = &harvestQuantity.Float64
+	}
+	if harvestQuality.Valid {
+		fr.HarvestQuality = &harvestQuality.String
 	}
 
 	if err := json.Unmarshal(coordinatesJSONBytes, &fr.Coordinates); err != nil {

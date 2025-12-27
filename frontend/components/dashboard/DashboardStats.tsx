@@ -14,10 +14,8 @@ import {
 import { fieldReportsAPI, workOrdersAPI, attendanceAPI, FieldReport, WorkOrder, AttendanceStats } from '@/lib/api'
 import { formatDateIndonesian } from '@/lib/dateUtils'
 
-// Helper untuk parse date dengan benar (handle 'Z' suffix)
 function parseDateCorrectly(dateString: string): Date {
   if (!dateString) return new Date(0)
-  // Jika berakhir dengan 'Z', remove dan treat sebagai local time
   if (dateString.endsWith('Z')) {
     return new Date(dateString.slice(0, -1))
   }
@@ -41,7 +39,6 @@ export default function DashboardStats({ className }: DashboardStatsProps) {
     todayReports: 0,
     thisWeekReports: 0,
     thisMonthReports: 0,
-    // Attendance stats
     totalEmployees: 0,
     todayAttendance: 0,
     thisWeekAttendance: 0,
@@ -52,7 +49,6 @@ export default function DashboardStats({ className }: DashboardStatsProps) {
 
   useEffect(() => {
     loadStats()
-    // Refresh every 30 seconds
     const interval = setInterval(loadStats, 30000)
     return () => clearInterval(interval)
   }, [])
@@ -61,13 +57,9 @@ export default function DashboardStats({ className }: DashboardStatsProps) {
     try {
       setLoading(true)
       
-      // Load field reports
       const reports = await fieldReportsAPI.listFieldReports({ include_comments: true })
-      
-      // Load work orders
       const workOrders = await workOrdersAPI.listWorkOrders({})
       
-      // Load attendance stats (for Level 1/2 only)
       let attendanceData: AttendanceStats | null = null
       try {
         attendanceData = await attendanceAPI.getAttendanceStats()
@@ -76,7 +68,6 @@ export default function DashboardStats({ className }: DashboardStatsProps) {
         console.error('Failed to load attendance stats:', err)
       }
 
-      // Calculate stats
       const now = new Date()
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
       const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
@@ -112,7 +103,6 @@ export default function DashboardStats({ className }: DashboardStatsProps) {
         todayReports,
         thisWeekReports,
         thisMonthReports,
-        // Attendance stats
         totalEmployees: attendanceData?.total_users || 0,
         todayAttendance: attendanceData?.today_attendance || 0,
         thisWeekAttendance: attendanceData?.this_week_attendance || 0,
@@ -127,11 +117,11 @@ export default function DashboardStats({ className }: DashboardStatsProps) {
 
   if (loading) {
     return (
-      <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 ${className || ''}`}>
+      <div className={`grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 ${className || ''}`}>
         {[...Array(8)].map((_, i) => (
-          <div key={i} className="bg-white rounded-lg shadow-lg p-6 animate-pulse">
-            <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
-            <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+          <div key={i} className="bg-white rounded-lg shadow-sm p-4 animate-pulse border border-gray-100">
+            <div className="h-3 bg-gray-200 rounded w-2/3 mb-3"></div>
+            <div className="h-6 bg-gray-200 rounded w-1/2"></div>
           </div>
         ))}
       </div>
@@ -146,243 +136,196 @@ export default function DashboardStats({ className }: DashboardStatsProps) {
     ? ((stats.completedWorkOrders / stats.totalWorkOrders) * 100).toFixed(1)
     : '0'
 
+  // Compact stat card component
+  const StatCard = ({ 
+    icon: Icon, 
+    label, 
+    value, 
+    subtext, 
+    color = 'indigo',
+    iconBg = 'indigo'
+  }: {
+    icon: any,
+    label: string,
+    value: string | number,
+    subtext?: string,
+    color?: string,
+    iconBg?: string
+  }) => {
+    const colorClasses: Record<string, string> = {
+      indigo: 'text-indigo-600 bg-indigo-50 border-indigo-200',
+      blue: 'text-blue-600 bg-blue-50 border-blue-200',
+      green: 'text-green-600 bg-green-50 border-green-200',
+      red: 'text-red-600 bg-red-50 border-red-200',
+      amber: 'text-amber-600 bg-amber-50 border-amber-200',
+      purple: 'text-purple-600 bg-purple-50 border-purple-200',
+      gray: 'text-gray-600 bg-gray-50 border-gray-200',
+    }
+
+    const iconBgClasses: Record<string, string> = {
+      indigo: 'bg-indigo-500',
+      blue: 'bg-blue-500',
+      green: 'bg-green-500',
+      red: 'bg-red-500',
+      amber: 'bg-amber-500',
+      purple: 'bg-purple-500',
+      gray: 'bg-gray-500',
+    }
+
+    return (
+      <div className={`bg-white rounded-lg shadow-sm p-4 border border-gray-100 hover:shadow-md transition-all ${colorClasses[color]}`}>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs font-medium text-gray-600">{label}</p>
+          <div className={`p-1.5 rounded ${iconBgClasses[iconBg]}`}>
+            <Icon className="w-3.5 h-3.5 text-white" />
+          </div>
+        </div>
+        <p className="text-xl font-bold text-gray-900">{value}</p>
+        {subtext && (
+          <p className="text-xs text-gray-500 mt-1">{subtext}</p>
+        )}
+      </div>
+    )
+  }
+
   return (
-    <div className={`space-y-8 ${className || ''}`}>
-      {/* Field Reports Stats */}
-      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border-2 border-blue-200">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-500 rounded-lg">
-              <FileText className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">Statistik Laporan Lapangan</h2>
-              <p className="text-sm text-gray-600">Ringkasan laporan lapangan</p>
-            </div>
-          </div>
-          <span className="text-xs text-gray-500 bg-white px-3 py-1 rounded-full">Real-time</span>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl shadow-md p-6 border-2 border-blue-200 hover:border-blue-400 transition-colors">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-gray-600">Total Laporan</h3>
-              <FileText className="w-5 h-5 text-blue-500" />
-            </div>
-            <p className="text-3xl font-bold text-gray-900">{stats.totalReports}</p>
-            <p className="text-xs text-gray-500 mt-2">
-              {stats.thisMonthReports} bulan ini
-            </p>
-          </div>
+    <div className={`${className || ''}`}>
+      {/* Compact Stats Grid - 2 rows, 8 columns on desktop */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+        {/* Field Reports */}
+        <StatCard 
+          icon={FileText} 
+          label="Total Laporan" 
+          value={stats.totalReports}
+          subtext={`${stats.thisMonthReports} bulan ini`}
+          color="blue"
+          iconBg="blue"
+        />
+        <StatCard 
+          icon={Clock} 
+          label="Menunggu" 
+          value={stats.pendingReports}
+          subtext="Perlu persetujuan"
+          color="amber"
+          iconBg="amber"
+        />
+        <StatCard 
+          icon={CheckCircle} 
+          label="Disetujui" 
+          value={stats.approvedReports}
+          subtext={`${approvalRate}% rate`}
+          color="green"
+          iconBg="green"
+        />
+        <StatCard 
+          icon={XCircle} 
+          label="Ditolak" 
+          value={stats.rejectedReports}
+          subtext="Perlu revisi"
+          color="red"
+          iconBg="red"
+        />
 
-          <div className="bg-white rounded-xl shadow-md p-6 border-2 border-amber-200 hover:border-amber-400 transition-colors">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-gray-600">Menunggu</h3>
-              <Clock className="w-5 h-5 text-amber-500" />
-            </div>
-            <p className="text-3xl font-bold text-gray-900">{stats.pendingReports}</p>
-            <p className="text-xs text-gray-500 mt-2">
-              Perlu persetujuan
-            </p>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-md p-6 border-2 border-green-200 hover:border-green-400 transition-colors">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-gray-600">Disetujui</h3>
-              <CheckCircle className="w-5 h-5 text-green-500" />
-            </div>
-            <p className="text-3xl font-bold text-gray-900">{stats.approvedReports}</p>
-            <p className="text-xs text-gray-500 mt-2">
-              {approvalRate}% approval rate
-            </p>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-md p-6 border-2 border-red-200 hover:border-red-400 transition-colors">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-gray-600">Ditolak</h3>
-              <XCircle className="w-5 h-5 text-red-500" />
-            </div>
-            <p className="text-3xl font-bold text-gray-900">{stats.rejectedReports}</p>
-            <p className="text-xs text-gray-500 mt-2">
-              Perlu revisi
-            </p>
-          </div>
-        </div>
+        {/* Work Orders */}
+        <StatCard 
+          icon={ClipboardList} 
+          label="Total WO" 
+          value={stats.totalWorkOrders}
+          subtext="Semua work orders"
+          color="indigo"
+          iconBg="indigo"
+        />
+        <StatCard 
+          icon={Clock} 
+          label="Pending WO" 
+          value={stats.pendingWorkOrders}
+          subtext="Belum dimulai"
+          color="amber"
+          iconBg="amber"
+        />
+        <StatCard 
+          icon={TrendingUp} 
+          label="In Progress" 
+          value={stats.inProgressWorkOrders}
+          subtext="Sedang dikerjakan"
+          color="blue"
+          iconBg="blue"
+        />
+        <StatCard 
+          icon={CheckCircle} 
+          label="Selesai" 
+          value={stats.completedWorkOrders}
+          subtext={`${completionRate}% rate`}
+          color="green"
+          iconBg="green"
+        />
       </div>
 
-      {/* Work Orders Stats */}
-      <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-6 border-2 border-indigo-200">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-indigo-500 rounded-lg">
-              <ClipboardList className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">Statistik Work Orders</h2>
-              <p className="text-sm text-gray-600">Ringkasan tugas kerja</p>
-            </div>
-          </div>
-          <span className="text-xs text-gray-500 bg-white px-3 py-1 rounded-full">Real-time</span>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl shadow-md p-6 border-2 border-indigo-200 hover:border-indigo-400 transition-colors">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-gray-600">Total Work Orders</h3>
-              <ClipboardList className="w-5 h-5 text-indigo-500" />
-            </div>
-            <p className="text-3xl font-bold text-gray-900">{stats.totalWorkOrders}</p>
-            <p className="text-xs text-gray-500 mt-2">
-              Semua work orders
-            </p>
-          </div>
+      {/* Second Row - Activity & Attendance */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 mt-3">
+        <StatCard 
+          icon={AlertCircle} 
+          label="Hari Ini" 
+          value={stats.todayReports}
+          subtext="Laporan"
+          color="gray"
+          iconBg="gray"
+        />
+        <StatCard 
+          icon={TrendingUp} 
+          label="7 Hari" 
+          value={stats.thisWeekReports}
+          subtext="Laporan"
+          color="gray"
+          iconBg="gray"
+        />
+        <StatCard 
+          icon={FileText} 
+          label="30 Hari" 
+          value={stats.thisMonthReports}
+          subtext="Laporan"
+          color="gray"
+          iconBg="gray"
+        />
 
-          <div className="bg-white rounded-xl shadow-md p-6 border-2 border-amber-200 hover:border-amber-400 transition-colors">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-gray-600">Pending</h3>
-              <Clock className="w-5 h-5 text-amber-500" />
-            </div>
-            <p className="text-3xl font-bold text-gray-900">{stats.pendingWorkOrders}</p>
-            <p className="text-xs text-gray-500 mt-2">
-              Belum dimulai
-            </p>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-md p-6 border-2 border-blue-200 hover:border-blue-400 transition-colors">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-gray-600">In Progress</h3>
-              <TrendingUp className="w-5 h-5 text-blue-500" />
-            </div>
-            <p className="text-3xl font-bold text-gray-900">{stats.inProgressWorkOrders}</p>
-            <p className="text-xs text-gray-500 mt-2">
-              Sedang dikerjakan
-            </p>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-md p-6 border-2 border-green-200 hover:border-green-400 transition-colors">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-gray-600">Selesai</h3>
-              <CheckCircle className="w-5 h-5 text-green-500" />
-            </div>
-            <p className="text-3xl font-bold text-gray-900">{stats.completedWorkOrders}</p>
-            <p className="text-xs text-gray-500 mt-2">
-              {completionRate}% completion rate
-            </p>
-          </div>
-        </div>
+        {/* Attendance Stats - Only show if available */}
+        {stats.totalEmployees > 0 && (
+          <>
+            <StatCard 
+              icon={Users} 
+              label="Karyawan" 
+              value={stats.totalEmployees}
+              subtext="Level 3 & 4"
+              color="purple"
+              iconBg="purple"
+            />
+            <StatCard 
+              icon={Clock} 
+              label="Absen Hari Ini" 
+              value={stats.todayAttendance}
+              subtext={`${stats.totalEmployees > 0 ? ((stats.todayAttendance / (stats.totalEmployees * 2)) * 100).toFixed(0) : 0}% target`}
+              color="green"
+              iconBg="green"
+            />
+            <StatCard 
+              icon={TrendingUp} 
+              label="Absen Minggu" 
+              value={stats.thisWeekAttendance}
+              subtext={`${stats.totalEmployees > 0 ? ((stats.thisWeekAttendance / (stats.totalEmployees * 14)) * 100).toFixed(0) : 0}% target`}
+              color="purple"
+              iconBg="purple"
+            />
+            <StatCard 
+              icon={CheckCircle} 
+              label="Absen Bulan" 
+              value={stats.thisMonthAttendance}
+              subtext={`Avg ${stats.totalEmployees > 0 ? (stats.thisMonthAttendance / stats.totalEmployees).toFixed(1) : 0}`}
+              color="indigo"
+              iconBg="indigo"
+            />
+          </>
+        )}
       </div>
-
-      {/* Activity Stats */}
-      <div className="bg-gradient-to-br from-gray-50 to-slate-50 rounded-xl p-6 border-2 border-gray-200">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-gray-500 rounded-lg">
-              <TrendingUp className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">Aktivitas Terkini</h2>
-              <p className="text-sm text-gray-600">Laporan berdasarkan periode</p>
-            </div>
-          </div>
-          <span className="text-xs text-gray-500 bg-white px-3 py-1 rounded-full">Real-time</span>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white rounded-xl shadow-md p-6 border-2 border-gray-200 hover:border-gray-400 transition-colors">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-gray-600">Hari Ini</h3>
-              <AlertCircle className="w-5 h-5 text-gray-400" />
-            </div>
-            <p className="text-3xl font-bold text-gray-900">{stats.todayReports}</p>
-            <p className="text-xs text-gray-500 mt-2">
-              Laporan dibuat hari ini
-            </p>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-md p-6 border-2 border-gray-200 hover:border-gray-400 transition-colors">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-gray-600">7 Hari Terakhir</h3>
-              <TrendingUp className="w-5 h-5 text-gray-400" />
-            </div>
-            <p className="text-3xl font-bold text-gray-900">{stats.thisWeekReports}</p>
-            <p className="text-xs text-gray-500 mt-2">
-              Laporan minggu ini
-            </p>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-md p-6 border-2 border-gray-200 hover:border-gray-400 transition-colors">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-gray-600">30 Hari Terakhir</h3>
-              <FileText className="w-5 h-5 text-gray-400" />
-            </div>
-            <p className="text-3xl font-bold text-gray-900">{stats.thisMonthReports}</p>
-            <p className="text-xs text-gray-500 mt-2">
-              Laporan bulan ini
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Attendance Stats - Only show if data available */}
-      {stats.totalEmployees > 0 && (
-        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-6 border-2 border-emerald-200">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-emerald-500 rounded-lg">
-                <Users className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">Statistik Absensi</h2>
-                <p className="text-sm text-gray-600">Ringkasan absensi karyawan Level 3 & 4</p>
-              </div>
-            </div>
-            <span className="text-xs text-gray-500 bg-white px-3 py-1 rounded-full">Real-time</span>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white rounded-xl shadow-md p-6 border-2 border-emerald-200 hover:border-emerald-400 transition-colors">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-600">Total Karyawan</h3>
-                <Users className="w-5 h-5 text-emerald-500" />
-              </div>
-              <p className="text-3xl font-bold text-gray-900">{stats.totalEmployees}</p>
-              <p className="text-xs text-gray-500 mt-2">
-                Level 3 & 4
-              </p>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-md p-6 border-2 border-green-200 hover:border-green-400 transition-colors">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-600">Absen Hari Ini</h3>
-                <Clock className="w-5 h-5 text-green-500" />
-              </div>
-              <p className="text-3xl font-bold text-gray-900">{stats.todayAttendance}</p>
-              <p className="text-xs text-gray-500 mt-2">
-                {stats.totalEmployees > 0 ? ((stats.todayAttendance / (stats.totalEmployees * 2)) * 100).toFixed(0) : 0}% dari target
-              </p>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-md p-6 border-2 border-purple-200 hover:border-purple-400 transition-colors">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-600">Absen Minggu Ini</h3>
-                <TrendingUp className="w-5 h-5 text-purple-500" />
-              </div>
-              <p className="text-3xl font-bold text-gray-900">{stats.thisWeekAttendance}</p>
-              <p className="text-xs text-gray-500 mt-2">
-                {stats.totalEmployees > 0 ? ((stats.thisWeekAttendance / (stats.totalEmployees * 14)) * 100).toFixed(0) : 0}% dari target
-              </p>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-md p-6 border-2 border-indigo-200 hover:border-indigo-400 transition-colors">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-600">Absen Bulan Ini</h3>
-                <CheckCircle className="w-5 h-5 text-indigo-500" />
-              </div>
-              <p className="text-3xl font-bold text-gray-900">{stats.thisMonthAttendance}</p>
-              <p className="text-xs text-gray-500 mt-2">
-                Rata-rata {stats.totalEmployees > 0 ? (stats.thisMonthAttendance / stats.totalEmployees).toFixed(1) : 0} per karyawan
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
-

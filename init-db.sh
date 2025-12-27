@@ -10,3 +10,4 @@ EOSQL
 
 echo "Default database 'agrione' created (if it didn't exist)"
 
+

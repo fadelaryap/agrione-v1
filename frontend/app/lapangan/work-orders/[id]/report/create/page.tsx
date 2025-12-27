@@ -24,6 +24,8 @@ export default function CreateReportPage() {
     notes: '',
     coordinates: { latitude: 0, longitude: 0 },
     progress: 0, // Progress percentage for work order (0-100)
+    harvestQuantity: undefined as number | undefined, // For Panen activity
+    harvestQuality: '' as string | undefined, // For Panen activity
   })
   
   const [mediaFiles, setMediaFiles] = useState<File[]>([])
@@ -226,6 +228,8 @@ export default function CreateReportPage() {
         work_order_id: workOrderId,
         media: mediaUrls,
         progress: formData.progress, // Include progress in report
+        harvest_quantity: formData.harvestQuantity,
+        harvest_quality: formData.harvestQuality || undefined,
       }
 
       await fieldReportsAPI.createFieldReport(reportData)
@@ -490,6 +494,50 @@ export default function CreateReportPage() {
               </p>
             </div>
           </div>
+
+          {/* Harvest Quantity & Quality - Only for Panen activity */}
+          {workOrder && (workOrder.activity === 'Panen' || workOrder.activity === 'Forecasting Panen') && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-sm font-semibold text-amber-800">Data Hasil Panen</span>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-amber-800 mb-1">
+                    Hasil Panen (Ton/Kg)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.harvestQuantity || ''}
+                    onChange={(e) => setFormData(prev => ({ 
+                      ...prev, 
+                      harvestQuantity: e.target.value ? parseFloat(e.target.value) : undefined 
+                    }))}
+                    className="w-full px-3 py-2 border border-amber-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white"
+                    placeholder="0.00"
+                  />
+                  <p className="text-xs text-amber-600 mt-1">Masukkan hasil panen dalam ton atau kg</p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-amber-800 mb-1">
+                    Kualitas
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.harvestQuality || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, harvestQuality: e.target.value }))}
+                    className="w-full px-3 py-2 border border-amber-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white"
+                    placeholder="Contoh: Grade A, Grade B"
+                  />
+                  <p className="text-xs text-amber-600 mt-1">Kualitas hasil panen</p>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Catatan (Opsional)</label>

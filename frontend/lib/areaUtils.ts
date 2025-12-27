@@ -58,3 +58,4 @@ export function debugAreaCalculation(drawType: string, coordinates: any) {
   })
 }
 
+

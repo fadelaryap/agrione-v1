@@ -7,7 +7,9 @@ import DashboardLayout from '@/components/layout/DashboardLayout'
 import MapWrapper from '@/components/map/MapWrapper'
 import FieldStatisticsChart from '@/components/charts/FieldStatisticsChart'
 import FieldReportsChart from '@/components/charts/FieldReportsChart'
+import HectaresChart from '@/components/charts/HectaresChart'
 import DashboardStats from '@/components/dashboard/DashboardStats'
+import HarvestStats from '@/components/dashboard/HarvestStats'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -65,17 +67,17 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 pb-20 lg:pb-8">
+      <div className="min-h-screen bg-gray-50 pb-20 lg:pb-8">
         <div className="p-4 sm:p-6 lg:p-8">
-          {/* Header */}
-          <div className="mb-8">
+          {/* Header - Compact */}
+          <div className="mb-6">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-                <p className="text-gray-600 mt-2">Selamat datang kembali, <span className="font-semibold text-indigo-600">{user.first_name}!</span></p>
+                <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+                <p className="text-sm text-gray-500 mt-1">Selamat datang, <span className="font-medium text-gray-700">{user.first_name}</span></p>
               </div>
-              <div className="hidden sm:flex items-center gap-4">
-                <div className="bg-white rounded-lg shadow-sm px-4 py-2 border border-gray-200">
+              <div className="hidden sm:flex items-center gap-3">
+                <div className="bg-white rounded-lg px-3 py-1.5 border border-gray-200 shadow-sm">
                   <p className="text-xs text-gray-500">Role</p>
                   <p className="text-sm font-semibold text-gray-900">{user.role}</p>
                 </div>
@@ -83,31 +85,44 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Dashboard Stats - Real-time */}
-          <div className="mb-8">
+          {/* Compact Stats Grid - 2 rows, multiple columns */}
+          <div className="mb-6">
             <DashboardStats />
           </div>
 
-          {/* Charts Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            {/* Field Statistics Chart */}
+          {/* Harvest Stats - Only show if there are harvest reports */}
+          <div className="mb-6">
+            <HarvestStats />
+          </div>
+
+          {/* Charts Grid - Modern Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+            {/* Hectares Chart - Full width on mobile, 2 columns on desktop */}
+            <div className="lg:col-span-2">
+              <HectaresChart fields={fields} />
+            </div>
+
+            {/* Field Statistics Chart - Compact */}
             <div className="lg:col-span-1">
               <FieldStatisticsChart fields={fields} />
             </div>
+          </div>
 
+          {/* Second Row Charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
             {/* Field Reports Chart */}
-            <div className="lg:col-span-1">
+            <div className="lg:col-span-2">
               <FieldReportsChart />
             </div>
           </div>
 
-          {/* Map View - Read Only */}
-          <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Overview Lahan</h2>
-              <span className="text-sm text-gray-500">{fields.length} lahan terdaftar</span>
+          {/* Map View - Compact */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-semibold text-gray-900">Overview Lahan</h2>
+              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{fields.length} lahan</span>
             </div>
-            <div className="rounded-lg overflow-hidden border border-gray-200">
+            <div className="rounded-lg overflow-hidden border border-gray-200 h-96">
               <MapWrapper isEditMode={false} />
             </div>
           </div>

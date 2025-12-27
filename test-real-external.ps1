@@ -32,3 +32,4 @@ Write-Host "  - Password authentication method" -ForegroundColor White
 Write-Host "  - pg_hba.conf configuration" -ForegroundColor White
 Write-Host "  - User password hash" -ForegroundColor White
 
+
