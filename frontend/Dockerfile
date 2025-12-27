@@ -12,6 +12,9 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Ensure public directory exists (create if it doesn't)
+RUN mkdir -p ./public
+
 # Build arguments for environment variables (build-time only)
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
@@ -31,6 +34,7 @@ ENV NODE_ENV=production
 # - public/ contains public assets (needs to be at public/ relative to server.js)
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
+# Copy public folder (will be empty if no files, but directory exists)
 COPY --from=builder /app/public ./public
 
 # Expose port
