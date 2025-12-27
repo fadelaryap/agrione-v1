@@ -51,6 +51,13 @@ export default function CreateReportPage() {
     }
   }, [workOrder])
 
+  // Auto-get GPS location when form is ready
+  useEffect(() => {
+    if (user && workOrder && !gpsRequested && formData.coordinates.latitude === 0 && formData.coordinates.longitude === 0) {
+      getCurrentLocation()
+    }
+  }, [user, workOrder])
+
 
   const checkAuth = async () => {
     try {
@@ -418,17 +425,10 @@ export default function CreateReportPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">Status Lokasi</label>
             {!gpsRequested && (
               <div className="space-y-2">
-                <button
-                  type="button"
-                  onClick={getCurrentLocation}
-                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium flex items-center justify-center gap-2"
-                >
-                  <MapPin className="w-4 h-4" />
-                  Dapatkan Lokasi GPS
-                </button>
-                <p className="text-xs text-gray-500">
-                  Klik tombol di atas untuk mendapatkan lokasi GPS. Pastikan browser mengizinkan akses lokasi.
-                </p>
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-50 border border-blue-200">
+                  <MapPin className="w-4 h-4 text-blue-600 animate-pulse" />
+                  <p className="text-sm text-blue-700">Mendapatkan lokasi GPS...</p>
+                </div>
               </div>
             )}
             {gpsPermission === 'denied' && gpsRequested && (

@@ -357,6 +357,8 @@ export interface Attendance {
   back_camera_image?: string
   has_issue: boolean
   description?: string
+  latitude?: number
+  longitude?: number
   check_in_time: string
   check_out_time?: string
   status: string
@@ -520,6 +522,8 @@ export const attendanceAPI = {
     back_camera_image?: string
     has_issue: boolean
     description?: string
+    latitude?: number
+    longitude?: number
     notes?: string
   }): Promise<Attendance> => {
     const response = await api.post<Attendance>('/attendance', data)

@@ -317,6 +317,8 @@ func RunMigrations(db *sql.DB) error {
 		back_camera_image TEXT,
 		has_issue BOOLEAN DEFAULT false,
 		description TEXT,
+		latitude DOUBLE PRECISION,
+		longitude DOUBLE PRECISION,
 		check_in_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 		check_out_time TIMESTAMP,
 		status VARCHAR(50) DEFAULT 'hadir' NOT NULL,
@@ -329,6 +331,17 @@ func RunMigrations(db *sql.DB) error {
 	CREATE INDEX IF NOT EXISTS idx_attendance_user_id ON attendance(user_id);
 	CREATE INDEX IF NOT EXISTS idx_attendance_date ON attendance(date);
 	CREATE INDEX IF NOT EXISTS idx_attendance_user_date ON attendance(user_id, date);
+
+	-- Add GPS columns to existing attendance table if they don't exist
+	DO $$ 
+	BEGIN
+		IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='attendance' AND column_name='latitude') THEN
+			ALTER TABLE attendance ADD COLUMN latitude DOUBLE PRECISION;
+		END IF;
+		IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='attendance' AND column_name='longitude') THEN
+			ALTER TABLE attendance ADD COLUMN longitude DOUBLE PRECISION;
+		END IF;
+	END $$;
 	`
 
 	_, err = db.Exec(createFieldReportsQuery)

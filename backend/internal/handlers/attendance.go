@@ -30,6 +30,8 @@ type Attendance struct {
 	BackCameraImage *string  `json:"back_camera_image,omitempty"`
 	HasIssue       bool      `json:"has_issue"`
 	Description    *string   `json:"description,omitempty"`
+	Latitude       *float64  `json:"latitude,omitempty"`
+	Longitude      *float64  `json:"longitude,omitempty"`
 	CheckInTime    string    `json:"check_in_time"`
 	CheckOutTime   *string   `json:"check_out_time,omitempty"`
 	Status         string    `json:"status"`
@@ -39,12 +41,14 @@ type Attendance struct {
 }
 
 type CreateAttendanceRequest struct {
-	Session         string  `json:"session"` // "pagi" or "sore"
-	SelfieImage     string  `json:"selfie_image"` // base64 image
-	BackCameraImage *string `json:"back_camera_image,omitempty"` // base64 image
-	HasIssue        bool    `json:"has_issue"`
-	Description     *string `json:"description,omitempty"`
-	Notes           *string `json:"notes,omitempty"`
+	Session         string   `json:"session"` // "pagi" or "sore"
+	SelfieImage     string   `json:"selfie_image"` // base64 image
+	BackCameraImage *string  `json:"back_camera_image,omitempty"` // base64 image
+	HasIssue        bool     `json:"has_issue"`
+	Description     *string  `json:"description,omitempty"`
+	Latitude        *float64 `json:"latitude,omitempty"`
+	Longitude       *float64 `json:"longitude,omitempty"`
+	Notes           *string  `json:"notes,omitempty"`
 }
 
 type UpdateAttendanceRequest struct {
@@ -92,10 +96,11 @@ func (h *AttendanceHandler) CreateAttendance(w http.ResponseWriter, r *http.Requ
 		_, err = h.db.Exec(`
 			UPDATE attendance 
 			SET selfie_image = $1, back_camera_image = $2, has_issue = $3, 
-			    description = $4, check_in_time = CURRENT_TIMESTAMP, 
-			    notes = $5, updated_at = CURRENT_TIMESTAMP
-			WHERE id = $6
-		`, req.SelfieImage, req.BackCameraImage, req.HasIssue, req.Description, req.Notes, existingID)
+			    description = $4, latitude = $5, longitude = $6,
+			    check_in_time = CURRENT_TIMESTAMP, 
+			    notes = $7, updated_at = CURRENT_TIMESTAMP
+			WHERE id = $8
+		`, req.SelfieImage, req.BackCameraImage, req.HasIssue, req.Description, req.Latitude, req.Longitude, req.Notes, existingID)
 		if err != nil {
 			http.Error(w, "Failed to update attendance", http.StatusInternalServerError)
 			return
@@ -108,14 +113,15 @@ func (h *AttendanceHandler) CreateAttendance(w http.ResponseWriter, r *http.Requ
 
 		var backCameraImage sql.NullString
 		var description sql.NullString
+		var latitude, longitude sql.NullFloat64
 		err = h.db.QueryRow(`
 			SELECT id, user_id, date, session, selfie_image, back_camera_image, 
-			       has_issue, description, check_in_time, 
+			       has_issue, description, latitude, longitude, check_in_time, 
 			       check_out_time, status, notes, created_at, updated_at
 			FROM attendance WHERE id = $1
 		`, existingID).Scan(
 			&att.ID, &att.UserID, &att.Date, &att.Session, &att.SelfieImage,
-			&backCameraImage, &att.HasIssue, &description,
+			&backCameraImage, &att.HasIssue, &description, &latitude, &longitude,
 			&checkInTime, &checkOutTime, &att.Status, &notes, &createdAt, &updatedAt,
 		)
 		if err != nil {
@@ -147,10 +153,10 @@ func (h *AttendanceHandler) CreateAttendance(w http.ResponseWriter, r *http.Requ
 	// Create new attendance
 	var attendanceID int
 	err = h.db.QueryRow(`
-		INSERT INTO attendance (user_id, date, session, selfie_image, back_camera_image, has_issue, description, notes)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		INSERT INTO attendance (user_id, date, session, selfie_image, back_camera_image, has_issue, description, latitude, longitude, notes)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		RETURNING id
-	`, userID, today, req.Session, req.SelfieImage, req.BackCameraImage, req.HasIssue, req.Description, req.Notes).Scan(&attendanceID)
+	`, userID, today, req.Session, req.SelfieImage, req.BackCameraImage, req.HasIssue, req.Description, req.Latitude, req.Longitude, req.Notes).Scan(&attendanceID)
 
 	if err != nil {
 		http.Error(w, "Failed to create attendance", http.StatusInternalServerError)
@@ -161,10 +167,11 @@ func (h *AttendanceHandler) CreateAttendance(w http.ResponseWriter, r *http.Requ
 	var att Attendance
 	var checkInTime, createdAt, updatedAt sql.NullString
 	var checkOutTime, notes, backCameraImage, description sql.NullString
+	var latitude, longitude sql.NullFloat64
 
 	err = h.db.QueryRow(`
 		SELECT id, user_id, date, session, selfie_image, back_camera_image, 
-		       has_issue, description, 
+		       has_issue, description, latitude, longitude,
 		       TO_CHAR(check_in_time AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as check_in_time,
 		       TO_CHAR(check_out_time AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as check_out_time,
 		       status, notes, 
@@ -173,7 +180,7 @@ func (h *AttendanceHandler) CreateAttendance(w http.ResponseWriter, r *http.Requ
 		FROM attendance WHERE id = $1
 	`, attendanceID).Scan(
 		&att.ID, &att.UserID, &att.Date, &att.Session, &att.SelfieImage,
-		&backCameraImage, &att.HasIssue, &description,
+		&backCameraImage, &att.HasIssue, &description, &latitude, &longitude,
 		&checkInTime, &checkOutTime, &att.Status, &notes, &createdAt, &updatedAt,
 	)
 	if err != nil {
@@ -195,6 +202,12 @@ func (h *AttendanceHandler) CreateAttendance(w http.ResponseWriter, r *http.Requ
 	}
 	if notes.Valid {
 		att.Notes = &notes.String
+	}
+	if latitude.Valid {
+		att.Latitude = &latitude.Float64
+	}
+	if longitude.Valid {
+		att.Longitude = &longitude.Float64
 	}
 	if createdAt.Valid {
 		att.CreatedAt = createdAt.String
@@ -224,7 +237,7 @@ func (h *AttendanceHandler) GetTodayAttendance(w http.ResponseWriter, r *http.Re
 
 	rows, err := h.db.Query(`
 		SELECT id, user_id, date, session, selfie_image, back_camera_image, 
-		       has_issue, description, 
+		       has_issue, description, latitude, longitude,
 		       TO_CHAR(check_in_time AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as check_in_time,
 		       TO_CHAR(check_out_time AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as check_out_time,
 		       status, notes, 
@@ -246,10 +259,11 @@ func (h *AttendanceHandler) GetTodayAttendance(w http.ResponseWriter, r *http.Re
 		var att Attendance
 		var checkInTime, createdAt, updatedAt sql.NullString
 		var checkOutTime, notes, backCameraImage, description sql.NullString
+		var latitude, longitude sql.NullFloat64
 
 		err := rows.Scan(
 			&att.ID, &att.UserID, &att.Date, &att.Session, &att.SelfieImage,
-			&backCameraImage, &att.HasIssue, &description,
+			&backCameraImage, &att.HasIssue, &description, &latitude, &longitude,
 			&checkInTime, &checkOutTime, &att.Status, &notes, &createdAt, &updatedAt,
 		)
 		if err != nil {
@@ -270,6 +284,12 @@ func (h *AttendanceHandler) GetTodayAttendance(w http.ResponseWriter, r *http.Re
 		}
 		if notes.Valid {
 			att.Notes = &notes.String
+		}
+		if latitude.Valid {
+			att.Latitude = &latitude.Float64
+		}
+		if longitude.Valid {
+			att.Longitude = &longitude.Float64
 		}
 		if createdAt.Valid {
 			att.CreatedAt = createdAt.String

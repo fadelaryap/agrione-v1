@@ -438,24 +438,22 @@ export default function WorkOrdersPage() {
             </div>
             
             <div className="sm:col-span-1">
-              <label className="block text-xs font-medium text-gray-700 mb-1">Tanggal Mulai</label>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Mulai</label>
               <input
                 type="date"
                 value={dateRangeFilter.start}
                 onChange={(e) => setDateRangeFilter({ ...dateRangeFilter, start: e.target.value })}
-                className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-green-500 min-w-0 max-w-full"
-                style={{ maxWidth: '100%' }}
+                className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-green-500 min-w-0"
               />
             </div>
             
             <div className="sm:col-span-1">
-              <label className="block text-xs font-medium text-gray-700 mb-1">Tanggal Selesai</label>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Selesai</label>
               <input
                 type="date"
                 value={dateRangeFilter.end}
                 onChange={(e) => setDateRangeFilter({ ...dateRangeFilter, end: e.target.value })}
-                className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-green-500 min-w-0 max-w-full"
-                style={{ maxWidth: '100%' }}
+                className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-green-500 min-w-0"
               />
             </div>
             

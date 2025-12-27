@@ -25,6 +25,7 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
   const [hasIssue, setHasIssue] = useState<boolean>(false)
   const [description, setDescription] = useState<string>('')
   const [selectedImage, setSelectedImage] = useState<{ url: string; alt: string } | null>(null)
+  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null)
 
   useEffect(() => {
     loadTodayAttendance()
@@ -70,6 +71,28 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
     setBackCameraFile(null)
     setHasIssue(false)
     setDescription('')
+    setLocation(null)
+    
+    // Auto-get GPS location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLocation({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          })
+        },
+        (error) => {
+          console.error('GPS error:', error)
+          // Don't show error, just silently fail
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      )
+    }
   }
 
   const closeForm = () => {
@@ -108,6 +131,8 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
         back_camera_image: backCameraURL,
         has_issue: hasIssue,
         description: description.trim() || undefined,
+        latitude: location?.latitude,
+        longitude: location?.longitude,
       })
       
       closeForm()
@@ -529,7 +554,7 @@ export default function AttendanceCard({ onUpdate }: AttendanceCardProps) {
       {/* Image Popup Modal */}
       {selectedImage && (
         <div 
-          className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/90 z-[100] flex items-center justify-center p-4"
           onClick={() => setSelectedImage(null)}
         >
           <div className="relative max-w-7xl max-h-full">
