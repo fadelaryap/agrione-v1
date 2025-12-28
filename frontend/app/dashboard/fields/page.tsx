@@ -2,16 +2,19 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { authAPI, User } from '@/lib/api'
+import { authAPI, User, fieldsAPI } from '@/lib/api'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import MapWrapper from '@/components/map/MapWrapper'
-import { Eye, Edit3 } from 'lucide-react'
+import { Eye, Edit3, Upload, X } from 'lucide-react'
+import { toast } from 'sonner'
+import KMZImportDialog from '@/components/fields/KMZImportDialog'
 
 export default function DashboardFieldsPage() {
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [isEditMode, setIsEditMode] = useState(false)
+  const [isKMZDialogOpen, setIsKMZDialogOpen] = useState(false)
 
   useEffect(() => {
     checkAuth()
@@ -62,7 +65,7 @@ export default function DashboardFieldsPage() {
             </div>
             
             {/* View/Edit Mode Toggle - Tab Style */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-4">
               <div className="flex bg-gray-100 rounded-lg p-1">
                 <button
                   onClick={() => setIsEditMode(false)}
@@ -87,6 +90,15 @@ export default function DashboardFieldsPage() {
                   <span className="text-sm font-medium">Edit Mode</span>
                 </button>
               </div>
+              {isEditMode && (
+                <button
+                  onClick={() => setIsKMZDialogOpen(true)}
+                  className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+                >
+                  <Upload className="w-4 h-4" />
+                  <span className="text-sm font-medium">Import KMZ</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -94,6 +106,18 @@ export default function DashboardFieldsPage() {
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           <MapWrapper isEditMode={isEditMode} />
         </div>
+
+        {/* KMZ Import Dialog */}
+        {isKMZDialogOpen && (
+          <KMZImportDialog
+            onClose={() => setIsKMZDialogOpen(false)}
+            onSuccess={() => {
+              setIsKMZDialogOpen(false)
+              // Reload map to show new fields
+              window.location.reload()
+            }}
+          />
+        )}
       </div>
     </DashboardLayout>
   )

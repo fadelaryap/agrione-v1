@@ -239,6 +239,27 @@ export const fieldsAPI = {
     const response = await api.put<Field>(`/fields/${fieldId}/assign`, { user_id: userId })
     return response.data
   },
+  importKMZ: async (file: File): Promise<{ polygons: Array<{ name: string; coordinates: number[][] }>; count: number }> => {
+    const formData = new FormData()
+    formData.append('kmz_file', file)
+    const response = await api.post<{ polygons: Array<{ name: string; coordinates: number[][] }>; count: number }>('/fields/import-kmz', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+    return response.data
+  },
+  batchCreateFields: async (fields: Array<{
+    name: string
+    description?: string
+    coordinates: number[][]
+    plant_type_id?: number
+    soil_type_id?: number
+    user_id?: number
+  }>): Promise<{ created: Field[]; count: number; errors?: string[] }> => {
+    const response = await api.post<{ created: Field[]; count: number; errors?: string[] }>('/fields/batch-create', { fields })
+    return response.data
+  },
 }
 
 export const plotsAPI = {

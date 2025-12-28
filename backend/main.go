@@ -146,6 +146,8 @@ func main() {
 	protectedPost.Use(middleware.AuthMiddleware(cfg))
 	protectedPost.HandleFunc("/logout", authHandler.Logout).Methods("POST")
 	protectedPost.HandleFunc("/fields", fieldsHandler.CreateField).Methods("POST")
+	protectedPost.HandleFunc("/fields/import-kmz", fieldsHandler.ImportKMZ).Methods("POST")
+	protectedPost.HandleFunc("/fields/batch-create", fieldsHandler.BatchCreateFields).Methods("POST")
 	protectedPost.HandleFunc("/plots", plotsHandler.CreatePlot).Methods("POST")
 	protectedPost.HandleFunc("/plant-types", plantTypesHandler.CreatePlantType).Methods("POST")
 	protectedPost.HandleFunc("/work-orders", workOrdersHandler.CreateWorkOrder).Methods("POST")
