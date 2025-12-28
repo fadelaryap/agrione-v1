@@ -332,11 +332,16 @@ func (h *InventoryHandler) RemoveStock(w http.ResponseWriter, r *http.Request) {
 		reference.String = *req.Reference
 		reference.Valid = true
 	}
+	var stockRequestID sql.NullInt64
+	if req.StockRequestID != nil {
+		stockRequestID.Int64 = int64(*req.StockRequestID)
+		stockRequestID.Valid = true
+	}
 
 	_, err = h.db.Exec(`
-		INSERT INTO stock_movements (movement_id, item_id, lot_id, warehouse_id, type, quantity, unit_cost, total_cost, reason, reference, performed_by, notes)
-		VALUES ($1, $2, $3, $4, 'out', $5, $6, $7, $8, $9, $10, $11)
-	`, movementID, itemID, req.LotID, warehouseID, req.Quantity, unitCost, totalCost, req.Reason, reference, req.PerformedBy, req.Notes)
+		INSERT INTO stock_movements (movement_id, item_id, lot_id, warehouse_id, type, quantity, unit_cost, total_cost, reason, reference, performed_by, notes, stock_request_id)
+		VALUES ($1, $2, $3, $4, 'out', $5, $6, $7, $8, $9, $10, $11, $12)
+	`, movementID, itemID, req.LotID, warehouseID, req.Quantity, unitCost, totalCost, req.Reason, reference, req.PerformedBy, req.Notes, stockRequestID)
 
 	if err != nil {
 		http.Error(w, "Failed to create stock movement", http.StatusInternalServerError)

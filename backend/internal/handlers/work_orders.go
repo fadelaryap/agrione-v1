@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
+	"math/rand"
 	"net/http"
 	"strconv"
 	"strings"
@@ -23,66 +25,75 @@ func NewWorkOrdersHandler(db *sql.DB, hub *websocket.Hub) *WorkOrdersHandler {
 	return &WorkOrdersHandler{db: db, hub: hub}
 }
 
+type MaterialRequirement struct {
+	ItemID      int     `json:"item_id"`
+	Quantity    float64 `json:"quantity"`
+	WarehouseID *int    `json:"warehouse_id,omitempty"`
+}
+
 type WorkOrder struct {
-	ID                  int       `json:"id"`
-	Title               string    `json:"title"`
-	Category            string    `json:"category"`
-	Activity            string    `json:"activity"`
-	Status              string    `json:"status"`
-	Priority            string    `json:"priority"`
-	Assignee            string    `json:"assignee"`
-	FieldID             *int      `json:"field_id,omitempty"`
-	FieldName           *string   `json:"field_name,omitempty"`
-	CultivationSeasonID *int      `json:"cultivation_season_id,omitempty"`
-	StartDate           string    `json:"start_date"`
-	EndDate             string    `json:"end_date"`
-	Progress            int       `json:"progress"`
-	Description         *string   `json:"description,omitempty"`
-	Requirements        []string  `json:"requirements,omitempty"`
-	ActualHours         *int      `json:"actual_hours,omitempty"`
-	Notes               *string   `json:"notes,omitempty"`
-	CreatedBy           string    `json:"created_by"`
-	LastUpdatedBy       *string   `json:"last_updated_by,omitempty"`
-	CompletedDate       *string   `json:"completed_date,omitempty"`
-	CreatedAt           string    `json:"created_at"`
-	UpdatedAt           string    `json:"updated_at"`
+	ID                  int                   `json:"id"`
+	Title               string                `json:"title"`
+	Category            string                `json:"category"`
+	Activity            string                `json:"activity"`
+	Status              string                `json:"status"`
+	Priority            string                `json:"priority"`
+	Assignee            string                `json:"assignee"`
+	FieldID             *int                  `json:"field_id,omitempty"`
+	FieldName           *string               `json:"field_name,omitempty"`
+	CultivationSeasonID *int                  `json:"cultivation_season_id,omitempty"`
+	StartDate           string                `json:"start_date"`
+	EndDate             string                `json:"end_date"`
+	Progress            int                   `json:"progress"`
+	Description         *string               `json:"description,omitempty"`
+	Requirements        []string              `json:"requirements,omitempty"`
+	MaterialRequirements []MaterialRequirement `json:"material_requirements,omitempty"`
+	ActualHours         *int                  `json:"actual_hours,omitempty"`
+	Notes               *string               `json:"notes,omitempty"`
+	CreatedBy           string                `json:"created_by"`
+	LastUpdatedBy       *string               `json:"last_updated_by,omitempty"`
+	CompletedDate       *string               `json:"completed_date,omitempty"`
+	CreatedAt           string                `json:"created_at"`
+	UpdatedAt           string                `json:"updated_at"`
 }
 
 type CreateWorkOrderRequest struct {
-	Title               string    `json:"title"`
-	Category            string    `json:"category"`
-	Activity            string    `json:"activity"`
-	Status              *string   `json:"status,omitempty"`
-	Priority            *string   `json:"priority,omitempty"`
-	Assignee            string    `json:"assignee"`
-	FieldID             *int      `json:"field_id,omitempty"`
-	CultivationSeasonID *int      `json:"cultivation_season_id,omitempty"`
-	StartDate           string    `json:"start_date"`
-	EndDate             string    `json:"end_date"`
-	Progress            *int      `json:"progress,omitempty"`
-	Description         *string   `json:"description,omitempty"`
-	Requirements        []string  `json:"requirements,omitempty"`
-	ActualHours         *int      `json:"actual_hours,omitempty"`
-	Notes               *string   `json:"notes,omitempty"`
-	CreatedBy           string    `json:"created_by"`
+	Title               string                `json:"title"`
+	Category            string                `json:"category"`
+	Activity            string                `json:"activity"`
+	Status              *string               `json:"status,omitempty"`
+	Priority            *string               `json:"priority,omitempty"`
+	Assignee            string                `json:"assignee"`
+	FieldID             *int                  `json:"field_id,omitempty"`
+	CultivationSeasonID *int                  `json:"cultivation_season_id,omitempty"`
+	StartDate           string                `json:"start_date"`
+	EndDate             string                `json:"end_date"`
+	Progress            *int                  `json:"progress,omitempty"`
+	Description         *string               `json:"description,omitempty"`
+	Requirements        []string              `json:"requirements,omitempty"`
+	MaterialRequirements []MaterialRequirement `json:"material_requirements,omitempty"`
+	ActualHours         *int                  `json:"actual_hours,omitempty"`
+	Notes               *string               `json:"notes,omitempty"`
+	CreatedBy           string                `json:"created_by"`
 }
 
 type UpdateWorkOrderRequest struct {
-	Title         *string   `json:"title,omitempty"`
-	Category      *string   `json:"category,omitempty"`
-	Activity      *string   `json:"activity,omitempty"`
-	Status        *string   `json:"status,omitempty"`
-	Priority      *string   `json:"priority,omitempty"`
-	Assignee      *string   `json:"assignee,omitempty"`
-	FieldID       *int      `json:"field_id,omitempty"`
-	StartDate     *string   `json:"start_date,omitempty"`
-	EndDate       *string   `json:"end_date,omitempty"`
-	Progress      *int      `json:"progress,omitempty"`
-	Description   *string   `json:"description,omitempty"`
-	Requirements  []string  `json:"requirements,omitempty"`
-	ActualHours   *int      `json:"actual_hours,omitempty"`
-	Notes         *string   `json:"notes,omitempty"`
-	LastUpdatedBy *string   `json:"last_updated_by,omitempty"`
+	Title                *string                `json:"title,omitempty"`
+	Category             *string                `json:"category,omitempty"`
+	Activity             *string                `json:"activity,omitempty"`
+	Status               *string                `json:"status,omitempty"`
+	Priority             *string                `json:"priority,omitempty"`
+	Assignee             *string                `json:"assignee,omitempty"`
+	FieldID              *int                   `json:"field_id,omitempty"`
+	StartDate            *string                `json:"start_date,omitempty"`
+	EndDate              *string                `json:"end_date,omitempty"`
+	Progress             *int                   `json:"progress,omitempty"`
+	Description          *string                `json:"description,omitempty"`
+	Requirements         []string               `json:"requirements,omitempty"`
+	MaterialRequirements *[]MaterialRequirement `json:"material_requirements,omitempty"`
+	ActualHours          *int                   `json:"actual_hours,omitempty"`
+	Notes                *string                `json:"notes,omitempty"`
+	LastUpdatedBy        *string                `json:"last_updated_by,omitempty"`
 }
 
 func (h *WorkOrdersHandler) ListWorkOrders(w http.ResponseWriter, r *http.Request) {
@@ -98,7 +109,7 @@ func (h *WorkOrdersHandler) ListWorkOrders(w http.ResponseWriter, r *http.Reques
 		SELECT 
 			wo.id, wo.title, wo.category, wo.activity, wo.status, wo.priority,
 			wo.assignee, wo.field_id, wo.start_date, wo.end_date, wo.progress,
-			wo.description, wo.requirements, wo.actual_hours, wo.notes,
+			wo.description, wo.requirements, wo.material_requirements, wo.actual_hours, wo.notes,
 			wo.created_by, wo.last_updated_by, wo.completed_date,
 			wo.created_at, wo.updated_at,
 			f.name as field_name
@@ -158,14 +169,14 @@ func (h *WorkOrdersHandler) ListWorkOrders(w http.ResponseWriter, r *http.Reques
 	var workOrders []WorkOrder
 	for rows.Next() {
 		var wo WorkOrder
-		var requirementsJSON []byte
+		var requirementsJSON, materialRequirementsJSON []byte
 		var description, notes, lastUpdatedBy, completedDate, createdAt, updatedAt, fieldName sql.NullString
 		var fieldID, actualHours sql.NullInt64
 
 		err := rows.Scan(
 			&wo.ID, &wo.Title, &wo.Category, &wo.Activity, &wo.Status, &wo.Priority,
 			&wo.Assignee, &fieldID, &wo.StartDate, &wo.EndDate, &wo.Progress,
-			&description, &requirementsJSON, &actualHours, &notes,
+			&description, &requirementsJSON, &materialRequirementsJSON, &actualHours, &notes,
 			&wo.CreatedBy, &lastUpdatedBy, &completedDate,
 			&createdAt, &updatedAt, &fieldName,
 		)
@@ -213,6 +224,14 @@ func (h *WorkOrdersHandler) ListWorkOrders(w http.ResponseWriter, r *http.Reques
 			wo.Requirements = []string{}
 		}
 
+		// Parse material requirements JSON
+		if len(materialRequirementsJSON) > 0 {
+			json.Unmarshal(materialRequirementsJSON, &wo.MaterialRequirements)
+		}
+		if wo.MaterialRequirements == nil {
+			wo.MaterialRequirements = []MaterialRequirement{}
+		}
+
 		workOrders = append(workOrders, wo)
 	}
 
@@ -230,7 +249,7 @@ func (h *WorkOrdersHandler) GetWorkOrder(w http.ResponseWriter, r *http.Request)
 	}
 
 	var wo WorkOrder
-	var requirementsJSON []byte
+	var requirementsJSON, materialRequirementsJSON []byte
 	var description, notes, lastUpdatedBy, completedDate, createdAt, updatedAt, fieldName sql.NullString
 	var fieldID, actualHours sql.NullInt64
 
@@ -238,7 +257,7 @@ func (h *WorkOrdersHandler) GetWorkOrder(w http.ResponseWriter, r *http.Request)
 		SELECT 
 			wo.id, wo.title, wo.category, wo.activity, wo.status, wo.priority,
 			wo.assignee, wo.field_id, wo.start_date, wo.end_date, wo.progress,
-			wo.description, wo.requirements, wo.actual_hours, wo.notes,
+			wo.description, wo.requirements, wo.material_requirements, wo.actual_hours, wo.notes,
 			wo.created_by, wo.last_updated_by, wo.completed_date,
 			TO_CHAR(wo.created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as created_at, 
 			TO_CHAR(wo.updated_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as updated_at,
@@ -249,7 +268,7 @@ func (h *WorkOrdersHandler) GetWorkOrder(w http.ResponseWriter, r *http.Request)
 	`, id).Scan(
 		&wo.ID, &wo.Title, &wo.Category, &wo.Activity, &wo.Status, &wo.Priority,
 		&wo.Assignee, &fieldID, &wo.StartDate, &wo.EndDate, &wo.Progress,
-		&description, &requirementsJSON, &actualHours, &notes,
+		&description, &requirementsJSON, &materialRequirementsJSON, &actualHours, &notes,
 		&wo.CreatedBy, &lastUpdatedBy, &completedDate,
 		&createdAt, &updatedAt, &fieldName,
 	)
@@ -298,6 +317,13 @@ func (h *WorkOrdersHandler) GetWorkOrder(w http.ResponseWriter, r *http.Request)
 	}
 	if wo.Requirements == nil {
 		wo.Requirements = []string{}
+	}
+
+	if len(materialRequirementsJSON) > 0 {
+		json.Unmarshal(materialRequirementsJSON, &wo.MaterialRequirements)
+	}
+	if wo.MaterialRequirements == nil {
+		wo.MaterialRequirements = []MaterialRequirement{}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -349,22 +375,49 @@ func (h *WorkOrdersHandler) CreateWorkOrder(w http.ResponseWriter, r *http.Reque
 		requirementsJSON = []byte("[]")
 	}
 
+	// Convert material requirements to JSON
+	materialRequirementsJSON, _ := json.Marshal(req.MaterialRequirements)
+	if req.MaterialRequirements == nil {
+		materialRequirementsJSON = []byte("[]")
+	}
+
 	// Insert work order
 	var woID int
 	err = h.db.QueryRow(`
 		INSERT INTO work_orders (
 			title, category, activity, status, priority, assignee, field_id,
-			start_date, end_date, progress, description, requirements,
+			start_date, end_date, progress, description, requirements, material_requirements,
 			actual_hours, notes, created_by, last_updated_by
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
 		RETURNING id
 	`, req.Title, req.Category, req.Activity, status, priority, req.Assignee, req.FieldID,
-		startDate, endDate, progress, req.Description, string(requirementsJSON),
+		startDate, endDate, progress, req.Description, string(requirementsJSON), string(materialRequirementsJSON),
 		req.ActualHours, req.Notes, req.CreatedBy, req.CreatedBy).Scan(&woID)
 
 	if err != nil {
 		http.Error(w, "Failed to create work order", http.StatusInternalServerError)
 		return
+	}
+
+	// Auto-create stock requests for material requirements
+	if len(req.MaterialRequirements) > 0 {
+		go func() {
+			for _, matReq := range req.MaterialRequirements {
+				if matReq.ItemID > 0 && matReq.Quantity > 0 {
+					requestID := fmt.Sprintf("REQ-%d-%s", time.Now().Unix(), fmt.Sprintf("%04d", rand.Intn(10000)))
+					
+					_, err := h.db.Exec(`
+						INSERT INTO stock_requests (request_id, work_order_id, item_id, quantity, warehouse_id, status, requested_by, notes)
+						VALUES ($1, $2, $3, $4, $5, 'pending', $6, $7)
+					`, requestID, woID, matReq.ItemID, matReq.Quantity, matReq.WarehouseID, req.CreatedBy, 
+						fmt.Sprintf("Auto-generated from work order: %s", req.Title))
+					
+					if err != nil {
+						log.Printf("Failed to create stock request for work order %d: %v", woID, err)
+					}
+				}
+			}
+		}()
 	}
 
 	// Create notification for the assignee
@@ -496,6 +549,12 @@ func (h *WorkOrdersHandler) UpdateWorkOrder(w http.ResponseWriter, r *http.Reque
 		requirementsJSON, _ := json.Marshal(req.Requirements)
 		updates = append(updates, "requirements = $"+strconv.Itoa(argPos))
 		args = append(args, string(requirementsJSON))
+		argPos++
+	}
+	if req.MaterialRequirements != nil {
+		materialRequirementsJSON, _ := json.Marshal(req.MaterialRequirements)
+		updates = append(updates, "material_requirements = $"+strconv.Itoa(argPos))
+		args = append(args, string(materialRequirementsJSON))
 		argPos++
 	}
 	if req.ActualHours != nil {

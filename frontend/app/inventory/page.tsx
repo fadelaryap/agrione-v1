@@ -2,23 +2,31 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { authAPI, User, inventoryAPI, InventoryItem, StockLot, StockMovement, InventoryStats, Warehouse } from '@/lib/api'
+import { authAPI, User, inventoryAPI, InventoryItem, StockLot, StockMovement, InventoryStats, Warehouse, stockRequestsAPI, StockRequest, MaterialRequirement } from '@/lib/api'
 import DashboardLayout from '@/components/layout/DashboardLayout'
-import { Package, Warehouse as WarehouseIcon, TrendingDown, AlertTriangle, BarChart3, Package2, Edit, Trash2, Minus, Plus, Search } from 'lucide-react'
+import { Package, Warehouse as WarehouseIcon, TrendingDown, AlertTriangle, BarChart3, Package2, Edit, Trash2, Minus, Plus, Search, CheckCircle, XCircle, Clock, FileText } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function InventoryPage() {
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'items' | 'lots' | 'warehouses' | 'movements'>('items')
+  const [activeTab, setActiveTab] = useState<'items' | 'lots' | 'warehouses' | 'movements' | 'requests'>('items')
 
   // Data states
   const [items, setItems] = useState<InventoryItem[]>([])
   const [stockLots, setStockLots] = useState<StockLot[]>([])
   const [warehouses, setWarehouses] = useState<Warehouse[]>([])
   const [movements, setMovements] = useState<StockMovement[]>([])
+  const [stockRequests, setStockRequests] = useState<StockRequest[]>([])
   const [stats, setStats] = useState<InventoryStats | null>(null)
+  
+  // Stock Request approval states
+  const [selectedRequest, setSelectedRequest] = useState<StockRequest | null>(null)
+  const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false)
+  const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false)
+  const [approveNote, setApproveNote] = useState('')
+  const [rejectReason, setRejectReason] = useState('')
 
   // Filter states
   const [searchTerm, setSearchTerm] = useState('')
@@ -95,18 +103,20 @@ export default function InventoryPage() {
 
   const loadData = async () => {
     try {
-      const [statsData, itemsData, lotsData, warehousesData, movementsData] = await Promise.all([
+      const [statsData, itemsData, lotsData, warehousesData, movementsData, requestsData] = await Promise.all([
         inventoryAPI.getStats(),
         inventoryAPI.listItems({ search: searchTerm, category: categoryFilter }),
         inventoryAPI.listStockLots({ search: searchTerm, warehouse: warehouseFilter, status: statusFilter }),
         inventoryAPI.listWarehouses({ search: searchTerm }),
-        inventoryAPI.listMovements({ search: searchTerm, type: movementTypeFilter })
+        inventoryAPI.listMovements({ search: searchTerm, type: movementTypeFilter }),
+        stockRequestsAPI.listStockRequests({ status: statusFilter !== 'all' ? statusFilter : undefined })
       ])
       setStats(statsData)
       setItems(itemsData)
       setStockLots(lotsData)
       setWarehouses(warehousesData)
       setMovements(movementsData)
+      setStockRequests(requestsData)
     } catch (err) {
       console.error('Failed to load data:', err)
       toast.error('Gagal memuat data inventory')
@@ -117,7 +127,7 @@ export default function InventoryPage() {
     if (user) {
       loadData()
     }
-  }, [searchTerm, categoryFilter, warehouseFilter, statusFilter, movementTypeFilter, user])
+  }, [searchTerm, categoryFilter, warehouseFilter, statusFilter, movementTypeFilter, user, activeTab])
 
   // Calculate total stock for an item
   const getTotalStock = (itemId: number) => {
@@ -301,6 +311,66 @@ export default function InventoryPage() {
     return colors[type] || 'bg-gray-100 text-gray-800 border-gray-200'
   }
 
+  const getRequestStatusColor = (status: string) => {
+    const colors: { [key: string]: string } = {
+      'pending': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      'approved': 'bg-green-100 text-green-800 border-green-200',
+      'rejected': 'bg-red-100 text-red-800 border-red-200',
+      'fulfilled': 'bg-blue-100 text-blue-800 border-blue-200',
+      'cancelled': 'bg-gray-100 text-gray-800 border-gray-200'
+    }
+    return colors[status] || 'bg-gray-100 text-gray-800 border-gray-200'
+  }
+
+  const handleApproveRequest = async () => {
+    if (!selectedRequest || !user) return
+    try {
+      await stockRequestsAPI.approveStockRequest(selectedRequest.id, {
+        approved_by: user.first_name + ' ' + user.last_name,
+        notes: approveNote || undefined
+      } as any)
+      toast.success('Stock request berhasil disetujui')
+      setIsApproveDialogOpen(false)
+      setSelectedRequest(null)
+      setApproveNote('')
+      loadData()
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Gagal menyetujui stock request')
+    }
+  }
+
+  const handleRejectRequest = async () => {
+    if (!selectedRequest || !user || !rejectReason.trim()) {
+      toast.error('Alasan penolakan wajib diisi')
+      return
+    }
+    try {
+      await stockRequestsAPI.rejectStockRequest(selectedRequest.id, {
+        rejected_by: user.first_name + ' ' + user.last_name,
+        rejection_reason: rejectReason
+      } as any)
+      toast.success('Stock request berhasil ditolak')
+      setIsRejectDialogOpen(false)
+      setSelectedRequest(null)
+      setRejectReason('')
+      loadData()
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Gagal menolak stock request')
+    }
+  }
+
+  const openApproveDialog = (request: StockRequest) => {
+    setSelectedRequest(request)
+    setApproveNote('')
+    setIsApproveDialogOpen(true)
+  }
+
+  const openRejectDialog = (request: StockRequest) => {
+    setSelectedRequest(request)
+    setRejectReason('')
+    setIsRejectDialogOpen(true)
+  }
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -419,6 +489,21 @@ export default function InventoryPage() {
                 }`}
               >
                 Movements
+              </button>
+              <button
+                onClick={() => setActiveTab('requests')}
+                className={`px-6 py-3 text-sm font-medium border-b-2 flex items-center gap-2 ${
+                  activeTab === 'requests'
+                    ? 'border-indigo-500 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Stock Requests
+                {stockRequests.filter(r => r.status === 'pending').length > 0 && (
+                  <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                    {stockRequests.filter(r => r.status === 'pending').length}
+                  </span>
+                )}
               </button>
             </nav>
           </div>
@@ -789,6 +874,171 @@ export default function InventoryPage() {
                           </td>
                         </tr>
                       ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Stock Requests Tab */}
+            {activeTab === 'requests' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 max-w-md">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                      <input
+                        type="text"
+                        placeholder="Search requests..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="fulfilled">Fulfilled</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </div>
+
+                {/* Pending Requests Alert */}
+                {stockRequests.filter(r => r.status === 'pending').length > 0 && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-5 w-5 text-yellow-600" />
+                      <span className="font-medium text-yellow-600">
+                        {stockRequests.filter(r => r.status === 'pending').length} pending requests need approval
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Stock Requests Table */}
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Request ID</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Work Order</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Warehouse</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Available Stock</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requested By</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {stockRequests
+                        .filter(req => {
+                          const matchesSearch = req.item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                               req.request_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                               req.work_order_title?.toLowerCase().includes(searchTerm.toLowerCase())
+                          const matchesStatus = statusFilter === 'all' || req.status === statusFilter
+                          return matchesSearch && matchesStatus
+                        })
+                        .map((request) => (
+                          <tr key={request.id}>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-mono">{request.request_id}</td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div>
+                                <div className="text-sm font-medium">#{request.work_order_id}</div>
+                                {request.work_order_title && (
+                                  <div className="text-sm text-gray-500">{request.work_order_title}</div>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div>
+                                <div className="text-sm font-medium">{request.item.name}</div>
+                                <div className="text-sm text-gray-500">{request.item.sku}</div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                              <span className="font-medium">{request.quantity}</span>
+                              <span className="text-gray-500 ml-1">{request.item.unit}</span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                              {request.warehouse ? (
+                                <div>
+                                  <div className="text-sm font-medium">{request.warehouse.name}</div>
+                                  <div className="text-sm text-gray-500">{request.warehouse.type}</div>
+                                </div>
+                              ) : (
+                                <span className="text-gray-400">N/A</span>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                              {request.available_stock !== undefined ? (
+                                <span className={request.available_stock < request.quantity ? 'text-red-600 font-medium' : 'text-gray-600'}>
+                                  {request.available_stock} {request.item.unit}
+                                  {request.available_stock < request.quantity && (
+                                    <span className="block text-xs text-red-500">Insufficient</span>
+                                  )}
+                                </span>
+                              ) : (
+                                <span className="text-gray-400">N/A</span>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${getRequestStatusColor(request.status)}`}>
+                                {request.status}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">{request.requested_by}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {request.created_at ? new Date(request.created_at).toLocaleDateString() : 'N/A'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              {request.status === 'pending' && (
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => openApproveDialog(request)}
+                                    className="text-green-600 hover:text-green-900"
+                                    title="Approve"
+                                  >
+                                    <CheckCircle className="h-4 w-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => openRejectDialog(request)}
+                                    className="text-red-600 hover:text-red-900"
+                                    title="Reject"
+                                  >
+                                    <XCircle className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              )}
+                              {request.status === 'approved' && (
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      await stockRequestsAPI.fulfillStockRequest(request.id)
+                                      toast.success('Stock request berhasil dipenuhi')
+                                      loadData()
+                                    } catch (err: any) {
+                                      toast.error(err.response?.data?.error || 'Gagal memenuhi stock request')
+                                    }
+                                  }}
+                                  className="text-blue-600 hover:text-blue-900"
+                                  title="Fulfill"
+                                >
+                                  <FileText className="h-4 w-4" />
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
                     </tbody>
                   </table>
                 </div>
@@ -1226,6 +1476,109 @@ export default function InventoryPage() {
                     className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
                   >
                     Remove Stock
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Approve Request Dialog */}
+        {isApproveDialogOpen && selectedRequest && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" onClick={() => setIsApproveDialogOpen(false)}>
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+              <div className="p-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Approve Stock Request</h2>
+                <div className="space-y-4 mb-6">
+                  <div>
+                    <p className="text-sm text-gray-600">Request ID:</p>
+                    <p className="font-mono text-sm font-medium">{selectedRequest.request_id}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Item:</p>
+                    <p className="text-sm font-medium">{selectedRequest.item.name} ({selectedRequest.item.sku})</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Quantity:</p>
+                    <p className="text-sm font-medium">{selectedRequest.quantity} {selectedRequest.item.unit}</p>
+                  </div>
+                  {selectedRequest.available_stock !== undefined && (
+                    <div>
+                      <p className="text-sm text-gray-600">Available Stock:</p>
+                      <p className={`text-sm font-medium ${selectedRequest.available_stock < selectedRequest.quantity ? 'text-red-600' : 'text-green-600'}`}>
+                        {selectedRequest.available_stock} {selectedRequest.item.unit}
+                      </p>
+                    </div>
+                  )}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
+                    <textarea
+                      value={approveNote}
+                      onChange={(e) => setApproveNote(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      rows={3}
+                      placeholder="Additional notes for approval"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <button
+                    onClick={() => setIsApproveDialogOpen(false)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleApproveRequest}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                  >
+                    Approve
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Reject Request Dialog */}
+        {isRejectDialogOpen && selectedRequest && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" onClick={() => setIsRejectDialogOpen(false)}>
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+              <div className="p-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Reject Stock Request</h2>
+                <div className="space-y-4 mb-6">
+                  <div>
+                    <p className="text-sm text-gray-600">Request ID:</p>
+                    <p className="font-mono text-sm font-medium">{selectedRequest.request_id}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Item:</p>
+                    <p className="text-sm font-medium">{selectedRequest.item.name} ({selectedRequest.item.sku})</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Rejection Reason *</label>
+                    <textarea
+                      value={rejectReason}
+                      onChange={(e) => setRejectReason(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      rows={4}
+                      placeholder="Enter reason for rejection"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <button
+                    onClick={() => setIsRejectDialogOpen(false)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleRejectRequest}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                  >
+                    Reject
                   </button>
                 </div>
               </div>

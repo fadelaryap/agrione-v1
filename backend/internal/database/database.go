@@ -344,6 +344,71 @@ func RunMigrations(db *sql.DB) error {
 		return fmt.Errorf("failed to create stock_movements table: %w", err)
 	}
 
+	// Create stock_requests table
+	createStockRequestsQuery := `
+	CREATE TABLE IF NOT EXISTS stock_requests (
+		id SERIAL PRIMARY KEY,
+		request_id VARCHAR(100) UNIQUE NOT NULL,
+		work_order_id INTEGER NOT NULL REFERENCES work_orders(id) ON DELETE CASCADE,
+		item_id INTEGER NOT NULL REFERENCES inventory_items(id) ON DELETE CASCADE,
+		quantity DOUBLE PRECISION NOT NULL,
+		warehouse_id INTEGER REFERENCES plots(id) ON DELETE RESTRICT,
+		status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'fulfilled', 'cancelled')),
+		requested_by VARCHAR(255) NOT NULL,
+		approved_by VARCHAR(255),
+		approved_at TIMESTAMP,
+		rejection_reason TEXT,
+		fulfilled_at TIMESTAMP,
+		notes TEXT,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	);
+
+	CREATE INDEX IF NOT EXISTS idx_stock_requests_work_order_id ON stock_requests(work_order_id);
+	CREATE INDEX IF NOT EXISTS idx_stock_requests_item_id ON stock_requests(item_id);
+	CREATE INDEX IF NOT EXISTS idx_stock_requests_warehouse_id ON stock_requests(warehouse_id);
+	CREATE INDEX IF NOT EXISTS idx_stock_requests_status ON stock_requests(status);
+	CREATE INDEX IF NOT EXISTS idx_stock_requests_request_id ON stock_requests(request_id);
+	CREATE INDEX IF NOT EXISTS idx_stock_requests_created_at ON stock_requests(created_at);
+	`
+
+	_, err = db.Exec(createStockRequestsQuery)
+	if err != nil {
+		return fmt.Errorf("failed to create stock_requests table: %w", err)
+	}
+
+	// Add stock_request_id to stock_movements table
+	alterStockMovementsQuery := `
+	DO $$ 
+	BEGIN
+		IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='stock_movements' AND column_name='stock_request_id') THEN
+			ALTER TABLE stock_movements ADD COLUMN stock_request_id INTEGER REFERENCES stock_requests(id) ON DELETE SET NULL;
+			CREATE INDEX IF NOT EXISTS idx_stock_movements_stock_request_id ON stock_movements(stock_request_id);
+		END IF;
+	END $$;
+	`
+
+	_, err = db.Exec(alterStockMovementsQuery)
+	if err != nil {
+		log.Printf("Warning: Failed to add stock_request_id to stock_movements: %v", err)
+	}
+
+	// Add material_requirements column to work_orders table (JSONB array of {item_id, quantity, warehouse_id})
+	alterWorkOrdersMaterialQuery := `
+	DO $$ 
+	BEGIN
+		IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='work_orders' AND column_name='material_requirements') THEN
+			ALTER TABLE work_orders ADD COLUMN material_requirements JSONB DEFAULT '[]'::jsonb;
+			CREATE INDEX IF NOT EXISTS idx_work_orders_material_requirements ON work_orders USING GIN(material_requirements);
+		END IF;
+	END $$;
+	`
+
+	_, err = db.Exec(alterWorkOrdersMaterialQuery)
+	if err != nil {
+		log.Printf("Warning: Failed to add material_requirements to work_orders: %v", err)
+	}
+
 	// Add new columns to field_reports if table already exists (for existing databases) - moved to after attendance table creation
 	alterFieldReportsQuery := `
 	DO $$ 

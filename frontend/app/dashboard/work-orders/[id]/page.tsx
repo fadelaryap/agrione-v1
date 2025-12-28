@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { authAPI, User, workOrdersAPI, WorkOrder, fieldReportsAPI, FieldReport, FieldReportComment, fieldsAPI, Field } from '@/lib/api'
+import { authAPI, User, workOrdersAPI, WorkOrder, fieldReportsAPI, FieldReport, FieldReportComment, fieldsAPI, Field, stockRequestsAPI, StockRequest, inventoryAPI, InventoryItem } from '@/lib/api'
 import DashboardLayout from '@/components/layout/DashboardLayout'
-import { Calendar, MapPin, User as UserIcon, Clock, CheckCircle, AlertCircle, MessageSquare, Send, Camera, Video, ArrowLeft, Image as ImageIcon, X, Navigation } from 'lucide-react'
+import { Calendar, MapPin, User as UserIcon, Clock, CheckCircle, AlertCircle, MessageSquare, Send, Camera, Video, ArrowLeft, Image as ImageIcon, X, Navigation, Package } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { toast } from 'sonner'
 
@@ -17,6 +17,8 @@ export default function WorkOrderDetailPage() {
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null)
   const [field, setField] = useState<Field | null>(null)
   const [fieldReports, setFieldReports] = useState<FieldReport[]>([])
+  const [stockRequests, setStockRequests] = useState<StockRequest[]>([])
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([])
   const [loading, setLoading] = useState(true)
   const [newComment, setNewComment] = useState<{ [reportId: number]: string }>({})
   const [submittingComment, setSubmittingComment] = useState<number | null>(null)
@@ -34,6 +36,8 @@ export default function WorkOrderDetailPage() {
     if (user && workOrderId) {
       loadWorkOrder()
       loadFieldReports()
+      loadStockRequests()
+      loadInventoryItems()
     }
   }, [user, workOrderId])
 
@@ -119,6 +123,43 @@ export default function WorkOrderDetailPage() {
       console.error('Failed to load field reports:', err)
       setFieldReports([])
     }
+  }
+
+  const loadStockRequests = async () => {
+    if (!workOrderId) return
+    try {
+      const requests = await stockRequestsAPI.listStockRequests({ work_order_id: workOrderId })
+      setStockRequests(requests || [])
+    } catch (err) {
+      console.error('Failed to load stock requests:', err)
+      setStockRequests([])
+    }
+  }
+
+  const loadInventoryItems = async () => {
+    try {
+      const items = await inventoryAPI.listItems({})
+      setInventoryItems(items || [])
+    } catch (err) {
+      console.error('Failed to load inventory items:', err)
+      setInventoryItems([])
+    }
+  }
+
+  const getRequestStatusColor = (status: string) => {
+    const colors: { [key: string]: string } = {
+      'pending': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      'approved': 'bg-green-100 text-green-800 border-green-200',
+      'rejected': 'bg-red-100 text-red-800 border-red-200',
+      'fulfilled': 'bg-blue-100 text-blue-800 border-blue-200',
+      'cancelled': 'bg-gray-100 text-gray-800 border-gray-200'
+    }
+    return colors[status] || 'bg-gray-100 text-gray-800 border-gray-200'
+  }
+
+  const getItemName = (itemId: number) => {
+    const item = inventoryItems.find(i => i.id === itemId)
+    return item ? `${item.sku} - ${item.name}` : `Item #${itemId}`
   }
 
   const handleAddComment = async (reportId: number) => {
@@ -230,8 +271,106 @@ export default function WorkOrderDetailPage() {
             {workOrder.description && (
               <p className="mt-4 text-gray-700">{workOrder.description}</p>
             )}
+
+            {/* Requirements */}
+            {workOrder.requirements && workOrder.requirements.length > 0 && (
+              <div className="mt-4">
+                <h3 className="text-sm font-medium text-gray-700 mb-2">Requirements:</h3>
+                <ul className="list-disc list-inside space-y-1">
+                  {workOrder.requirements.map((req, idx) => (
+                    <li key={idx} className="text-sm text-gray-600">{req}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Material Requirements */}
+            {workOrder.material_requirements && workOrder.material_requirements.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                  <Package className="w-4 h-4" />
+                  Material Requirements:
+                </h3>
+                <div className="space-y-2">
+                  {workOrder.material_requirements.map((matReq, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                      <div>
+                        <span className="text-sm font-medium text-gray-900">{getItemName(matReq.item_id)}</span>
+                        {matReq.warehouse_id && (
+                          <span className="text-xs text-gray-500 ml-2">(Warehouse #{matReq.warehouse_id})</span>
+                        )}
+                      </div>
+                      <span className="text-sm text-gray-600 font-medium">{matReq.quantity} units</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
+
+        {/* Stock Requests Section */}
+        {stockRequests.length > 0 && (
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <Package className="w-5 h-5" />
+              Stock Requests ({stockRequests.length})
+            </h2>
+            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Request ID</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Warehouse</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requested By</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {stockRequests.map((request) => (
+                      <tr key={request.id}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-mono">{request.request_id}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div>
+                            <div className="text-sm font-medium">{request.item.name}</div>
+                            <div className="text-sm text-gray-500">{request.item.sku}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <span className="font-medium">{request.quantity}</span>
+                          <span className="text-gray-500 ml-1">{request.item.unit}</span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          {request.warehouse ? (
+                            <div>
+                              <div className="text-sm font-medium">{request.warehouse.name}</div>
+                              <div className="text-sm text-gray-500">{request.warehouse.type}</div>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">N/A</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${getRequestStatusColor(request.status)}`}>
+                            {request.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">{request.requested_by}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {request.created_at ? format(parseISO(request.created_at), 'MMM dd, yyyy') : 'N/A'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Field Reports */}
         <div className="mb-6">

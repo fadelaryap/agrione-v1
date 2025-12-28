@@ -137,6 +137,8 @@ func main() {
 	protected.HandleFunc("/inventory/stock-lots", inventoryHandler.ListStockLots).Methods("GET")
 	protected.HandleFunc("/inventory/warehouses", inventoryHandler.ListWarehouses).Methods("GET")
 	protected.HandleFunc("/inventory/stock-movements", inventoryHandler.ListStockMovements).Methods("GET")
+	protected.HandleFunc("/inventory/stock-requests", inventoryHandler.ListStockRequests).Methods("GET")
+	protected.HandleFunc("/inventory/stock-requests/{id}", inventoryHandler.GetStockRequest).Methods("GET")
 	
 	// Protected POST routes (require both auth and CSRF)
 	protectedPost := api.PathPrefix("").Subrouter()
@@ -151,6 +153,10 @@ func main() {
 	protectedPost.HandleFunc("/inventory/items", inventoryHandler.CreateInventoryItem).Methods("POST")
 	protectedPost.HandleFunc("/inventory/stock-lots", inventoryHandler.CreateStockLot).Methods("POST")
 	protectedPost.HandleFunc("/inventory/stock-lots/remove", inventoryHandler.RemoveStock).Methods("POST")
+	protectedPost.HandleFunc("/inventory/stock-requests", inventoryHandler.CreateStockRequest).Methods("POST")
+	protectedPost.HandleFunc("/inventory/stock-requests/{id}/approve", inventoryHandler.ApproveStockRequest).Methods("POST")
+	protectedPost.HandleFunc("/inventory/stock-requests/{id}/reject", inventoryHandler.RejectStockRequest).Methods("POST")
+	protectedPost.HandleFunc("/inventory/stock-requests/{id}/fulfill", inventoryHandler.FulfillStockRequest).Methods("POST")
 	
 	// Protected PUT routes (require both auth and CSRF)
 	protectedPut := api.PathPrefix("").Subrouter()

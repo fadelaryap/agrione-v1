@@ -103,12 +103,13 @@ type CreateStockLotRequest struct {
 }
 
 type RemoveStockRequest struct {
-	LotID       int       `json:"lot_id"`
-	Quantity    float64   `json:"quantity"`
-	Reason      string    `json:"reason"`
-	Reference   *string   `json:"reference,omitempty"`
-	PerformedBy string    `json:"performed_by"`
-	Notes       *string   `json:"notes,omitempty"`
+	LotID          int       `json:"lot_id"`
+	Quantity       float64   `json:"quantity"`
+	Reason         string    `json:"reason"`
+	Reference      *string   `json:"reference,omitempty"`
+	PerformedBy    string    `json:"performed_by"`
+	Notes          *string   `json:"notes,omitempty"`
+	StockRequestID *int      `json:"stock_request_id,omitempty"`
 }
 
 // Stock Movement types

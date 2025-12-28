@@ -167,6 +167,12 @@ export interface PlantType {
   updated_at?: string
 }
 
+export interface MaterialRequirement {
+  item_id: number
+  quantity: number
+  warehouse_id?: number
+}
+
 export interface WorkOrder {
   id: number
   title: string
@@ -183,6 +189,7 @@ export interface WorkOrder {
   progress: number
   description?: string
   requirements?: string[]
+  material_requirements?: MaterialRequirement[]
   actual_hours?: number
   notes?: string
   created_by: string
@@ -808,6 +815,86 @@ export const inventoryAPI = {
     if (params?.search) queryParams.append('search', params.search)
     const response = await api.get<Warehouse[]>(`/inventory/warehouses?${queryParams.toString()}`)
     return Array.isArray(response.data) ? response.data : []
+  },
+}
+
+// Stock Requests Interfaces
+export interface StockRequest {
+  id: number
+  request_id: string
+  work_order_id: number
+  work_order_title?: string
+  item: InventoryItem
+  quantity: number
+  warehouse_id?: number
+  warehouse?: Warehouse
+  status: 'pending' | 'approved' | 'rejected' | 'fulfilled' | 'cancelled'
+  requested_by: string
+  approved_by?: string
+  approved_at?: string
+  rejection_reason?: string
+  fulfilled_at?: string
+  notes?: string
+  available_stock?: number
+  created_at?: string
+  updated_at?: string
+}
+
+export interface CreateStockRequestData {
+  work_order_id: number
+  item_id: number
+  quantity: number
+  warehouse_id?: number
+  notes?: string
+  requested_by: string
+}
+
+export interface ApproveStockRequestData {
+  approved_by: string
+  notes?: string
+}
+
+export interface RejectStockRequestData {
+  rejected_by: string
+  rejection_reason: string
+}
+
+export const stockRequestsAPI = {
+  listStockRequests: async (params?: {
+    work_order_id?: number
+    status?: string
+    item_id?: number
+    page?: number
+    limit?: number
+  }): Promise<StockRequest[]> => {
+    const queryParams = new URLSearchParams()
+    if (params?.work_order_id) queryParams.append('work_order_id', params.work_order_id.toString())
+    if (params?.status && params.status !== 'all') queryParams.append('status', params.status)
+    if (params?.item_id) queryParams.append('item_id', params.item_id.toString())
+    if (params?.page) queryParams.append('page', params.page.toString())
+    if (params?.limit) queryParams.append('limit', params.limit.toString())
+    const response = await api.get<StockRequest[]>(`/inventory/stock-requests?${queryParams.toString()}`)
+    return Array.isArray(response.data) ? response.data : []
+  },
+  getStockRequest: async (id: number): Promise<StockRequest> => {
+    const response = await api.get<StockRequest>(`/inventory/stock-requests/${id}`)
+    return response.data
+  },
+  createStockRequest: async (data: CreateStockRequestData): Promise<StockRequest> => {
+    const response = await api.post<StockRequest>('/inventory/stock-requests', data)
+    return response.data
+  },
+  approveStockRequest: async (id: number, data: ApproveStockRequestData): Promise<StockRequest> => {
+    const response = await api.post<StockRequest>(`/inventory/stock-requests/${id}/approve`, data)
+    return response.data
+  },
+  rejectStockRequest: async (id: number, data: RejectStockRequestData): Promise<StockRequest> => {
+    const response = await api.post<StockRequest>(`/inventory/stock-requests/${id}/reject`, data)
+    return response.data
+  },
+  fulfillStockRequest: async (id: number): Promise<StockRequest> => {
+    const response = await api.post<StockRequest>(`/inventory/stock-requests/${id}/fulfill`, {})
+    return response.data
   },
 }
 
