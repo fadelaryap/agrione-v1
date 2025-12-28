@@ -19,6 +19,7 @@ export default function SuperAdminPage() {
   const [updating, setUpdating] = useState(false)
   const [editingStatus, setEditingStatus] = useState<User | null>(null)
   const [selectedStatus, setSelectedStatus] = useState<string>('')
+  const [statusNotes, setStatusNotes] = useState<string>('')
 
   const roles = ['superadmin', 'Level 1', 'Level 2', 'Level 3', 'Level 4', 'user']
 
