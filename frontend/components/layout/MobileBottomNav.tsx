@@ -25,7 +25,7 @@ export default function MobileBottomNav() {
   }
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 shadow-2xl z-50" style={{ position: 'fixed', bottom: 0 }}>
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 shadow-2xl z-50" style={{ position: 'fixed', bottom: 0, left: 0, right: 0 }}>
       <div className="flex justify-around items-center h-20 px-2" style={{ minHeight: '80px', paddingBottom: 'max(env(safe-area-inset-bottom), 0px)' }}>
         {navItems.map((item) => {
           const Icon = item.icon
