@@ -6,15 +6,27 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
+	"log"
 	"mime/multipart"
 	"strings"
 )
 
 // KML structures for parsing
 type KML struct {
-	XMLName xml.Name   `xml:"kml"`
-	Placemark []Placemark `xml:"Document>Placemark"`
-	Placemarks []Placemark `xml:"Placemark"` // Also support root-level Placemarks
+	XMLName   xml.Name   `xml:"kml"`
+	Document  Document   `xml:"Document"`
+	Placemark []Placemark `xml:"Placemark"` // Also support root-level Placemarks
+}
+
+type Document struct {
+	Placemark []Placemark `xml:"Placemark"`
+	Folder    []Folder    `xml:"Folder"`
+}
+
+type Folder struct {
+	Name      string      `xml:"name"`
+	Placemark []Placemark `xml:"Placemark"`
+	Folder    []Folder    `xml:"Folder"` // Support nested folders
 }
 
 type Placemark struct {
@@ -80,24 +92,40 @@ func ParseKMZ(file multipart.File, size int64) ([]ParsedPolygon, error) {
 	// Parse KML XML
 	var kml KML
 	if err := xml.Unmarshal(kmlData, &kml); err != nil {
+		log.Printf("[KMZ Parser] Failed to parse KML XML: %v", err)
 		return nil, fmt.Errorf("failed to parse KML XML: %w", err)
 	}
 
-	// Combine placemarks from Document and root level
-	placemarks := kml.Placemark
-	if len(kml.Placemarks) > 0 {
-		placemarks = append(placemarks, kml.Placemarks...)
+	log.Printf("[KMZ Parser] Parsed KML - Root Placemarks: %d, Document Placemarks: %d, Document Folders: %d",
+		len(kml.Placemark), len(kml.Document.Placemark), len(kml.Document.Folder))
+
+	// Collect all placemarks from various sources
+	var allPlacemarks []Placemark
+	
+	// Root level placemarks
+	allPlacemarks = append(allPlacemarks, kml.Placemark...)
+	
+	// Document level placemarks
+	allPlacemarks = append(allPlacemarks, kml.Document.Placemark...)
+	
+	// Placemarks from folders (recursive)
+	for _, folder := range kml.Document.Folder {
+		allPlacemarks = append(allPlacemarks, extractPlacemarksFromFolder(folder)...)
 	}
+
+	log.Printf("[KMZ Parser] Total placemarks found: %d", len(allPlacemarks))
 
 	// Extract polygons
 	var polygons []ParsedPolygon
-	for i, placemark := range placemarks {
+	for i, placemark := range allPlacemarks {
 		if placemark.Polygon.OuterBoundaryIs.LinearRing.Coordinates == "" {
+			log.Printf("[KMZ Parser] Placemark %d (%s) has no polygon coordinates", i+1, placemark.Name)
 			continue
 		}
 
 		coords := parseCoordinates(placemark.Polygon.OuterBoundaryIs.LinearRing.Coordinates)
 		if len(coords) < 3 {
+			log.Printf("[KMZ Parser] Placemark %d (%s) has less than 3 coordinates: %d", i+1, placemark.Name, len(coords))
 			continue // Need at least 3 points for a polygon
 		}
 
@@ -107,13 +135,30 @@ func ParseKMZ(file multipart.File, size int64) ([]ParsedPolygon, error) {
 			name = fmt.Sprintf("Field %d", i+1)
 		}
 
+		log.Printf("[KMZ Parser] Extracted polygon: %s with %d coordinates", name, len(coords))
 		polygons = append(polygons, ParsedPolygon{
 			Name:        name,
 			Coordinates: coords,
 		})
 	}
 
+	log.Printf("[KMZ Parser] Total polygons extracted: %d", len(polygons))
 	return polygons, nil
+}
+
+// extractPlacemarksFromFolder recursively extracts placemarks from folders
+func extractPlacemarksFromFolder(folder Folder) []Placemark {
+	var placemarks []Placemark
+	
+	// Add placemarks from this folder
+	placemarks = append(placemarks, folder.Placemark...)
+	
+	// Recursively extract from nested folders
+	for _, nestedFolder := range folder.Folder {
+		placemarks = append(placemarks, extractPlacemarksFromFolder(nestedFolder)...)
+	}
+	
+	return placemarks
 }
 
 // parseCoordinates parses a coordinate string into [][]float64

@@ -64,6 +64,13 @@ export default function KMZImportDialog({ onClose, onSuccess }: KMZImportDialogP
 
     try {
       const result = await fieldsAPI.importKMZ(selectedFile)
+      
+      if (!result.polygons || result.polygons.length === 0) {
+        toast.error('No polygons found in KMZ file. Please check the file format.')
+        setFile(null)
+        return
+      }
+      
       setParsedPolygons(result.polygons)
 
       // Initialize field data with parsed polygons

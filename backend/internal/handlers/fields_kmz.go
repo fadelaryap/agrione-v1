@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -33,9 +34,12 @@ func (h *FieldsHandler) ImportKMZ(w http.ResponseWriter, r *http.Request) {
 	// Parse KMZ file
 	polygons, err := ParseKMZ(file, header.Size)
 	if err != nil {
+		log.Printf("[ImportKMZ] Error parsing KMZ: %v", err)
 		http.Error(w, "Failed to parse KMZ file: "+err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	log.Printf("[ImportKMZ] Successfully parsed %d polygons from KMZ file", len(polygons))
 
 	// Return parsed polygons
 	w.Header().Set("Content-Type", "application/json")
