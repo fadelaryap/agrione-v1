@@ -41,9 +41,7 @@ export function calculateArea(drawType: string, coordinates: any): number {
 
 export function formatArea(area: number): string {
   if (area < 0.01) {
-    return `${(area * 10000).toFixed(2)} m²`
-  } else if (area < 1) {
-    return `${(area * 100).toFixed(2)} are`
+    return `${(area * 10000).toFixed(0)} m²`
   } else {
     return `${area.toFixed(2)} ha`
   }

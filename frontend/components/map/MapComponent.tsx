@@ -7,6 +7,7 @@ import L from 'leaflet'
 import { fieldsAPI, plotsAPI, plantTypesAPI, usersAPI, Field, Plot, PlantType, User } from '@/lib/api'
 import { calculateArea, formatArea } from '@/lib/areaUtils'
 import { findContainingField } from '@/lib/geometryUtils'
+import { Pointer, Square, Circle, Shapes, Move, Edit3, MapPin, Package, Building2, CarFront, Thermometer, Eraser, RotateCcw, RotateCw, Map as MapIcon, Satellite } from 'lucide-react'
 
 // Fix Leaflet default icon
 if (typeof window !== 'undefined') {
@@ -70,7 +71,8 @@ export default function MapComponent({ isEditMode = true, userId }: MapComponent
     fieldId: null,
     userId: '',
   })
-  const [activeTool, setActiveTool] = useState<'select' | 'draw_polygon' | 'draw_rectangle' | 'draw_circle' | 'marker' | null>(null)
+  const [activeTool, setActiveTool] = useState<'select' | 'draw_polygon' | 'draw_rectangle' | 'draw_circle' | 'edit' | 'move' | 'delete' | 'marker_storage' | 'marker_workshop' | 'marker_garage' | 'marker_sensor' | null>(null)
+  const [showMarkerPicker, setShowMarkerPicker] = useState(false)
   const [satellite, setSatellite] = useState(true) // Default to satellite view
   const [plantTypes, setPlantTypes] = useState<PlantType[]>([])
   const [level34Users, setLevel34Users] = useState<User[]>([])
@@ -88,8 +90,10 @@ export default function MapComponent({ isEditMode = true, userId }: MapComponent
   const drawPolygonRef = useRef<any>(null)
   const drawRectangleRef = useRef<any>(null)
   const drawCircleRef = useRef<any>(null)
+  const editToolbarRef = useRef<any>(null)
   const lastCreatedLayerRef = useRef<any>(null)
   const lastCreatedTypeRef = useRef<'field' | 'plot' | null>(null)
+  const movingStateRef = useRef<any>(null)
 
   // Load data
   useEffect(() => {
@@ -144,6 +148,10 @@ export default function MapComponent({ isEditMode = true, userId }: MapComponent
       drawCircleRef.current = new L.Draw.Circle(map, {
         shapeOptions: { color: '#fff200', weight: 2, opacity: 0.9, fillOpacity: 0.2 },
       })
+      // @ts-ignore
+      editToolbarRef.current = new L.EditToolbar.Edit(map, {
+        featureGroup: featureGroupRef.current,
+      })
 
       // @ts-ignore
       map.on(L.Draw.Event.CREATED, onCreated)
@@ -163,18 +171,159 @@ export default function MapComponent({ isEditMode = true, userId }: MapComponent
     drawRectangleRef.current?.disable?.()
     // @ts-ignore
     drawCircleRef.current?.disable?.()
+    // @ts-ignore
+    editToolbarRef.current?.disable?.()
 
-    if (activeTool === 'draw_polygon') {
+    // Clear move interaction
+    if (movingStateRef.current) {
+      movingStateRef.current = null
+    }
+
+    // Clean up delete mode handlers
+    if (activeTool !== 'delete') {
+      const fg = featureGroupRef.current as any
+      if (fg) {
+        const layers: any[] = fg.getLayers()
+        layers.forEach((layer) => {
+          layer.off('click')
+        })
+      }
+    }
+
+    // Clean up marker placement handlers
+    if (!activeTool?.startsWith('marker_')) {
+      map.off('click')
+    }
+
+    if (activeTool === 'select' || !activeTool) {
+      map.dragging.enable()
+    } else if (activeTool === 'draw_polygon') {
       // @ts-ignore
       drawPolygonRef.current?.enable?.()
+      map.dragging.enable()
     } else if (activeTool === 'draw_rectangle') {
       // @ts-ignore
       drawRectangleRef.current?.enable?.()
+      map.dragging.enable()
     } else if (activeTool === 'draw_circle') {
       // @ts-ignore
       drawCircleRef.current?.enable?.()
+      map.dragging.enable()
+    } else if (activeTool === 'edit') {
+      // @ts-ignore
+      editToolbarRef.current?.enable?.()
+      map.dragging.enable()
+    } else if (activeTool === 'move') {
+      map.dragging.disable()
+      const fg = featureGroupRef.current as any
+      if (fg) {
+        const layers: any[] = fg.getLayers()
+        layers.forEach((layer) => {
+          if (layer instanceof L.Marker) {
+            layer.dragging?.enable()
+          } else {
+            layer.on('mousedown', (e: any) => {
+              const start = e.latlng
+              const original = layer.getLatLngs ? JSON.parse(JSON.stringify(layer.getLatLngs())) : null
+              movingStateRef.current = { layer, start, original }
+            })
+          }
+        })
+
+        const onMove = (e: any) => {
+          if (!movingStateRef.current) return
+          const { layer, start, original } = movingStateRef.current
+          const dLat = e.latlng.lat - start.lat
+          const dLng = e.latlng.lng - start.lng
+          if (layer.getLatLngs && original) {
+            const shifted = original[0].map((pt: any) => new L.LatLng(pt.lat + dLat, pt.lng + dLng))
+            layer.setLatLngs([shifted])
+          } else if (layer instanceof L.Circle) {
+            const center = layer.getLatLng()
+            layer.setLatLng(new L.LatLng(center.lat + dLat, center.lng + dLng))
+          }
+        }
+        const onUp = async () => {
+          if (movingStateRef.current) {
+            const { layer } = movingStateRef.current
+            const meta = (layer as any)._meta
+            if (meta) {
+              try {
+                if (meta.type === 'field') {
+                  let coordinates
+                  if (layer instanceof L.Circle) {
+                    const center = layer.getLatLng()
+                    coordinates = { center: [center.lat, center.lng], radius: layer.getRadius() }
+                  } else {
+                    const latLngs = layer.getLatLngs()[0].map((p: any) => [p.lat, p.lng])
+                    coordinates = latLngs
+                  }
+                  const area = calculateArea(meta.drawType || 'polygon', coordinates)
+                  await fieldsAPI.updateField(meta.id, { coordinates, area })
+                } else if (meta.type === 'plot' && layer instanceof L.Marker) {
+                  const ll = layer.getLatLng()
+                  await plotsAPI.updatePlot(meta.id, { coordinates: [ll.lat, ll.lng] })
+                }
+                await loadData()
+              } catch (err) {
+                console.error('Failed to update:', err)
+              }
+            }
+          }
+          movingStateRef.current = null
+        }
+        map.on('mousemove', onMove)
+        map.on('mouseup', onUp)
+      }
+    } else if (activeTool === 'delete') {
+      map.dragging.enable()
+      const fg = featureGroupRef.current as any
+      if (fg) {
+        const layers: any[] = fg.getLayers()
+        layers.forEach((layer) => {
+          layer.once('click', async () => {
+            const meta = (layer as any)._meta
+            if (meta) {
+              if (confirm(`Hapus ${meta.type === 'field' ? 'field' : 'plot'} "${meta.name}"?`)) {
+                try {
+                  if (meta.type === 'field') {
+                    await fieldsAPI.deleteField(meta.id)
+                  } else if (meta.type === 'plot') {
+                    await plotsAPI.deletePlot(meta.id)
+                  }
+                  fg.removeLayer(layer)
+                  await loadData()
+                } catch (err) {
+                  console.error('Failed to delete:', err)
+                }
+              }
+            }
+          })
+        })
+      }
+    } else if (activeTool?.startsWith('marker_')) {
+      map.dragging.enable()
+      const type = activeTool.replace('marker_', '') as 'storage' | 'workshop' | 'garage' | 'sensor'
+      const handleClick = (e: any) => {
+        const latlng = e.latlng
+        const containingField = Array.isArray(fields) && fields.length > 0 
+          ? findContainingField([latlng.lat, latlng.lng], fields)
+          : null
+        
+        setPlotData({
+          name: '',
+          description: '',
+          type: type,
+          apikey: '',
+          coordinates: [latlng.lat, latlng.lng],
+          fieldRef: containingField ? containingField.id.toString() : '',
+        })
+        setIsPlotDialogOpen(true)
+        setActiveTool('select')
+      }
+      map.on('click', handleClick)
     }
-  }, [activeTool, map])
+  }, [activeTool, map, fields])
 
   const onCreated = (e: any) => {
     const { layerType, layer } = e
@@ -297,35 +446,22 @@ export default function MapComponent({ isEditMode = true, userId }: MapComponent
   }
 
 
-  // Add click handler to map for marker placement
+  // Close marker picker when clicking outside
   useEffect(() => {
-    if (!map) return
-
-    if (activeTool === 'marker') {
-      const handleClick = (e: any) => {
-        const latlng = e.latlng
-        const containingField = Array.isArray(fields) && fields.length > 0 
-          ? findContainingField([latlng.lat, latlng.lng], fields)
-          : null
-        
-        setPlotData({
-          name: '',
-          description: '',
-          type: 'storage',
-          apikey: '',
-          coordinates: latlng,
-          fieldRef: containingField ? containingField.id.toString() : '',
-        })
-        setIsPlotDialogOpen(true)
-        setActiveTool(null)
-      }
-
-      map.on('click', handleClick)
-      return () => {
-        map.off('click', handleClick)
+    if (!showMarkerPicker) return
+    
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+      if (!target.closest('[data-marker-picker]')) {
+        setShowMarkerPicker(false)
       }
     }
-  }, [map, activeTool, fields])
+    
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showMarkerPicker])
 
   // Render fields and plots on map
   useEffect(() => {
@@ -542,45 +678,189 @@ export default function MapComponent({ isEditMode = true, userId }: MapComponent
         </div>
       )}
 
-      {/* Toolbar */}
+      {/* Modern Toolbar - Left Side */}
       {isEditMode && (
-        <div className="absolute top-4 left-4 z-[1000] bg-white rounded-lg shadow-lg p-2 flex flex-col gap-2">
+        <div className="absolute top-4 left-4 z-[1000] bg-white/95 backdrop-blur-sm rounded-xl shadow-xl border border-gray-200 p-2 flex flex-col gap-1">
+          {/* Select Tool */}
           <button
-            onClick={() => setActiveTool(activeTool === 'draw_polygon' ? null : 'draw_polygon')}
-            className={`px-4 py-2 rounded ${activeTool === 'draw_polygon' ? 'bg-indigo-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+            onClick={() => setActiveTool('select')}
+            className={`p-2.5 rounded-lg transition-all duration-200 ${
+              activeTool === 'select' 
+                ? 'bg-indigo-600 text-white shadow-md' 
+                : 'bg-gray-50 hover:bg-gray-100 text-gray-700 hover:shadow-sm'
+            }`}
+            title="Select"
+          >
+            <Pointer className="w-5 h-5" />
+          </button>
+          
+          {/* Drawing Tools */}
+          <div className="h-px bg-gray-200 my-1"></div>
+          <button
+            onClick={() => setActiveTool(activeTool === 'draw_polygon' ? 'select' : 'draw_polygon')}
+            className={`p-2.5 rounded-lg transition-all duration-200 ${
+              activeTool === 'draw_polygon' 
+                ? 'bg-indigo-600 text-white shadow-md' 
+                : 'bg-gray-50 hover:bg-gray-100 text-gray-700 hover:shadow-sm'
+            }`}
             title="Draw Polygon"
           >
-            Draw Polygon
+            <Shapes className="w-5 h-5" />
           </button>
           <button
-            onClick={() => setActiveTool(activeTool === 'draw_rectangle' ? null : 'draw_rectangle')}
-            className={`px-4 py-2 rounded ${activeTool === 'draw_rectangle' ? 'bg-indigo-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+            onClick={() => setActiveTool(activeTool === 'draw_rectangle' ? 'select' : 'draw_rectangle')}
+            className={`p-2.5 rounded-lg transition-all duration-200 ${
+              activeTool === 'draw_rectangle' 
+                ? 'bg-indigo-600 text-white shadow-md' 
+                : 'bg-gray-50 hover:bg-gray-100 text-gray-700 hover:shadow-sm'
+            }`}
             title="Draw Rectangle"
           >
-            Draw Rectangle
+            <Square className="w-5 h-5" />
           </button>
           <button
-            onClick={() => setActiveTool(activeTool === 'draw_circle' ? null : 'draw_circle')}
-            className={`px-4 py-2 rounded ${activeTool === 'draw_circle' ? 'bg-indigo-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+            onClick={() => setActiveTool(activeTool === 'draw_circle' ? 'select' : 'draw_circle')}
+            className={`p-2.5 rounded-lg transition-all duration-200 ${
+              activeTool === 'draw_circle' 
+                ? 'bg-indigo-600 text-white shadow-md' 
+                : 'bg-gray-50 hover:bg-gray-100 text-gray-700 hover:shadow-sm'
+            }`}
             title="Draw Circle"
           >
-            Draw Circle
+            <Circle className="w-5 h-5" />
           </button>
-          <div className="h-px bg-gray-300 my-1"></div>
+          
+          {/* Edit & Move Tools */}
+          <div className="h-px bg-gray-200 my-1"></div>
           <button
-            onClick={() => setActiveTool(activeTool === 'marker' ? null : 'marker')}
-            className={`px-4 py-2 rounded ${activeTool === 'marker' ? 'bg-indigo-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
-            title="Add Plot Marker"
+            onClick={() => setActiveTool(activeTool === 'edit' ? 'select' : 'edit')}
+            className={`p-2.5 rounded-lg transition-all duration-200 ${
+              activeTool === 'edit' 
+                ? 'bg-indigo-600 text-white shadow-md' 
+                : 'bg-gray-50 hover:bg-gray-100 text-gray-700 hover:shadow-sm'
+            }`}
+            title="Edit Vertices"
           >
-            Add Plot
+            <Edit3 className="w-5 h-5" />
           </button>
-          <div className="h-px bg-gray-300 my-1"></div>
           <button
-            onClick={() => setSatellite(!satellite)}
-            className="px-4 py-2 rounded bg-gray-100 hover:bg-gray-200"
-            title="Toggle Satellite"
+            onClick={() => setActiveTool(activeTool === 'move' ? 'select' : 'move')}
+            className={`p-2.5 rounded-lg transition-all duration-200 ${
+              activeTool === 'move' 
+                ? 'bg-indigo-600 text-white shadow-md' 
+                : 'bg-gray-50 hover:bg-gray-100 text-gray-700 hover:shadow-sm'
+            }`}
+            title="Move Shape"
           >
-            {satellite ? 'Map' : 'Satellite'}
+            <Move className="w-5 h-5" />
+          </button>
+          
+          {/* Marker Tools */}
+          <div className="h-px bg-gray-200 my-1"></div>
+          <div className="relative" data-marker-picker>
+            <button
+              onClick={() => setShowMarkerPicker(!showMarkerPicker)}
+              className={`p-2.5 rounded-lg transition-all duration-200 w-full ${
+                activeTool?.startsWith('marker_') 
+                  ? 'bg-indigo-600 text-white shadow-md' 
+                  : 'bg-gray-50 hover:bg-gray-100 text-gray-700 hover:shadow-sm'
+              }`}
+              title="Add Marker"
+            >
+              <MapPin className="w-5 h-5" />
+            </button>
+            {showMarkerPicker && (
+              <div className="absolute left-full ml-2 top-0 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl border border-gray-200 p-2 flex flex-col gap-1 z-[1100]" data-marker-picker>
+                <button
+                  onClick={() => { setActiveTool('marker_storage'); setShowMarkerPicker(false); }}
+                  className={`p-2.5 rounded-lg transition-all duration-200 ${
+                    activeTool === 'marker_storage' 
+                      ? 'bg-green-600 text-white' 
+                      : 'bg-gray-50 hover:bg-green-50 text-gray-700'
+                  }`}
+                  title="Storage"
+                >
+                  <Package className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => { setActiveTool('marker_workshop'); setShowMarkerPicker(false); }}
+                  className={`p-2.5 rounded-lg transition-all duration-200 ${
+                    activeTool === 'marker_workshop' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-50 hover:bg-blue-50 text-gray-700'
+                  }`}
+                  title="Workshop"
+                >
+                  <Building2 className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => { setActiveTool('marker_garage'); setShowMarkerPicker(false); }}
+                  className={`p-2.5 rounded-lg transition-all duration-200 ${
+                    activeTool === 'marker_garage' 
+                      ? 'bg-amber-600 text-white' 
+                      : 'bg-gray-50 hover:bg-amber-50 text-gray-700'
+                  }`}
+                  title="Garage"
+                >
+                  <CarFront className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => { setActiveTool('marker_sensor'); setShowMarkerPicker(false); }}
+                  className={`p-2.5 rounded-lg transition-all duration-200 ${
+                    activeTool === 'marker_sensor' 
+                      ? 'bg-red-600 text-white' 
+                      : 'bg-gray-50 hover:bg-red-50 text-gray-700'
+                  }`}
+                  title="Sensor"
+                >
+                  <Thermometer className="w-5 h-5" />
+                </button>
+              </div>
+            )}
+          </div>
+          
+          {/* Delete Tool */}
+          <div className="h-px bg-gray-200 my-1"></div>
+          <button
+            onClick={() => setActiveTool(activeTool === 'delete' ? 'select' : 'delete')}
+            className={`p-2.5 rounded-lg transition-all duration-200 ${
+              activeTool === 'delete' 
+                ? 'bg-red-600 text-white shadow-md' 
+                : 'bg-gray-50 hover:bg-red-50 text-gray-700 hover:shadow-sm hover:text-red-600'
+            }`}
+            title="Delete"
+          >
+            <Eraser className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+
+      {/* Basemap Switcher - Bottom Right */}
+      {isEditMode && (
+        <div className="absolute bottom-4 right-4 z-[1000] bg-white/95 backdrop-blur-sm rounded-xl shadow-xl border border-gray-200 p-1 flex gap-1">
+          <button
+            onClick={() => setSatellite(false)}
+            className={`px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
+              !satellite 
+                ? 'bg-indigo-600 text-white shadow-md' 
+                : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
+            }`}
+            title="Map View"
+          >
+            <MapIcon className="w-4 h-4" />
+            <span className="text-sm font-medium">Map</span>
+          </button>
+          <button
+            onClick={() => setSatellite(true)}
+            className={`px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
+              satellite 
+                ? 'bg-indigo-600 text-white shadow-md' 
+                : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
+            }`}
+            title="Satellite View"
+          >
+            <Satellite className="w-4 h-4" />
+            <span className="text-sm font-medium">Satellite</span>
           </button>
         </div>
       )}
@@ -605,11 +885,11 @@ export default function MapComponent({ isEditMode = true, userId }: MapComponent
         <FeatureGroup ref={featureGroupRef} />
       </MapContainer>
 
-      {/* Locate Me Button */}
+      {/* Locate Me Button - Bottom Left */}
       <button
         onClick={handleLocateMe}
         disabled={isLocating || !map}
-        className="absolute bottom-4 right-4 z-[1000] bg-white hover:bg-gray-50 border border-gray-300 rounded-lg shadow-lg p-3 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="absolute bottom-4 left-4 z-[1000] bg-white/95 backdrop-blur-sm hover:bg-gray-50 border border-gray-300 rounded-xl shadow-xl p-3 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
         title="Locate Me"
       >
         {isLocating ? (
