@@ -130,6 +130,14 @@ func main() {
 	protected.HandleFunc("/cultivation-seasons", cultivationSeasonsHandler.ListCultivationSeasons).Methods("GET")
 	protected.HandleFunc("/cultivation-seasons/{id}", cultivationSeasonsHandler.GetCultivationSeason).Methods("GET")
 	
+	// Inventory routes (GET)
+	protected.HandleFunc("/inventory/stats", inventoryHandler.GetInventoryStats).Methods("GET")
+	protected.HandleFunc("/inventory/items", inventoryHandler.ListInventoryItems).Methods("GET")
+	protected.HandleFunc("/inventory/items/{id}", inventoryHandler.GetInventoryItem).Methods("GET")
+	protected.HandleFunc("/inventory/stock-lots", inventoryHandler.ListStockLots).Methods("GET")
+	protected.HandleFunc("/inventory/warehouses", inventoryHandler.ListWarehouses).Methods("GET")
+	protected.HandleFunc("/inventory/stock-movements", inventoryHandler.ListStockMovements).Methods("GET")
+	
 	// Protected POST routes (require both auth and CSRF)
 	protectedPost := api.PathPrefix("").Subrouter()
 	protectedPost.Use(csrfSkipOptions)

@@ -149,3 +149,4 @@ console.log('3. Check production logs: docker logs agrione_frontend')
 console.log('4. Test upload with small file (< 5MB) vs large file (> 5MB)')
 console.log()
 
+
