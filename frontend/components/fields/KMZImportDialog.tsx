@@ -20,10 +20,11 @@ interface FieldData {
 
 interface KMZImportDialogProps {
   onClose: () => void
-  onSuccess: () => void
+  onSuccess?: () => void
+  onPolygonsParsed?: (polygons: ParsedPolygon[]) => void
 }
 
-export default function KMZImportDialog({ onClose, onSuccess }: KMZImportDialogProps) {
+export default function KMZImportDialog({ onClose, onSuccess, onPolygonsParsed }: KMZImportDialogProps) {
   const [file, setFile] = useState<File | null>(null)
   const [parsedPolygons, setParsedPolygons] = useState<ParsedPolygon[]>([])
   const [fieldsData, setFieldsData] = useState<FieldData[]>([])
@@ -73,7 +74,13 @@ export default function KMZImportDialog({ onClose, onSuccess }: KMZImportDialogP
       
       setParsedPolygons(result.polygons)
 
-      // Initialize field data with parsed polygons
+      // If onPolygonsParsed callback is provided, use it (for map-based editing)
+      if (onPolygonsParsed) {
+        onPolygonsParsed(result.polygons)
+        return // Close dialog and let parent handle the polygons
+      }
+
+      // Otherwise, use the old form-based approach
       const initialFieldsData: FieldData[] = result.polygons.map((polygon) => ({
         name: polygon.name || '',
         description: '',

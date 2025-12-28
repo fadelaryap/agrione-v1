@@ -9,12 +9,22 @@ import { Eye, Edit3, Upload, X } from 'lucide-react'
 import { toast } from 'sonner'
 import KMZImportDialog from '@/components/fields/KMZImportDialog'
 
+export interface TemporaryImportedPolygon {
+  id: string // Unique ID for this polygon
+  name: string
+  coordinates: number[][]
+  description?: string
+  plantTypeId?: string
+  userId?: string
+}
+
 export default function DashboardFieldsPage() {
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [isEditMode, setIsEditMode] = useState(false)
   const [isKMZDialogOpen, setIsKMZDialogOpen] = useState(false)
+  const [temporaryPolygons, setTemporaryPolygons] = useState<TemporaryImportedPolygon[]>([])
 
   useEffect(() => {
     checkAuth()
@@ -103,18 +113,95 @@ export default function DashboardFieldsPage() {
           </div>
         </div>
         
+        {/* Temporary polygons info banner */}
+        {temporaryPolygons.length > 0 && (
+          <div className="mb-4 bg-orange-50 border border-orange-200 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-orange-900">
+                  {temporaryPolygons.length} polygon(s) dari KMZ siap untuk dikonfigurasi
+                </p>
+                <p className="text-xs text-orange-700 mt-1">
+                  Klik polygon di peta untuk mengisi detail (nama, assignee, plant type)
+                </p>
+                <p className="text-xs text-orange-600 mt-1">
+                  {temporaryPolygons.filter(p => p.name.trim()).length} dari {temporaryPolygons.length} sudah memiliki nama
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={async () => {
+                    const invalidFields = temporaryPolygons.filter(p => !p.name.trim())
+                    if (invalidFields.length > 0) {
+                      toast.error(`Mohon beri nama untuk semua polygon (${invalidFields.length} belum memiliki nama)`)
+                      return
+                    }
+
+                    try {
+                      const fieldsToCreate = temporaryPolygons.map(f => ({
+                        name: f.name.trim(),
+                        description: f.description?.trim() || undefined,
+                        coordinates: f.coordinates,
+                        plant_type_id: f.plantTypeId ? parseInt(f.plantTypeId) : undefined,
+                        user_id: f.userId ? parseInt(f.userId) : undefined,
+                      }))
+
+                      const result = await fieldsAPI.batchCreateFields(fieldsToCreate)
+
+                      if (result.errors && result.errors.length > 0) {
+                        toast.warning(`Berhasil membuat ${result.count} field(s), tapi ada ${result.errors.length} error(s)`)
+                        console.error('Errors:', result.errors)
+                      } else {
+                        toast.success(`Berhasil membuat ${result.count} field(s)`)
+                      }
+
+                      setTemporaryPolygons([])
+                      window.location.reload() // Reload to show new fields
+                    } catch (err: any) {
+                      toast.error(err.response?.data?.error || 'Gagal membuat fields')
+                    }
+                  }}
+                  disabled={temporaryPolygons.some(p => !p.name.trim())}
+                  className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                >
+                  Buat {temporaryPolygons.length} Field(s)
+                </button>
+                <button
+                  onClick={() => setTemporaryPolygons([])}
+                  className="text-orange-600 hover:text-orange-800 text-sm font-medium px-3 py-2 hover:bg-orange-100 rounded-lg transition-colors"
+                >
+                  Hapus Semua
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          <MapWrapper isEditMode={isEditMode} />
+          <MapWrapper 
+            isEditMode={isEditMode} 
+            temporaryPolygons={temporaryPolygons}
+            onTemporaryPolygonsChange={setTemporaryPolygons}
+          />
         </div>
 
         {/* KMZ Import Dialog */}
         {isKMZDialogOpen && (
           <KMZImportDialog
             onClose={() => setIsKMZDialogOpen(false)}
-            onSuccess={() => {
+            onPolygonsParsed={(polygons) => {
+              // Convert parsed polygons to temporary polygons with unique IDs
+              const tempPolygons: TemporaryImportedPolygon[] = polygons.map((poly, index) => ({
+                id: `temp-${Date.now()}-${index}`,
+                name: poly.name || `Field ${index + 1}`,
+                coordinates: poly.coordinates,
+                description: '',
+                plantTypeId: '',
+                userId: '',
+              }))
+              setTemporaryPolygons(tempPolygons)
               setIsKMZDialogOpen(false)
-              // Reload map to show new fields
-              window.location.reload()
+              toast.success(`${polygons.length} polygon(s) berhasil di-import. Klik polygon di peta untuk mengisi detail.`)
             }}
           />
         )}
