@@ -51,6 +51,7 @@ func main() {
 	attendanceHandler := handlers.NewAttendanceHandler(db)
 	notificationsHandler := handlers.NewNotificationsHandler(db, hub)
 	cultivationSeasonsHandler := handlers.NewCultivationSeasonsHandler(db)
+	inventoryHandler := handlers.NewInventoryHandler(db)
 
 	// Setup router
 	r := mux.NewRouter()
@@ -139,6 +140,9 @@ func main() {
 	protectedPost.HandleFunc("/plant-types", plantTypesHandler.CreatePlantType).Methods("POST")
 	protectedPost.HandleFunc("/work-orders", workOrdersHandler.CreateWorkOrder).Methods("POST")
 	protectedPost.HandleFunc("/cultivation-seasons", cultivationSeasonsHandler.CreateCultivationSeason).Methods("POST")
+	protectedPost.HandleFunc("/inventory/items", inventoryHandler.CreateInventoryItem).Methods("POST")
+	protectedPost.HandleFunc("/inventory/stock-lots", inventoryHandler.CreateStockLot).Methods("POST")
+	protectedPost.HandleFunc("/inventory/stock-lots/remove", inventoryHandler.RemoveStock).Methods("POST")
 	
 	// Protected PUT routes (require both auth and CSRF)
 	protectedPut := api.PathPrefix("").Subrouter()
@@ -152,6 +156,7 @@ func main() {
 	protectedPut.HandleFunc("/plant-types/{id}", plantTypesHandler.UpdatePlantType).Methods("PUT")
 	protectedPut.HandleFunc("/work-orders/{id}", workOrdersHandler.UpdateWorkOrder).Methods("PUT")
 	protectedPut.HandleFunc("/cultivation-seasons/{id}", cultivationSeasonsHandler.UpdateCultivationSeason).Methods("PUT")
+	protectedPut.HandleFunc("/inventory/items/{id}", inventoryHandler.UpdateInventoryItem).Methods("PUT")
 	
 	// Protected DELETE routes (require both auth and CSRF)
 	protectedDelete := api.PathPrefix("").Subrouter()
@@ -162,6 +167,7 @@ func main() {
 	protectedDelete.HandleFunc("/plant-types/{id}", plantTypesHandler.DeletePlantType).Methods("DELETE")
 	protectedDelete.HandleFunc("/work-orders/{id}", workOrdersHandler.DeleteWorkOrder).Methods("DELETE")
 	protectedDelete.HandleFunc("/cultivation-seasons/{id}", cultivationSeasonsHandler.DeleteCultivationSeason).Methods("DELETE")
+	protectedDelete.HandleFunc("/inventory/items/{id}", inventoryHandler.DeleteInventoryItem).Methods("DELETE")
 
 	// Field Reports routes
 	protected.HandleFunc("/field-reports", fieldReportsHandler.ListFieldReports).Methods("GET")

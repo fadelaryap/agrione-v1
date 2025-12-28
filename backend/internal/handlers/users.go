@@ -135,6 +135,7 @@ func (h *UsersHandler) UpdateUserRole(w http.ResponseWriter, r *http.Request) {
 		"Level 2":    true,
 		"Level 3":    true,
 		"Level 4":    true,
+		"warehouse":  true,
 		"user":       true,
 	}
 	if !validRoles[req.Role] {

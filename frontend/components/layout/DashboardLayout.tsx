@@ -15,7 +15,8 @@ import {
   FileCheck,
   Building2,
   Calendar,
-  Clock
+  Clock,
+  Package
 } from 'lucide-react'
 import LogoutButton from '@/components/LogoutButton'
 import NotificationBell from '@/components/notifications/NotificationBell'
@@ -55,13 +56,24 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     ? [{ href: '/dashboard/attendance', label: 'Data Absensi', icon: Clock }]
     : []
 
+  // Add inventory link for warehouse role or Level 1/Level 2
+  const inventoryNavItem = user && (user.role === 'warehouse' || user.role === 'Level 1' || user.role === 'Level 2')
+    ? [{ href: '/inventory', label: 'Inventory', icon: Package }]
+    : []
+
   // Add approval, HR, and attendance links only for Level 1 and Level 2
   const navItems = user && (user.role === 'Level 1' || user.role === 'Level 2')
     ? [
         ...baseNavItems, 
         ...attendanceNavItem,
+        ...inventoryNavItem,
         { href: '/dashboard/field-reports-approval', label: 'Persetujuan Laporan', icon: FileCheck },
         { href: '/dashboard/hr', label: 'Manajemen HR', icon: Building2 }
+      ]
+    : user && user.role === 'warehouse'
+    ? [
+        ...baseNavItems,
+        ...inventoryNavItem
       ]
     : baseNavItems
 

@@ -619,3 +619,195 @@ export const attendanceAPI = {
   },
 }
 
+// Inventory Interfaces
+export interface InventoryItem {
+  id: number
+  sku: string
+  name: string
+  category: string
+  unit: string
+  reorder_point: number
+  status: string
+  avg_cost: number
+  description?: string
+  suppliers: string[]
+  created_at?: string
+  updated_at?: string
+}
+
+export interface StockLot {
+  id: number
+  lot_id: string
+  item: InventoryItem
+  warehouse: {
+    id: number
+    name: string
+    description?: string
+    type: string
+    apikey: string
+    coordinates: any
+    field_ref?: number
+    created_at?: string
+    updated_at?: string
+  }
+  batch_no: string
+  quantity: number
+  unit_cost: number
+  total_cost: number
+  expiry_date?: string
+  supplier: string
+  status: string
+  notes?: string
+  received_date: string
+  created_at?: string
+  updated_at?: string
+}
+
+export interface StockMovement {
+  id: number
+  movement_id: string
+  item: InventoryItem
+  lot?: StockLot
+  warehouse: {
+    id: number
+    name: string
+    description?: string
+    type: string
+    apikey: string
+    coordinates: any
+    field_ref?: number
+    created_at?: string
+    updated_at?: string
+  }
+  type: 'in' | 'out' | 'transfer' | 'adjustment'
+  quantity: number
+  unit_cost: number
+  total_cost: number
+  reason: string
+  reference?: string
+  performed_by: string
+  notes?: string
+  created_at?: string
+  updated_at?: string
+}
+
+export interface InventoryStats {
+  total_items: number
+  stock_value: number
+  total_warehouses: number
+  low_stock_count: number
+  recent_movements: number
+}
+
+export interface Warehouse {
+  id: number
+  name: string
+  description?: string
+  type: string
+  apikey: string
+  coordinates: any
+  field_ref?: number
+  created_at?: string
+  updated_at?: string
+}
+
+export const inventoryAPI = {
+  // Inventory Items
+  listItems: async (params?: { search?: string; category?: string; page?: number; limit?: number }): Promise<InventoryItem[]> => {
+    const queryParams = new URLSearchParams()
+    if (params?.search) queryParams.append('search', params.search)
+    if (params?.category && params.category !== 'all') queryParams.append('category', params.category)
+    if (params?.page) queryParams.append('page', params.page.toString())
+    if (params?.limit) queryParams.append('limit', params.limit.toString())
+    const response = await api.get<InventoryItem[]>(`/inventory/items?${queryParams.toString()}`)
+    return Array.isArray(response.data) ? response.data : []
+  },
+  getItem: async (id: number): Promise<InventoryItem> => {
+    const response = await api.get<InventoryItem>(`/inventory/items/${id}`)
+    return response.data
+  },
+  createItem: async (data: {
+    sku: string
+    name: string
+    category: string
+    unit: string
+    reorder_point: number
+    status?: string
+    avg_cost?: number
+    description?: string
+    suppliers?: string[]
+  }): Promise<InventoryItem> => {
+    const response = await api.post<InventoryItem>('/inventory/items', data)
+    return response.data
+  },
+  updateItem: async (id: number, data: Partial<InventoryItem>): Promise<InventoryItem> => {
+    const response = await api.put<InventoryItem>(`/inventory/items/${id}`, data)
+    return response.data
+  },
+  deleteItem: async (id: number): Promise<void> => {
+    await api.delete(`/inventory/items/${id}`)
+  },
+
+  // Stock Lots
+  listStockLots: async (params?: { search?: string; warehouse?: string; status?: string; page?: number; limit?: number }): Promise<StockLot[]> => {
+    const queryParams = new URLSearchParams()
+    if (params?.search) queryParams.append('search', params.search)
+    if (params?.warehouse && params.warehouse !== 'all') queryParams.append('warehouse', params.warehouse)
+    if (params?.status && params.status !== 'all') queryParams.append('status', params.status)
+    if (params?.page) queryParams.append('page', params.page.toString())
+    if (params?.limit) queryParams.append('limit', params.limit.toString())
+    const response = await api.get<StockLot[]>(`/inventory/stock-lots?${queryParams.toString()}`)
+    return Array.isArray(response.data) ? response.data : []
+  },
+  createStockLot: async (data: {
+    item_id: number
+    warehouse_id: number
+    batch_no: string
+    quantity: number
+    unit_cost: number
+    expiry_date?: string
+    supplier: string
+    notes?: string
+  }): Promise<StockLot> => {
+    const response = await api.post<StockLot>('/inventory/stock-lots', data)
+    return response.data
+  },
+  removeStock: async (data: {
+    lot_id: number
+    quantity: number
+    reason: string
+    reference?: string
+    performed_by: string
+    notes?: string
+  }): Promise<void> => {
+    await api.post('/inventory/stock-lots/remove', data)
+  },
+
+  // Stock Movements
+  listMovements: async (params?: { search?: string; type?: string; item_id?: number; warehouse_id?: number; page?: number; limit?: number }): Promise<StockMovement[]> => {
+    const queryParams = new URLSearchParams()
+    if (params?.search) queryParams.append('search', params.search)
+    if (params?.type && params.type !== 'all') queryParams.append('type', params.type)
+    if (params?.item_id) queryParams.append('item_id', params.item_id.toString())
+    if (params?.warehouse_id) queryParams.append('warehouse_id', params.warehouse_id.toString())
+    if (params?.page) queryParams.append('page', params.page.toString())
+    if (params?.limit) queryParams.append('limit', params.limit.toString())
+    const response = await api.get<StockMovement[]>(`/inventory/stock-movements?${queryParams.toString()}`)
+    return Array.isArray(response.data) ? response.data : []
+  },
+
+  // Stats
+  getStats: async (): Promise<InventoryStats> => {
+    const response = await api.get<InventoryStats>('/inventory/stats')
+    return response.data
+  },
+
+  // Warehouses
+  listWarehouses: async (params?: { search?: string }): Promise<Warehouse[]> => {
+    const queryParams = new URLSearchParams()
+    if (params?.search) queryParams.append('search', params.search)
+    const response = await api.get<Warehouse[]>(`/inventory/warehouses?${queryParams.toString()}`)
+    return Array.isArray(response.data) ? response.data : []
+  },
+}
+

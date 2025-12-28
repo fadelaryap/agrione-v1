@@ -251,7 +251,100 @@ func RunMigrations(db *sql.DB) error {
 		return fmt.Errorf("failed to create field_reports table: %w", err)
 	}
 
-	// Add new columns to field_reports if table already exists (for existing databases)
+	// Create inventory_items table
+	createInventoryItemsQuery := `
+	CREATE TABLE IF NOT EXISTS inventory_items (
+		id SERIAL PRIMARY KEY,
+		sku VARCHAR(100) UNIQUE NOT NULL,
+		name VARCHAR(255) NOT NULL,
+		category VARCHAR(100) NOT NULL,
+		unit VARCHAR(50) NOT NULL,
+		reorder_point DOUBLE PRECISION NOT NULL DEFAULT 0,
+		status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'discontinued')),
+		avg_cost DOUBLE PRECISION DEFAULT 0,
+		description TEXT,
+		suppliers JSONB DEFAULT '[]'::jsonb,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	);
+
+	CREATE INDEX IF NOT EXISTS idx_inventory_items_sku ON inventory_items(sku);
+	CREATE INDEX IF NOT EXISTS idx_inventory_items_category ON inventory_items(category);
+	CREATE INDEX IF NOT EXISTS idx_inventory_items_status ON inventory_items(status);
+	CREATE INDEX IF NOT EXISTS idx_inventory_items_name ON inventory_items(name);
+	`
+
+	_, err = db.Exec(createInventoryItemsQuery)
+	if err != nil {
+		return fmt.Errorf("failed to create inventory_items table: %w", err)
+	}
+
+	// Create stock_lots table
+	createStockLotsQuery := `
+	CREATE TABLE IF NOT EXISTS stock_lots (
+		id SERIAL PRIMARY KEY,
+		lot_id VARCHAR(100) UNIQUE NOT NULL,
+		item_id INTEGER NOT NULL REFERENCES inventory_items(id) ON DELETE CASCADE,
+		warehouse_id INTEGER NOT NULL REFERENCES plots(id) ON DELETE RESTRICT,
+		batch_no VARCHAR(100) NOT NULL,
+		quantity DOUBLE PRECISION NOT NULL,
+		unit_cost DOUBLE PRECISION NOT NULL,
+		total_cost DOUBLE PRECISION NOT NULL,
+		expiry_date TIMESTAMP,
+		supplier VARCHAR(255) NOT NULL,
+		status VARCHAR(20) DEFAULT 'available' CHECK (status IN ('available', 'reserved', 'expired', 'depleted')),
+		notes TEXT,
+		received_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	);
+
+	CREATE INDEX IF NOT EXISTS idx_stock_lots_item_id ON stock_lots(item_id);
+	CREATE INDEX IF NOT EXISTS idx_stock_lots_warehouse_id ON stock_lots(warehouse_id);
+	CREATE INDEX IF NOT EXISTS idx_stock_lots_lot_id ON stock_lots(lot_id);
+	CREATE INDEX IF NOT EXISTS idx_stock_lots_status ON stock_lots(status);
+	CREATE INDEX IF NOT EXISTS idx_stock_lots_expiry_date ON stock_lots(expiry_date);
+	`
+
+	_, err = db.Exec(createStockLotsQuery)
+	if err != nil {
+		return fmt.Errorf("failed to create stock_lots table: %w", err)
+	}
+
+	// Create stock_movements table
+	createStockMovementsQuery := `
+	CREATE TABLE IF NOT EXISTS stock_movements (
+		id SERIAL PRIMARY KEY,
+		movement_id VARCHAR(100) UNIQUE NOT NULL,
+		item_id INTEGER NOT NULL REFERENCES inventory_items(id) ON DELETE CASCADE,
+		lot_id INTEGER REFERENCES stock_lots(id) ON DELETE SET NULL,
+		warehouse_id INTEGER NOT NULL REFERENCES plots(id) ON DELETE RESTRICT,
+		type VARCHAR(20) NOT NULL CHECK (type IN ('in', 'out', 'transfer', 'adjustment')),
+		quantity DOUBLE PRECISION NOT NULL,
+		unit_cost DOUBLE PRECISION NOT NULL,
+		total_cost DOUBLE PRECISION NOT NULL,
+		reason VARCHAR(255) NOT NULL,
+		reference VARCHAR(255),
+		performed_by VARCHAR(255) NOT NULL,
+		notes TEXT,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	);
+
+	CREATE INDEX IF NOT EXISTS idx_stock_movements_item_id ON stock_movements(item_id);
+	CREATE INDEX IF NOT EXISTS idx_stock_movements_lot_id ON stock_movements(lot_id);
+	CREATE INDEX IF NOT EXISTS idx_stock_movements_warehouse_id ON stock_movements(warehouse_id);
+	CREATE INDEX IF NOT EXISTS idx_stock_movements_type ON stock_movements(type);
+	CREATE INDEX IF NOT EXISTS idx_stock_movements_movement_id ON stock_movements(movement_id);
+	CREATE INDEX IF NOT EXISTS idx_stock_movements_created_at ON stock_movements(created_at);
+	`
+
+	_, err = db.Exec(createStockMovementsQuery)
+	if err != nil {
+		return fmt.Errorf("failed to create stock_movements table: %w", err)
+	}
+
+	// Add new columns to field_reports if table already exists (for existing databases) - moved to after attendance table creation
 	alterFieldReportsQuery := `
 	DO $$ 
 	BEGIN
@@ -354,11 +447,6 @@ func RunMigrations(db *sql.DB) error {
 		END IF;
 	END $$;
 	`
-
-	_, err = db.Exec(createFieldReportsQuery)
-	if err != nil {
-		return fmt.Errorf("failed to create field_reports table: %w", err)
-	}
 
 	_, err = db.Exec(createAttendanceQuery)
 	if err != nil {
