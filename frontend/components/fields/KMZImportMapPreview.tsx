@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useMemo } from 'react'
 import { MapContainer, TileLayer, FeatureGroup, useMap } from 'react-leaflet'
-import { LatLngExpression, Map as LeafletMap } from 'leaflet'
+import { LatLngExpression } from 'leaflet'
 import L from 'leaflet'
 
 // Fix Leaflet default icon
@@ -53,59 +53,102 @@ function MapBounds({ polygons }: { polygons: ParsedPolygon[] }) {
   return null
 }
 
-export default function KMZImportMapPreview({ polygons, onPolygonClick }: KMZImportMapPreviewProps) {
-  const [map, setMap] = useState<LeafletMap | null>(null)
-  const featureGroupRef = useRef<any>(null)
+function PolygonLayers({ polygons, onPolygonClick }: { polygons: ParsedPolygon[], onPolygonClick: (polygon: ParsedPolygon & { id: string }) => void }) {
+  const featureGroupRef = useRef<L.FeatureGroup | null>(null)
+  const layersRef = useRef<L.Polygon[]>([])
+  const polygonsRef = useRef<ParsedPolygon[]>(polygons)
+  const onPolygonClickRef = useRef(onPolygonClick)
+
+  // Update refs when props change
+  useEffect(() => {
+    polygonsRef.current = polygons
+    onPolygonClickRef.current = onPolygonClick
+  }, [polygons, onPolygonClick])
+
+  // Create a stable key for polygons to detect changes
+  const polygonsKey = useMemo(() => {
+    return polygons.map(p => `${p.id}-${p.coordinates.length}`).join(',')
+  }, [polygons])
 
   useEffect(() => {
-    if (!map || !featureGroupRef.current) return
+    if (!featureGroupRef.current) return
 
     const featureGroup = featureGroupRef.current
 
-    // Clear existing layers
-    featureGroup.clearLayers()
+    // Cleanup previous layers
+    layersRef.current.forEach(layer => {
+      featureGroup.removeLayer(layer)
+      layer.remove()
+    })
+    layersRef.current = []
 
     // Draw temporary imported polygons (orange color)
-    if (Array.isArray(polygons) && polygons.length > 0) {
-      polygons.forEach((poly) => {
+    const currentPolygons = polygonsRef.current
+    if (Array.isArray(currentPolygons) && currentPolygons.length > 0) {
+      currentPolygons.forEach((poly) => {
         if (Array.isArray(poly.coordinates) && poly.coordinates.length > 0) {
-          const latlngs = poly.coordinates.map((coord: any) => [coord[0], coord[1]] as LatLngExpression)
-          const layer = L.polygon(latlngs, { 
-            color: '#f97316', // Orange color
-            weight: 3, 
-            fillOpacity: 0.25,
-            dashArray: '5, 5' // Dashed border to show it's temporary
-          })
-          
-          ;(layer as any)._meta = { id: poly.id, type: 'temporary_polygon', name: poly.name }
-          layer.bindPopup(`
-            <div>
-              <strong style="color: #f97316;">${poly.name || 'Unnamed'}</strong><br/>
-              <button onclick="window.clickKMZPolygon('${poly.id}')" style="margin-top:8px;padding:4px 8px;background:#f97316;color:white;border:none;border-radius:4px;cursor:pointer;">Edit Detail</button>
-            </div>
-          `)
-          
-          layer.on('click', () => {
-            const foundPoly = polygons.find(p => p.id === poly.id)
-            if (foundPoly) {
-              onPolygonClick(foundPoly)
-            }
-          })
-          
-          featureGroup.addLayer(layer)
+          try {
+            const latlngs = poly.coordinates.map((coord: any) => [coord[0], coord[1]] as LatLngExpression)
+            const layer = L.polygon(latlngs, { 
+              color: '#f97316', // Orange color
+              weight: 3, 
+              fillOpacity: 0.25,
+              dashArray: '5, 5' // Dashed border to show it's temporary
+            })
+            
+            ;(layer as any)._meta = { id: poly.id, type: 'temporary_polygon', name: poly.name }
+            layer.bindPopup(`
+              <div>
+                <strong style="color: #f97316;">${poly.name || 'Unnamed'}</strong><br/>
+                <button onclick="window.clickKMZPolygon('${poly.id}')" style="margin-top:8px;padding:4px 8px;background:#f97316;color:white;border:none;border-radius:4px;cursor:pointer;">Edit Detail</button>
+              </div>
+            `)
+            
+            layer.on('click', () => {
+              const foundPoly = currentPolygons.find(p => p.id === poly.id)
+              if (foundPoly) {
+                onPolygonClickRef.current(foundPoly)
+              }
+            })
+            
+            featureGroup.addLayer(layer)
+            layersRef.current.push(layer)
+          } catch (err) {
+            console.error('Error rendering polygon:', err, poly)
+          }
         }
       })
     }
 
     // Global function for clicking polygon from popup
     ;(window as any).clickKMZPolygon = (polygonId: string) => {
-      const poly = polygons.find(p => p.id === polygonId)
+      const poly = currentPolygons.find(p => p.id === polygonId)
       if (poly) {
-        onPolygonClick(poly)
+        onPolygonClickRef.current(poly)
       }
     }
-  }, [map, polygons, onPolygonClick])
 
+    // Cleanup
+    return () => {
+      if (featureGroupRef.current) {
+        layersRef.current.forEach(layer => {
+          featureGroupRef.current!.removeLayer(layer)
+          layer.remove()
+        })
+        layersRef.current = []
+      }
+    }
+  }, [polygonsKey]) // Depend on polygonsKey to trigger re-render
+
+  // Callback ref to ensure FeatureGroup is ready
+  const setFeatureGroupRef = (instance: L.FeatureGroup | null) => {
+    featureGroupRef.current = instance
+  }
+
+  return <FeatureGroup ref={setFeatureGroupRef} />
+}
+
+export default function KMZImportMapPreview({ polygons, onPolygonClick }: KMZImportMapPreviewProps) {
   // Calculate center from polygons
   const getCenter = (): [number, number] => {
     if (polygons.length === 0) return [-4.079, 104.167] // Default center
@@ -140,7 +183,7 @@ export default function KMZImportMapPreview({ polygons, onPolygonClick }: KMZImp
           url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
           attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
         />
-        <FeatureGroup ref={featureGroupRef} />
+        <PolygonLayers polygons={polygons} onPolygonClick={onPolygonClick} />
         <MapBounds polygons={polygons} />
       </MapContainer>
     </div>
