@@ -30,8 +30,13 @@ type Folder struct {
 }
 
 type Placemark struct {
-	Name     string   `xml:"name"`
-	Polygon  Polygon  `xml:"Polygon"`
+	Name          string        `xml:"name"`
+	Polygon       Polygon       `xml:"Polygon"`        // Direct polygon
+	MultiGeometry MultiGeometry `xml:"MultiGeometry"`  // MultiGeometry containing multiple polygons
+}
+
+type MultiGeometry struct {
+	Polygon []Polygon `xml:"Polygon"`
 }
 
 type Polygon struct {
@@ -118,21 +123,42 @@ func ParseKMZ(file multipart.File, size int64) ([]ParsedPolygon, error) {
 	// Extract polygons
 	var polygons []ParsedPolygon
 	for i, placemark := range allPlacemarks {
-		if placemark.Polygon.OuterBoundaryIs.LinearRing.Coordinates == "" {
-			log.Printf("[KMZ Parser] Placemark %d (%s) has no polygon coordinates", i+1, placemark.Name)
-			continue
-		}
-
-		coords := parseCoordinates(placemark.Polygon.OuterBoundaryIs.LinearRing.Coordinates)
-		if len(coords) < 3 {
-			log.Printf("[KMZ Parser] Placemark %d (%s) has less than 3 coordinates: %d", i+1, placemark.Name, len(coords))
-			continue // Need at least 3 points for a polygon
-		}
-
-		// Use name from KML, or generate one if empty
 		name := placemark.Name
 		if name == "" {
 			name = fmt.Sprintf("Field %d", i+1)
+		}
+
+		var coords [][]float64
+		var foundPolygon bool
+
+		// Check for MultiGeometry first (takes precedence if both exist)
+		if len(placemark.MultiGeometry.Polygon) > 0 {
+			log.Printf("[KMZ Parser] Placemark %d (%s) has MultiGeometry with %d polygons", i+1, name, len(placemark.MultiGeometry.Polygon))
+			
+			// Extract the first polygon from MultiGeometry (typically the main one)
+			polygon := placemark.MultiGeometry.Polygon[0]
+			if polygon.OuterBoundaryIs.LinearRing.Coordinates != "" {
+				coords = parseCoordinates(polygon.OuterBoundaryIs.LinearRing.Coordinates)
+				foundPolygon = true
+				
+				if len(placemark.MultiGeometry.Polygon) > 1 {
+					log.Printf("[KMZ Parser] Placemark %d (%s) has %d polygons in MultiGeometry, using the first one", i+1, name, len(placemark.MultiGeometry.Polygon))
+				}
+			}
+		} else if placemark.Polygon.OuterBoundaryIs.LinearRing.Coordinates != "" {
+			// Check for direct Polygon
+			coords = parseCoordinates(placemark.Polygon.OuterBoundaryIs.LinearRing.Coordinates)
+			foundPolygon = true
+		}
+
+		if !foundPolygon {
+			log.Printf("[KMZ Parser] Placemark %d (%s) has no polygon coordinates", i+1, name)
+			continue
+		}
+
+		if len(coords) < 3 {
+			log.Printf("[KMZ Parser] Placemark %d (%s) has less than 3 coordinates: %d", i+1, name, len(coords))
+			continue // Need at least 3 points for a polygon
 		}
 
 		log.Printf("[KMZ Parser] Extracted polygon: %s with %d coordinates", name, len(coords))
