@@ -57,8 +57,44 @@
   * {
     @apply border-border;
   }
+  /* Increase base font size by 50% (for 150% zoom equivalent) */
+  /* This will make all rem-based sizes (including Tailwind classes) 50% larger */
+  html {
+    font-size: 150%; /* 24px base (from 16px) - equivalent to 150% zoom */
+  }
   body {
     @apply bg-background text-foreground;
+    font-size: 1rem; /* Will be 24px now (24px = 1rem when html is 150%) */
+    line-height: 1.6;
+  }
+  /* Icon sizes will automatically scale because Tailwind uses rem units */
+  /* w-4 = 1rem = 24px, w-5 = 1.25rem = 30px, w-6 = 1.5rem = 36px */
+  
+  /* Increase input/select/textarea sizes for better visibility */
+  input, select, textarea {
+    font-size: 1rem; /* 24px */
+    padding: 0.75rem 0.875rem;
+    line-height: 1.5;
+  }
+  
+  /* Increase button text and padding */
+  button {
+    font-size: 1rem; /* 24px */
+    padding: 0.75rem 1rem;
+    line-height: 1.5;
+  }
+  
+  /* Better line height for readability */
+  p {
+    line-height: 1.7;
+  }
+  
+  /* Ensure text in small classes is still readable */
+  .text-xs {
+    font-size: 0.75rem; /* 18px (was 12px) */
+  }
+  .text-sm {
+    font-size: 0.875rem; /* 21px (was 14px) */
   }
 }
 

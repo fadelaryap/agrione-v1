@@ -130,7 +130,7 @@ export default function KMZImportDialog({ onClose, onSuccess, onPolygonsParsed }
         toast.success(`Successfully created ${result.count} field(s)`)
       }
 
-      onSuccess()
+      onSuccess?.()
     } catch (err: any) {
       toast.error(err.response?.data?.error || 'Failed to create fields')
     } finally {
