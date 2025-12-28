@@ -50,12 +50,13 @@ function MapBounds({ attendances }: { attendances: Attendance[] }) {
   useEffect(() => {
     if (attendances.length === 0) return
     
-    const bounds = attendances
+    const latLngs = attendances
       .filter(a => a.latitude && a.longitude)
-      .map(a => [a.latitude!, a.longitude!] as LatLngExpression)
+      .map(a => L.latLng(a.latitude!, a.longitude!))
     
-    if (bounds.length > 0) {
-      map.fitBounds(bounds as LatLngExpression[], { padding: [50, 50] })
+    if (latLngs.length > 0) {
+      const bounds = L.latLngBounds(latLngs)
+      map.fitBounds(bounds, { padding: [50, 50] })
     }
   }, [attendances, map])
   

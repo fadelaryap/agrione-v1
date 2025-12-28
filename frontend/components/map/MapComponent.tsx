@@ -71,7 +71,7 @@ export default function MapComponent({ isEditMode = true, userId }: MapComponent
     userId: '',
   })
   const [activeTool, setActiveTool] = useState<'select' | 'draw_polygon' | 'draw_rectangle' | 'draw_circle' | 'marker' | null>(null)
-  const [satellite, setSatellite] = useState(false)
+  const [satellite, setSatellite] = useState(true) // Default to satellite view
   const [plantTypes, setPlantTypes] = useState<PlantType[]>([])
   const [level34Users, setLevel34Users] = useState<User[]>([])
   const [fields, setFields] = useState<Field[]>([])

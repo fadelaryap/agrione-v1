@@ -13,7 +13,6 @@ export default function WorkOrdersPage() {
   const [fields, setFields] = useState<Field[]>([])
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([])
   const [loading, setLoading] = useState(true)
-  const [generating, setGenerating] = useState<number | null>(null)
   const [selectedFieldId, setSelectedFieldId] = useState<number | null>(null)
   const [viewMode, setViewMode] = useState<'card' | 'gantt'>('card')
 
@@ -104,276 +103,6 @@ export default function WorkOrdersPage() {
       }
     })
   }, [fields, workOrders])
-
-  const formatDate = (date: Date): string => {
-    return date.toISOString().split('T')[0]
-  }
-
-  // Generate work orders for one planting season
-  const generateWorkOrders = async (fieldId: number) => {
-    if (!user) return
-
-    setGenerating(fieldId)
-    try {
-      const field = fields.find(f => f.id === fieldId)
-      if (!field) return
-
-      // Get Level 3/4 users for assignment
-      const { usersAPI } = await import('@/lib/api')
-      const usersData = await usersAPI.listUsers(1, 100)
-      const level34Users = Array.isArray(usersData?.users) 
-        ? usersData.users.filter(u => u.role === 'Level 3' || u.role === 'Level 4')
-        : []
-
-      if (level34Users.length === 0) {
-        alert('No Level 3/4 users found. Please assign a user to this field first.')
-        setGenerating(null)
-        return
-      }
-
-      // Assign to first available Level 3/4 user, or use field's assigned user
-      const assignee = field.user_id 
-        ? level34Users.find(u => u.id === field.user_id) 
-        : level34Users[0]
-      
-      if (!assignee) {
-        alert('No user available for assignment.')
-        setGenerating(null)
-        return
-      }
-
-      const assigneeName = `${assignee.first_name} ${assignee.last_name}`
-      const today = new Date()
-      
-      // Generate work orders for one planting season (rice example)
-      const workOrdersToCreate = [
-        {
-          title: 'Land Preparation',
-          category: 'Planting Prep',
-          activity: 'Pengolahan Tanah',
-          status: 'pending' as const,
-          priority: 'high' as const,
-          assignee: assigneeName,
-          field_id: fieldId,
-          start_date: formatDate(addDays(today, 0)),
-          end_date: formatDate(addDays(today, 5)),
-          progress: 0,
-          description: 'Persiapan lahan untuk penanaman padi',
-          requirements: ['Traktor', 'Bajak', 'Alat pengukur level'],
-          created_by: user.first_name + ' ' + user.last_name,
-        },
-        {
-          title: 'Bund Repair + Drainage Channels',
-          category: 'Planting Prep',
-          activity: 'Pengolahan Tanah',
-          status: 'pending' as const,
-          priority: 'high' as const,
-          assignee: assigneeName,
-          field_id: fieldId,
-          start_date: formatDate(addDays(today, 6)),
-          end_date: formatDate(addDays(today, 10)),
-          progress: 0,
-          description: 'Memperbaiki bund dan membuat saluran drainase',
-          requirements: ['Material bund', 'Alat pengukur level'],
-          created_by: user.first_name + ' ' + user.last_name,
-        },
-        {
-          title: 'Initial Field Irrigation',
-          category: 'Planting Prep',
-          activity: 'Pengolahan Tanah',
-          status: 'pending' as const,
-          priority: 'medium' as const,
-          assignee: assigneeName,
-          field_id: fieldId,
-          start_date: formatDate(addDays(today, 11)),
-          end_date: formatDate(addDays(today, 13)),
-          progress: 0,
-          description: 'Irigasi awal untuk membasahi tanah',
-          requirements: ['Sistem irigasi', 'Pompa air'],
-          created_by: user.first_name + ' ' + user.last_name,
-        },
-        {
-          title: 'First Plowing',
-          category: 'Planting Prep',
-          activity: 'Pengolahan Tanah',
-          status: 'pending' as const,
-          priority: 'high' as const,
-          assignee: assigneeName,
-          field_id: fieldId,
-          start_date: formatDate(addDays(today, 14)),
-          end_date: formatDate(addDays(today, 16)),
-          progress: 0,
-          description: 'Pembajakan pertama untuk menggemburkan tanah',
-          requirements: ['Traktor dengan bajak'],
-          created_by: user.first_name + ' ' + user.last_name,
-        },
-        {
-          title: 'Seedbed Preparation',
-          category: 'Planting Prep',
-          activity: 'Persemaian',
-          status: 'pending' as const,
-          priority: 'high' as const,
-          assignee: assigneeName,
-          field_id: fieldId,
-          start_date: formatDate(addDays(today, 17)),
-          end_date: formatDate(addDays(today, 20)),
-          progress: 0,
-          description: 'Mempersiapkan bedengan untuk persemaian benih',
-          requirements: ['Benih berkualitas', 'Media tanam'],
-          created_by: user.first_name + ' ' + user.last_name,
-        },
-        {
-          title: 'Seed Sowing',
-          category: 'Planting Prep',
-          activity: 'Persemaian',
-          status: 'pending' as const,
-          priority: 'high' as const,
-          assignee: assigneeName,
-          field_id: fieldId,
-          start_date: formatDate(addDays(today, 21)),
-          end_date: formatDate(addDays(today, 23)),
-          progress: 0,
-          description: 'Menanam benih di bedengan persemaian',
-          requirements: ['Benih padi varietas unggul', 'Alat tanam manual'],
-          created_by: user.first_name + ' ' + user.last_name,
-        },
-        {
-          title: 'Transplanting to Main Field',
-          category: 'Planting Prep',
-          activity: 'Penanaman',
-          status: 'pending' as const,
-          priority: 'high' as const,
-          assignee: assigneeName,
-          field_id: fieldId,
-          start_date: formatDate(addDays(today, 45)),
-          end_date: formatDate(addDays(today, 48)),
-          progress: 0,
-          description: 'Memindahkan bibit dari persemaian ke lahan utama',
-          requirements: ['Bibit siap tanam', 'Alat tanam', 'Tenaga kerja'],
-          created_by: user.first_name + ' ' + user.last_name,
-        },
-        {
-          title: 'Precision Irrigation Setup',
-          category: 'Crop Care',
-          activity: 'Pengelolaan Air (Irigasi Presisi)',
-          status: 'pending' as const,
-          priority: 'medium' as const,
-          assignee: assigneeName,
-          field_id: fieldId,
-          start_date: formatDate(addDays(today, 49)),
-          end_date: formatDate(addDays(today, 52)),
-          progress: 0,
-          description: 'Mengatur sistem irigasi presisi',
-          requirements: ['Sensor kelembaban tanah', 'Sistem irigasi otomatis'],
-          created_by: user.first_name + ' ' + user.last_name,
-        },
-        {
-          title: 'First Fertilization',
-          category: 'Crop Care',
-          activity: 'Pemupukan',
-          status: 'pending' as const,
-          priority: 'high' as const,
-          assignee: assigneeName,
-          field_id: fieldId,
-          start_date: formatDate(addDays(today, 55)),
-          end_date: formatDate(addDays(today, 57)),
-          progress: 0,
-          description: 'Pemupukan pertama dengan NPK',
-          requirements: ['Pupuk NPK 15-15-15', 'Alat penyebar pupuk'],
-          created_by: user.first_name + ' ' + user.last_name,
-        },
-        {
-          title: 'Weed Control',
-          category: 'Crop Care',
-          activity: 'Pengendalian Gulma',
-          status: 'pending' as const,
-          priority: 'medium' as const,
-          assignee: assigneeName,
-          field_id: fieldId,
-          start_date: formatDate(addDays(today, 65)),
-          end_date: formatDate(addDays(today, 67)),
-          progress: 0,
-          description: 'Pengendalian gulma secara manual dan kimiawi',
-          requirements: ['Herbisida selektif', 'Alat penyemprot'],
-          created_by: user.first_name + ' ' + user.last_name,
-        },
-        {
-          title: 'Pest and Disease Monitoring',
-          category: 'Crop Care',
-          activity: 'Pengendalian Hama Penyakit',
-          status: 'pending' as const,
-          priority: 'medium' as const,
-          assignee: assigneeName,
-          field_id: fieldId,
-          start_date: formatDate(addDays(today, 70)),
-          end_date: formatDate(addDays(today, 72)),
-          progress: 0,
-          description: 'Monitoring dan pengendalian hama penyakit',
-          requirements: ['Pestisida biologis', 'Alat monitoring'],
-          created_by: user.first_name + ' ' + user.last_name,
-        },
-        {
-          title: 'Harvest Forecasting',
-          category: 'Harvest',
-          activity: 'Forecasting Panen',
-          status: 'pending' as const,
-          priority: 'low' as const,
-          assignee: assigneeName,
-          field_id: fieldId,
-          start_date: formatDate(addDays(today, 105)),
-          end_date: formatDate(addDays(today, 107)),
-          progress: 0,
-          description: 'Analisis dan prediksi hasil panen',
-          requirements: ['Alat pengukur hasil', 'Data historis'],
-          created_by: user.first_name + ' ' + user.last_name,
-        },
-        {
-          title: 'Rice Harvesting',
-          category: 'Harvest',
-          activity: 'Panen',
-          status: 'pending' as const,
-          priority: 'high' as const,
-          assignee: assigneeName,
-          field_id: fieldId,
-          start_date: formatDate(addDays(today, 110)),
-          end_date: formatDate(addDays(today, 115)),
-          progress: 0,
-          description: 'Panen padi dengan mesin combine harvester',
-          requirements: ['Combine harvester', 'Tenaga kerja panen'],
-          created_by: user.first_name + ' ' + user.last_name,
-        },
-        {
-          title: 'Land Rehabilitation',
-          category: 'Maintenance',
-          activity: 'Rehabilitasi Lahan',
-          status: 'pending' as const,
-          priority: 'low' as const,
-          assignee: assigneeName,
-          field_id: fieldId,
-          start_date: formatDate(addDays(today, 121)),
-          end_date: formatDate(addDays(today, 125)),
-          progress: 0,
-          description: 'Rehabilitasi lahan setelah panen',
-          requirements: ['Pupuk organik', 'Alat pengolah tanah'],
-          created_by: user.first_name + ' ' + user.last_name,
-        },
-      ]
-
-      // Create all work orders
-      for (const woData of workOrdersToCreate) {
-        await workOrdersAPI.createWorkOrder(woData)
-      }
-
-      // Reload data
-      await loadWorkOrders()
-      alert(`Successfully generated ${workOrdersToCreate.length} work orders for this field!`)
-    } catch (err: any) {
-      console.error('Failed to generate work orders:', err)
-      alert('Failed to generate work orders: ' + (err.response?.data?.error || err.message))
-    } finally {
-      setGenerating(null)
-    }
-  }
 
   // Early returns
   if (loading) {
@@ -505,13 +234,11 @@ export default function WorkOrdersPage() {
                 <div
                   key={field.id}
                   className={`bg-white rounded-lg shadow-lg p-6 border-2 transition-all hover:shadow-xl ${
-                    field.hasWorkOrders ? 'border-indigo-200' : 'border-gray-200 hover:border-indigo-300 cursor-pointer'
+                    field.hasWorkOrders ? 'border-indigo-200 cursor-pointer' : 'border-gray-200'
                   }`}
                   onClick={() => {
-                    if (!field.hasWorkOrders) {
-                      if (confirm(`Generate work orders for one planting season for "${field.name}"?`)) {
-                        generateWorkOrders(field.id)
-                      }
+                    if (field.hasWorkOrders) {
+                      setSelectedFieldId(field.id)
                     }
                   }}
                 >
@@ -572,28 +299,10 @@ export default function WorkOrdersPage() {
                       <div className="mb-4">
                         <Sparkles className="w-12 h-12 text-gray-400 mx-auto" />
                       </div>
-                      <p className="text-sm text-gray-600 mb-2">No work orders yet</p>
-                      <p className="text-xs text-gray-500 mb-4">
-                        Click to generate work orders for one planting season
+                      <p className="text-sm text-gray-600 mb-2">Belum ada work orders</p>
+                      <p className="text-xs text-gray-500">
+                        Generate work orders melalui halaman Cultivation Planning
                       </p>
-                      {generating === field.id ? (
-                        <div className="flex items-center justify-center gap-2 text-indigo-600">
-                          <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                          <span className="text-sm">Generating...</span>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            if (confirm(`Generate work orders for one planting season for "${field.name}"?`)) {
-                              generateWorkOrders(field.id)
-                            }
-                          }}
-                          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
-                        >
-                          Generate Work Orders
-                        </button>
-                      )}
                     </div>
                   )}
                 </div>
