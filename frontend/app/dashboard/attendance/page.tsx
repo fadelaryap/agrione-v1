@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { authAPI, User, attendanceAPI, Attendance, usersAPI, AttendanceStats } from '@/lib/api'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 import { Calendar, MapPin, User as UserIcon, Clock, Camera, AlertCircle, Filter, ArrowUpDown, Map, X, Eye, EyeOff } from 'lucide-react'
 import { format, parseISO, startOfMonth, endOfMonth, subMonths } from 'date-fns'
 import { id } from 'date-fns/locale'
@@ -100,32 +101,18 @@ export default function AttendancePage() {
   const loadAllAttendances = async () => {
     try {
       setLoading(true)
-      const userIds = selectedUserId === 'all' 
-        ? users.map(u => u.id)
-        : [selectedUserId as number]
+      // Use listAllAttendances API which is designed for admin/Level 1-2 users
+      const allAttendances = await attendanceAPI.listAllAttendances({
+        start_date: dateRange.start,
+        end_date: dateRange.end,
+        user_id: selectedUserId === 'all' ? undefined : selectedUserId as number,
+      })
       
-      // Load attendances for all selected users
-      const allAttendances: Attendance[] = []
-      for (const userId of userIds) {
-        try {
-          const userAttendances = await attendanceAPI.listAttendance({
-            start_date: dateRange.start,
-            end_date: dateRange.end,
-          })
-          // Filter by user_id since API returns only current user's attendance
-          // We'll need to use stats API or modify backend to support admin view
-          // For now, we'll use the stats data to get attendance list
-          const userAtt = userAttendances.filter((a: any) => a.user_id === userId)
-          allAttendances.push(...userAtt)
-        } catch (err) {
-          console.error(`Failed to load attendance for user ${userId}:`, err)
-        }
-      }
-      
-      setAttendances(allAttendances)
+      setAttendances(allAttendances || [])
     } catch (err) {
       console.error('Failed to load attendances:', err)
       toast.error('Gagal memuat data absen')
+      setAttendances([])
     } finally {
       setLoading(false)
     }
@@ -238,8 +225,8 @@ export default function AttendancePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <DashboardLayout>
+      <div className="py-6">
         {/* Header */}
         <div className="mb-6">
           <div className="bg-white rounded-lg shadow-lg p-6">
@@ -546,7 +533,7 @@ export default function AttendancePage() {
           </div>
         )}
       </div>
-    </div>
+    </DashboardLayout>
   )
 }
 
