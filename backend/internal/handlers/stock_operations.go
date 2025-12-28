@@ -7,8 +7,6 @@ import (
 	"net/http"
 	"strconv"
 	"time"
-
-	"github.com/gorilla/mux"
 )
 
 // List Stock Lots
@@ -82,16 +80,19 @@ func (h *InventoryHandler) ListStockLots(w http.ResponseWriter, r *http.Request)
 		var plotFieldRef sql.NullInt64
 		var plotCreatedAt, plotUpdatedAt sql.NullString
 
+		var itemID, warehouseID int
 		err := rows.Scan(
 			&lot.ID, &lot.LotID, &lot.BatchNo, &lot.Quantity, &lot.UnitCost, &lot.TotalCost,
 			&expiryDate, &lot.Supplier, &lot.Status, &notes, &receivedDate,
 			&createdAt, &updatedAt,
-			&item.ID, &lot.Warehouse.ID,
+			&itemID, &warehouseID,
 			&item.SKU, &item.Name, &item.Category, &item.Unit,
 			&lot.Warehouse.ID, &lot.Warehouse.Name, &plotDescription, &lot.Warehouse.Type,
 			&lot.Warehouse.APIKey, &plotCoordinatesJSON, &plotFieldRef,
 			&plotCreatedAt, &plotUpdatedAt,
 		)
+		
+		item.ID = itemID
 
 		if err != nil {
 			continue
@@ -426,16 +427,19 @@ func (h *InventoryHandler) ListStockMovements(w http.ResponseWriter, r *http.Req
 		var plotFieldRef sql.NullInt64
 		var plotCreatedAt, plotUpdatedAt sql.NullString
 
+		var itemID, warehouseID int
 		err := rows.Scan(
 			&movement.ID, &movement.MovementID, &movement.Type, &movement.Quantity,
 			&movement.UnitCost, &movement.TotalCost, &movement.Reason, &reference,
 			&movement.PerformedBy, &notes, &createdAt, &updatedAt,
-			&item.ID, &lotID, &movement.Warehouse.ID,
+			&itemID, &lotID, &warehouseID,
 			&item.SKU, &item.Name, &item.Category, &item.Unit,
 			&movement.Warehouse.ID, &movement.Warehouse.Name, &plotDescription, &movement.Warehouse.Type,
 			&movement.Warehouse.APIKey, &plotCoordinatesJSON, &plotFieldRef,
 			&plotCreatedAt, &plotUpdatedAt,
 		)
+		
+		item.ID = itemID
 
 		if err != nil {
 			continue
