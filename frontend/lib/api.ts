@@ -208,8 +208,8 @@ export const usersAPI = {
     const response = await api.put<User>(`/users/${userId}/role`, { role })
     return response.data
   },
-  updateUserStatus: async (userId: number, status: string): Promise<User> => {
-    const response = await api.put<User>(`/users/${userId}/status`, { status })
+  updateUserStatus: async (userId: number, status: string, notes?: string): Promise<User> => {
+    const response = await api.put<User>(`/users/${userId}/status`, { status, notes })
     return response.data
   },
 }

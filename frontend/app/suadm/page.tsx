@@ -61,6 +61,7 @@ export default function SuperAdminPage() {
   const handleEditStatusClick = (user: User) => {
     setEditingStatus(user)
     setSelectedStatus(user.status || 'pending')
+    setStatusNotes('')
   }
 
   const handleUpdateRole = async () => {
@@ -81,13 +82,18 @@ export default function SuperAdminPage() {
 
   const handleUpdateStatus = async () => {
     if (!editingStatus) return
+    if (selectedStatus === 'rejected' && !statusNotes.trim()) {
+      setError('Catatan perbaikan harus diisi untuk status "Perlu perbaikan"')
+      return
+    }
 
     setUpdating(true)
     try {
-      await usersAPI.updateUserStatus(editingStatus.id, selectedStatus)
+      await usersAPI.updateUserStatus(editingStatus.id, selectedStatus, statusNotes || undefined)
       await loadUsers()
       setEditingStatus(null)
       setSelectedStatus('')
+      setStatusNotes('')
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to update status')
     } finally {
@@ -119,7 +125,7 @@ export default function SuperAdminPage() {
       case 'pending':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200'
       case 'rejected':
-        return 'bg-red-100 text-red-800 border-red-200'
+        return 'bg-orange-100 text-orange-800 border-orange-200'
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200'
     }
@@ -162,7 +168,7 @@ export default function SuperAdminPage() {
                       {editingStatus.first_name} {editingStatus.last_name} ({editingStatus.email})
                     </p>
                   </div>
-                  <div className="mb-6">
+                  <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Select Status
                     </label>
@@ -173,9 +179,23 @@ export default function SuperAdminPage() {
                     >
                       <option value="pending">Pending</option>
                       <option value="approved">Approved</option>
-                      <option value="rejected">Rejected</option>
+                      <option value="rejected">Perlu perbaikan</option>
                     </select>
                   </div>
+                  {selectedStatus === 'rejected' && (
+                    <div className="mb-6">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Catatan Perbaikan <span className="text-red-500">*</span>
+                      </label>
+                      <textarea
+                        value={statusNotes}
+                        onChange={(e) => setStatusNotes(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        rows={4}
+                        placeholder="Masukkan catatan apa yang perlu diperbaiki..."
+                      />
+                    </div>
+                  )}
                   <div className="flex gap-3">
                     <button
                       onClick={handleUpdateStatus}
@@ -188,6 +208,7 @@ export default function SuperAdminPage() {
                       onClick={() => {
                         setEditingStatus(null)
                         setSelectedStatus('')
+                        setStatusNotes('')
                       }}
                       disabled={updating}
                       className="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 disabled:opacity-50 transition-colors"
@@ -333,7 +354,7 @@ export default function SuperAdminPage() {
                               onClick={() => handleEditStatusClick(user)}
                               className="text-blue-600 hover:text-blue-900 font-medium transition-colors"
                             >
-                              {user.status === 'approved' ? 'Change Status' : 'Approve/Reject'}
+                              {user.status === 'approved' ? 'Change Status' : 'Approve/Perbaikan'}
                             </button>
                           </td>
                         </tr>

@@ -2,12 +2,14 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { MapContainer, TileLayer, FeatureGroup, useMap, Marker } from 'react-leaflet'
-import { LatLngExpression, Map as LeafletMap } from 'leaflet'
+import { LatLngExpression, Map as LeafletMap, LatLngBounds } from 'leaflet'
 import L from 'leaflet'
+import 'leaflet.markercluster/dist/MarkerCluster.css'
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
+import 'leaflet.markercluster'
 import { fieldsAPI, plotsAPI, plantTypesAPI, usersAPI, Field, Plot, PlantType, User } from '@/lib/api'
 import { calculateArea, formatArea } from '@/lib/areaUtils'
 import { findContainingField } from '@/lib/geometryUtils'
-import { TemporaryImportedPolygon } from '@/app/dashboard/fields/page'
 import { Pointer, Square, Circle, Shapes, Move, Edit3, MapPin, Package, Building2, CarFront, Thermometer, Eraser, RotateCcw, RotateCw, Map as MapIcon, Satellite } from 'lucide-react'
 
 // Fix Leaflet default icon
@@ -26,11 +28,9 @@ const initialMapCenter: [number, number] = [-4.079, 104.167]
 interface MapComponentProps {
   isEditMode?: boolean
   userId?: number // For filtering fields by user
-  temporaryPolygons?: TemporaryImportedPolygon[]
-  onTemporaryPolygonsChange?: (polygons: TemporaryImportedPolygon[]) => void
 }
 
-export default function MapComponent({ isEditMode = true, userId, temporaryPolygons = [], onTemporaryPolygonsChange }: MapComponentProps) {
+export default function MapComponent({ isEditMode = true, userId }: MapComponentProps) {
   const [map, setMap] = useState<LeafletMap | null>(null)
   const [isFieldDialogOpen, setIsFieldDialogOpen] = useState(false)
   const [isPlotDialogOpen, setIsPlotDialogOpen] = useState(false)
@@ -74,8 +74,6 @@ export default function MapComponent({ isEditMode = true, userId, temporaryPolyg
     fieldId: null,
     userId: '',
   })
-  const [editingTemporaryPolygon, setEditingTemporaryPolygon] = useState<TemporaryImportedPolygon | null>(null)
-  const [isTemporaryPolygonDialogOpen, setIsTemporaryPolygonDialogOpen] = useState(false)
   const [activeTool, setActiveTool] = useState<'select' | 'draw_polygon' | 'draw_rectangle' | 'draw_circle' | 'edit' | 'move' | 'delete' | 'marker_storage' | 'marker_workshop' | 'marker_garage' | 'marker_sensor' | null>(null)
   const [showMarkerPicker, setShowMarkerPicker] = useState(false)
   const [satellite, setSatellite] = useState(true) // Default to satellite view
@@ -92,6 +90,7 @@ export default function MapComponent({ isEditMode = true, userId, temporaryPolyg
   const userLocationCircleRef = useRef<any>(null)
 
   const featureGroupRef = useRef<any>(null)
+  const markerClusterRef = useRef<L.MarkerClusterGroup | null>(null)
   const drawPolygonRef = useRef<any>(null)
   const drawRectangleRef = useRef<any>(null)
   const drawCircleRef = useRef<any>(null)
@@ -477,7 +476,20 @@ export default function MapComponent({ isEditMode = true, userId, temporaryPolyg
     // Clear existing layers
     featureGroup.clearLayers()
 
-    // Draw fields
+    // Initialize marker cluster group for plots (points)
+    if (markerClusterRef.current) {
+      map.removeLayer(markerClusterRef.current)
+    }
+    const markerClusterGroup = L.markerClusterGroup({
+      maxClusterRadius: 80,
+      spiderfyOnMaxZoom: true,
+      showCoverageOnHover: false,
+      zoomToBoundsOnClick: true,
+    })
+    markerClusterRef.current = markerClusterGroup
+    map.addLayer(markerClusterGroup)
+
+    // Draw fields (polygons - no clustering needed)
     if (Array.isArray(fields) && fields.length > 0) {
       fields.forEach((field) => {
       let layer: any
@@ -508,7 +520,7 @@ export default function MapComponent({ isEditMode = true, userId, temporaryPolyg
       })
     }
 
-    // Draw plots
+    // Draw plots (markers - with clustering)
     if (Array.isArray(plots) && plots.length > 0) {
       plots.forEach((plot) => {
       if (Array.isArray(plot.coordinates)) {
@@ -523,44 +535,8 @@ export default function MapComponent({ isEditMode = true, userId, temporaryPolyg
             ${plot.description || ''}
           </div>
         `)
-        featureGroup.addLayer(marker)
+        markerClusterGroup.addLayer(marker)
       }
-      })
-    }
-
-    // Draw temporary imported polygons (orange color to distinguish from regular fields)
-    if (Array.isArray(temporaryPolygons) && temporaryPolygons.length > 0) {
-      temporaryPolygons.forEach((tempPoly) => {
-        if (Array.isArray(tempPoly.coordinates) && tempPoly.coordinates.length > 0) {
-          const latlngs = tempPoly.coordinates.map((coord: any) => [coord[0], coord[1]] as LatLngExpression)
-          const layer = L.polygon(latlngs, { 
-            color: '#f97316', // Orange color
-            weight: 3, 
-            fillOpacity: 0.25,
-            dashArray: '5, 5' // Dashed border to show it's temporary
-          })
-          
-          ;(layer as any)._meta = { id: tempPoly.id, type: 'temporary_polygon', name: tempPoly.name }
-          layer.bindPopup(`
-            <div>
-              <strong style="color: #f97316;">${tempPoly.name || 'Unnamed'}</strong><br/>
-              ${tempPoly.description ? `<br/>${tempPoly.description}` : ''}
-              ${tempPoly.userId ? `<br/>User ID: ${tempPoly.userId}` : '<br/><em>Belum di-assign</em>'}
-              ${tempPoly.plantTypeId ? `<br/>Plant Type ID: ${tempPoly.plantTypeId}` : '<br/><em>Belum ada plant type</em>'}
-              <br/><button onclick="window.editTemporaryPolygon('${tempPoly.id}')" style="margin-top:8px;padding:4px 8px;background:#f97316;color:white;border:none;border-radius:4px;cursor:pointer;">Edit Detail</button>
-            </div>
-          `)
-          
-          layer.on('click', () => {
-            const poly = temporaryPolygons.find(p => p.id === tempPoly.id)
-            if (poly) {
-              setEditingTemporaryPolygon(poly)
-              setIsTemporaryPolygonDialogOpen(true)
-            }
-          })
-          
-          featureGroup.addLayer(layer)
-        }
       })
     }
 
@@ -569,16 +545,7 @@ export default function MapComponent({ isEditMode = true, userId, temporaryPolyg
       setAssignData({ fieldId, userId: '' })
       setIsAssignDialogOpen(true)
     }
-
-    // Global function for editing temporary polygon
-    ;(window as any).editTemporaryPolygon = (polygonId: string) => {
-      const poly = temporaryPolygons.find(p => p.id === polygonId)
-      if (poly) {
-        setEditingTemporaryPolygon(poly)
-        setIsTemporaryPolygonDialogOpen(true)
-      }
-    }
-  }, [map, fields, plots, temporaryPolygons, loading, isEditMode])
+  }, [map, fields, plots, loading, isEditMode])
 
   function createPlotIcon(type: string) {
     const colors: { [key: string]: string } = {
@@ -706,6 +673,44 @@ export default function MapComponent({ isEditMode = true, userId, temporaryPolyg
     useEffect(() => {
       onReady(m as unknown as LeafletMap)
     }, [m])
+    return null
+  }
+
+  // Component to fit map bounds to fields
+  function MapBounds({ fields, plots }: { fields: Field[], plots: Plot[] }) {
+    const map = useMap()
+    const hasInitialized = useRef(false)
+    
+    useEffect(() => {
+      if (hasInitialized.current || !map) return
+      
+      const allCoords: LatLngExpression[] = []
+      
+      // Collect coordinates from fields
+      fields.forEach((field) => {
+        if (field.draw_type === 'circle' && field.coordinates?.center) {
+          allCoords.push([field.coordinates.center[0], field.coordinates.center[1]])
+        } else if (Array.isArray(field.coordinates)) {
+          field.coordinates.forEach((coord: any) => {
+            allCoords.push([coord[0], coord[1]])
+          })
+        }
+      })
+      
+      // Collect coordinates from plots
+      plots.forEach((plot) => {
+        if (Array.isArray(plot.coordinates)) {
+          allCoords.push([plot.coordinates[0], plot.coordinates[1]])
+        }
+      })
+      
+      if (allCoords.length > 0) {
+        const bounds = L.latLngBounds(allCoords)
+        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 })
+        hasInitialized.current = true
+      }
+    }, [map, fields, plots])
+    
     return null
   }
 
@@ -932,6 +937,7 @@ export default function MapComponent({ isEditMode = true, userId, temporaryPolyg
             : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           }
         />
+        <MapBounds fields={fields} plots={plots} />
         <FeatureGroup ref={featureGroupRef} />
       </MapContainer>
 
@@ -1148,95 +1154,6 @@ export default function MapComponent({ isEditMode = true, userId, temporaryPolyg
                 className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
               >
                 Create Plot
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Temporary Polygon Edit Dialog */}
-      {isTemporaryPolygonDialogOpen && editingTemporaryPolygon && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]">
-          <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
-            <h2 className="text-2xl font-bold mb-4">Edit Polygon Detail</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Name *</label>
-                <input
-                  type="text"
-                  value={editingTemporaryPolygon.name}
-                  onChange={(e) => setEditingTemporaryPolygon({ ...editingTemporaryPolygon, name: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
-                  placeholder="Field name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Description</label>
-                <textarea
-                  value={editingTemporaryPolygon.description || ''}
-                  onChange={(e) => setEditingTemporaryPolygon({ ...editingTemporaryPolygon, description: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
-                  rows={3}
-                  placeholder="Field description"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Plant Type</label>
-                <select
-                  value={editingTemporaryPolygon.plantTypeId || ''}
-                  onChange={(e) => setEditingTemporaryPolygon({ ...editingTemporaryPolygon, plantTypeId: e.target.value || undefined })}
-                  className="w-full px-3 py-2 border rounded-lg"
-                >
-                  <option value="">Select plant type</option>
-                  {Array.isArray(plantTypes) && plantTypes.map((pt) => (
-                    <option key={pt.id} value={pt.id}>
-                      {pt.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Assign to User (Level 3/4)</label>
-                <select
-                  value={editingTemporaryPolygon.userId || ''}
-                  onChange={(e) => setEditingTemporaryPolygon({ ...editingTemporaryPolygon, userId: e.target.value || undefined })}
-                  className="w-full px-3 py-2 border rounded-lg"
-                >
-                  <option value="">No assignment</option>
-                  {Array.isArray(level34Users) && level34Users.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.first_name} {user.last_name} ({user.email}) - {user.role}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => {
-                  setIsTemporaryPolygonDialogOpen(false)
-                  setEditingTemporaryPolygon(null)
-                }}
-                className="flex-1 px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  if (!editingTemporaryPolygon.name.trim()) return
-                  if (onTemporaryPolygonsChange) {
-                    const updated = temporaryPolygons.map(p => 
-                      p.id === editingTemporaryPolygon.id ? editingTemporaryPolygon : p
-                    )
-                    onTemporaryPolygonsChange(updated)
-                  }
-                  setIsTemporaryPolygonDialogOpen(false)
-                  setEditingTemporaryPolygon(null)
-                }}
-                disabled={!editingTemporaryPolygon.name.trim()}
-                className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
-              >
-                Save
               </button>
             </div>
           </div>

@@ -2,7 +2,6 @@
 
 import dynamic from 'next/dynamic'
 import { Suspense } from 'react'
-import { TemporaryImportedPolygon } from '@/app/dashboard/fields/page'
 
 const MapComponent = dynamic(() => import('./MapComponent'), {
   ssr: false,
@@ -19,11 +18,9 @@ const MapComponent = dynamic(() => import('./MapComponent'), {
 interface MapWrapperProps {
   isEditMode?: boolean
   userId?: number // For filtering fields by user
-  temporaryPolygons?: TemporaryImportedPolygon[]
-  onTemporaryPolygonsChange?: (polygons: TemporaryImportedPolygon[]) => void
 }
 
-export default function MapWrapper({ isEditMode = true, userId, temporaryPolygons = [], onTemporaryPolygonsChange }: MapWrapperProps) {
+export default function MapWrapper({ isEditMode = true, userId }: MapWrapperProps) {
   return (
     <Suspense
       fallback={
@@ -35,12 +32,7 @@ export default function MapWrapper({ isEditMode = true, userId, temporaryPolygon
         </div>
       }
     >
-      <MapComponent 
-        isEditMode={isEditMode} 
-        userId={userId}
-        temporaryPolygons={temporaryPolygons}
-        onTemporaryPolygonsChange={onTemporaryPolygonsChange}
-      />
+      <MapComponent isEditMode={isEditMode} userId={userId} />
     </Suspense>
   )
 }

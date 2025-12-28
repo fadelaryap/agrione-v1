@@ -118,20 +118,20 @@ export default function FieldReportsApprovalPage() {
 
   const handleReject = async (reportId: number) => {
     if (!user || !rejectionReason.trim()) {
-      toast.error('Alasan penolakan harus diisi')
+      toast.error('Catatan perbaikan harus diisi')
       return
     }
 
     try {
       const rejectedBy = `${user.first_name} ${user.last_name}`
       await fieldReportsAPI.rejectFieldReport(reportId, rejectedBy, rejectionReason)
-      toast.success('Laporan berhasil ditolak!')
+      toast.success('Laporan ditandai perlu perbaikan!')
       setRejectingId(null)
       setRejectionReason('')
       await loadReports()
     } catch (err: any) {
       console.error('Failed to reject report:', err)
-      toast.error('Gagal menolak laporan: ' + (err.response?.data?.error || err.message))
+      toast.error('Gagal menandai laporan perlu perbaikan: ' + (err.response?.data?.error || err.message))
     }
   }
 
@@ -139,7 +139,7 @@ export default function FieldReportsApprovalPage() {
     const styles: { [key: string]: { bg: string; text: string; icon: any } } = {
       'pending': { bg: 'bg-amber-100', text: 'text-amber-800', icon: Clock },
       'approved': { bg: 'bg-green-100', text: 'text-green-800', icon: CheckCircle },
-      'rejected': { bg: 'bg-red-100', text: 'text-red-800', icon: XCircle },
+      'rejected': { bg: 'bg-orange-100', text: 'text-orange-800', icon: XCircle },
     }
     const style = styles[status] || styles.pending
     const Icon = style.icon
@@ -147,7 +147,7 @@ export default function FieldReportsApprovalPage() {
     const statusLabels: { [key: string]: string } = {
       'pending': 'Menunggu',
       'approved': 'Disetujui',
-      'rejected': 'Ditolak',
+      'rejected': 'Perlu perbaikan',
     }
     
     return (
@@ -205,7 +205,7 @@ export default function FieldReportsApprovalPage() {
               <FileText className="h-8 w-8 text-indigo-600" />
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Persetujuan Laporan Lapangan</h1>
-                <p className="text-gray-600 mt-1">Tinjau dan setujui atau tolak laporan lapangan</p>
+                <p className="text-gray-600 mt-1">Tinjau dan setujui atau tandai perlu perbaikan laporan lapangan</p>
               </div>
             </div>
 
@@ -221,7 +221,7 @@ export default function FieldReportsApprovalPage() {
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
-                  {f === 'all' ? 'Semua' : f === 'pending' ? 'Menunggu' : f === 'approved' ? 'Disetujui' : 'Ditolak'}
+                  {f === 'all' ? 'Semua' : f === 'pending' ? 'Menunggu' : f === 'approved' ? 'Disetujui' : 'Perlu perbaikan'}
                   {f !== 'all' && (
                     <span className="ml-2 bg-white/20 px-2 py-0.5 rounded-full text-xs">
                       {reports.filter(r => r.status === f).length}
@@ -375,13 +375,13 @@ export default function FieldReportsApprovalPage() {
                     {rejectingId === report.id ? (
                       <div className="space-y-2">
                         <label className="block text-sm font-medium text-gray-700">
-                          Alasan Penolakan <span className="text-red-500">*</span>
+                          Catatan Perbaikan <span className="text-red-500">*</span>
                         </label>
                         <textarea
                           value={rejectionReason}
                           onChange={(e) => setRejectionReason(e.target.value)}
-                          placeholder="Masukkan alasan penolakan..."
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                          placeholder="Masukkan catatan apa yang perlu diperbaiki..."
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                           rows={3}
                         />
                         <div className="flex gap-2">
@@ -397,9 +397,9 @@ export default function FieldReportsApprovalPage() {
                           <button
                             onClick={() => handleReject(report.id)}
                             disabled={!rejectionReason.trim()}
-                            className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                            className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
                           >
-                            Tolak
+                            Perlu Perbaikan
                           </button>
                         </div>
                       </div>
@@ -414,10 +414,10 @@ export default function FieldReportsApprovalPage() {
                         </button>
                         <button
                           onClick={() => setRejectingId(report.id)}
-                          className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium flex items-center justify-center gap-2"
+                          className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 text-sm font-medium flex items-center justify-center gap-2"
                         >
                           <XCircle className="w-4 h-4" />
-                          Tolak
+                          Perlu Perbaikan
                         </button>
                       </div>
                     )}

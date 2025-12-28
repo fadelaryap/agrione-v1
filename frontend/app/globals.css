@@ -57,30 +57,28 @@
   * {
     @apply border-border;
   }
-  /* Increase base font size by 50% (for 150% zoom equivalent) */
-  /* This will make all rem-based sizes (including Tailwind classes) 50% larger */
+  /* Increase base font size by 20% (for better readability) */
+  /* This will make all rem-based sizes (including Tailwind classes) 20% larger */
   html {
-    font-size: 150%; /* 24px base (from 16px) - equivalent to 150% zoom */
+    font-size: 120%; /* 19.2px base (from 16px) - 20% larger */
   }
   body {
     @apply bg-background text-foreground;
-    font-size: 1rem; /* Will be 24px now (24px = 1rem when html is 150%) */
+    font-size: 1rem; /* Will be 19.2px now (19.2px = 1rem when html is 120%) */
     line-height: 1.6;
   }
-  /* Icon sizes will automatically scale because Tailwind uses rem units */
-  /* w-4 = 1rem = 24px, w-5 = 1.25rem = 30px, w-6 = 1.5rem = 36px */
   
   /* Increase input/select/textarea sizes for better visibility */
   input, select, textarea {
-    font-size: 1rem; /* 24px */
-    padding: 0.75rem 0.875rem;
+    font-size: 1rem; /* 19.2px */
+    padding: 0.625rem 0.75rem;
     line-height: 1.5;
   }
   
   /* Increase button text and padding */
   button {
-    font-size: 1rem; /* 24px */
-    padding: 0.75rem 1rem;
+    font-size: 0.9375rem; /* ~18px */
+    padding: 0.625rem 0.875rem;
     line-height: 1.5;
   }
   
@@ -91,38 +89,43 @@
   
   /* Ensure text in small classes is still readable */
   .text-xs {
-    font-size: 0.75rem; /* 18px (was 12px) */
+    font-size: 0.75rem; /* 14.4px (was 12px) */
   }
   .text-sm {
-    font-size: 0.875rem; /* 21px (was 14px) */
+    font-size: 0.875rem; /* 16.8px (was 14px) */
   }
   
   /* Exception: /lapangan route should use normal font size (mobile-friendly) */
-  /* Reset html font-size inside .lapangan-route to 100% (16px) */
-  .lapangan-route {
-    font-size: 16px; /* Reset to 16px base, overriding html 150% */
+  /* Reset everything to 100% (16px base) for /lapangan route */
+  .lapangan-route,
+  .lapangan-route * {
+    font-size: revert !important; /* Reset all font sizes to browser default (16px) */
   }
-  /* Reset input/select/textarea/button to normal sizes in /lapangan */
+  /* Explicitly reset html font-size context for /lapangan */
+  .lapangan-route {
+    font-size: 16px !important; /* Force 16px base */
+  }
   .lapangan-route input,
   .lapangan-route select,
   .lapangan-route textarea {
-    font-size: 1rem; /* 16px when parent is 16px */
-    padding: 0.5rem 0.75rem;
+    font-size: 1rem !important; /* 16px */
+    padding: 0.5rem 0.75rem !important;
   }
   .lapangan-route button {
-    font-size: 0.875rem; /* 14px - normal button size */
-    padding: 0.5rem 1rem;
+    font-size: 0.875rem !important; /* 14px */
+    padding: 0.5rem 1rem !important;
   }
-  /* Reset text size classes to normal in /lapangan */
   .lapangan-route .text-xs {
-    font-size: 0.75rem; /* 12px */
+    font-size: 0.75rem !important; /* 12px */
   }
   .lapangan-route .text-sm {
-    font-size: 0.875rem; /* 14px */
+    font-size: 0.875rem !important; /* 14px */
   }
-  /* Icon sizes in /lapangan should be normal (Tailwind default) */
-  /* Tailwind classes w-4=1rem, w-5=1.25rem, w-6=1.5rem will work correctly */
-  /* when parent font-size is 16px (100%) */
+  /* Reset all icon sizes in /lapangan to normal */
+  .lapangan-route svg {
+    width: revert !important;
+    height: revert !important;
+  }
 }
 
 
