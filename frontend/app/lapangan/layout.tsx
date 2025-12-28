@@ -9,13 +9,13 @@ export default function LapanganLayout({
   children: React.ReactNode
 }) {
   return (
-    <>
+    <div className="lapangan-route">
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 pt-16 pb-20 lg:pb-0" style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom))' }}>
         <LapanganHeader />
         {children}
       </div>
       <MobileBottomNav />
-    </>
+    </div>
   )
 }
 

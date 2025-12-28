@@ -96,6 +96,33 @@
   .text-sm {
     font-size: 0.875rem; /* 21px (was 14px) */
   }
+  
+  /* Exception: /lapangan route should use normal font size (mobile-friendly) */
+  /* Reset html font-size inside .lapangan-route to 100% (16px) */
+  .lapangan-route {
+    font-size: 16px; /* Reset to 16px base, overriding html 150% */
+  }
+  /* Reset input/select/textarea/button to normal sizes in /lapangan */
+  .lapangan-route input,
+  .lapangan-route select,
+  .lapangan-route textarea {
+    font-size: 1rem; /* 16px when parent is 16px */
+    padding: 0.5rem 0.75rem;
+  }
+  .lapangan-route button {
+    font-size: 0.875rem; /* 14px - normal button size */
+    padding: 0.5rem 1rem;
+  }
+  /* Reset text size classes to normal in /lapangan */
+  .lapangan-route .text-xs {
+    font-size: 0.75rem; /* 12px */
+  }
+  .lapangan-route .text-sm {
+    font-size: 0.875rem; /* 14px */
+  }
+  /* Icon sizes in /lapangan should be normal (Tailwind default) */
+  /* Tailwind classes w-4=1rem, w-5=1.25rem, w-6=1.5rem will work correctly */
+  /* when parent font-size is 16px (100%) */
 }
 
 

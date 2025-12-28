@@ -166,12 +166,15 @@ jobs:
             echo "🔨 Building new container images (this may take a while)..."
             echo "   ⚠️  Old containers are still running to prevent downtime"
             echo "   This process may take 5-10 minutes. Please wait..."
-            # Use --no-cache to avoid snapshot errors from corrupt cache
+            # Use cache for faster builds and lower memory usage
             # Set DOCKER_BUILDKIT=1 for better build performance
             export DOCKER_BUILDKIT=1
             export COMPOSE_DOCKER_CLI_BUILD=1
-            docker compose -f "$COMPOSE_FILE" build --no-cache || {
+            # Build with cache to reduce memory usage (--no-cache causes OOM issues)
+            # If you need clean build, manually run: docker builder prune -af
+            docker compose -f "$COMPOSE_FILE" build || {
               echo "⚠️  Build process failed. Old containers are still running."
+              echo "💡 If build fails due to cache issues, try: docker builder prune -af"
               docker compose -f "$COMPOSE_FILE" ps || true
               exit 1
             }
