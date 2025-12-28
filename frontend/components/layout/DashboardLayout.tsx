@@ -14,7 +14,8 @@ import {
   ClipboardList,
   FileCheck,
   Building2,
-  Calendar
+  Calendar,
+  Clock
 } from 'lucide-react'
 import LogoutButton from '@/components/LogoutButton'
 import NotificationBell from '@/components/notifications/NotificationBell'
@@ -48,11 +49,17 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { href: '/dashboard/cultivation', label: 'Cultivation Planning', icon: Calendar },
     { href: '/dashboard/work-orders', label: 'Work Orders', icon: ClipboardList },
   ]
+  
+  // Add attendance link only for Level 1 and Level 2
+  const attendanceNavItem = user && (user.role === 'Level 1' || user.role === 'Level 2')
+    ? [{ href: '/dashboard/attendance', label: 'Data Absensi', icon: Clock }]
+    : []
 
-  // Add approval and HR links only for Level 1 and Level 2
+  // Add approval, HR, and attendance links only for Level 1 and Level 2
   const navItems = user && (user.role === 'Level 1' || user.role === 'Level 2')
     ? [
         ...baseNavItems, 
+        ...attendanceNavItem,
         { href: '/dashboard/field-reports-approval', label: 'Persetujuan Laporan', icon: FileCheck },
         { href: '/dashboard/hr', label: 'Manajemen HR', icon: Building2 }
       ]

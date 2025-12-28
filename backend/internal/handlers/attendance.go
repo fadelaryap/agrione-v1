@@ -319,7 +319,7 @@ func (h *AttendanceHandler) ListAttendance(w http.ResponseWriter, r *http.Reques
 
 	query := `
 		SELECT id, user_id, date, session, selfie_image, back_camera_image, 
-		       has_issue, description, 
+		       has_issue, description, latitude, longitude,
 		       TO_CHAR(check_in_time AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as check_in_time,
 		       TO_CHAR(check_out_time AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as check_out_time,
 		       status, notes, 
@@ -356,10 +356,11 @@ func (h *AttendanceHandler) ListAttendance(w http.ResponseWriter, r *http.Reques
 		var att Attendance
 		var checkInTime, createdAt, updatedAt sql.NullString
 		var checkOutTime, notes, backCameraImage, description sql.NullString
+		var latitude, longitude sql.NullFloat64
 
 		err := rows.Scan(
 			&att.ID, &att.UserID, &att.Date, &att.Session, &att.SelfieImage,
-			&backCameraImage, &att.HasIssue, &description,
+			&backCameraImage, &att.HasIssue, &description, &latitude, &longitude,
 			&checkInTime, &checkOutTime, &att.Status, &notes, &createdAt, &updatedAt,
 		)
 		if err != nil {
@@ -371,6 +372,12 @@ func (h *AttendanceHandler) ListAttendance(w http.ResponseWriter, r *http.Reques
 		}
 		if description.Valid {
 			att.Description = &description.String
+		}
+		if latitude.Valid {
+			att.Latitude = &latitude.Float64
+		}
+		if longitude.Valid {
+			att.Longitude = &longitude.Float64
 		}
 		if checkInTime.Valid {
 			att.CheckInTime = checkInTime.String
@@ -458,3 +465,129 @@ func (h *AttendanceHandler) GetAttendance(w http.ResponseWriter, r *http.Request
 	json.NewEncoder(w).Encode(att)
 }
 
+// ListAllAttendances - Admin endpoint to list all attendances
+func (h *AttendanceHandler) ListAllAttendances(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value(middleware.UserIDKey).(int)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Get user role - only Level 1 and Level 2 can access this
+	// We need to check user role from database
+	var userRole string
+	err := h.db.QueryRow(`SELECT role FROM users WHERE id = $1`, userID).Scan(&userRole)
+	if err != nil {
+		http.Error(w, "Failed to verify user", http.StatusInternalServerError)
+		return
+	}
+
+	if userRole != "Level 1" && userRole != "Level 2" {
+		http.Error(w, "Forbidden - Admin access required", http.StatusForbidden)
+		return
+	}
+
+	// Get query parameters
+	startDate := r.URL.Query().Get("start_date")
+	endDate := r.URL.Query().Get("end_date")
+	requestedUserId := r.URL.Query().Get("user_id") // Optional: filter by specific user
+
+	query := `
+		SELECT a.id, a.user_id, a.date, a.session, a.selfie_image, a.back_camera_image, 
+		       a.has_issue, a.description, a.latitude, a.longitude,
+		       TO_CHAR(a.check_in_time AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as check_in_time,
+		       TO_CHAR(a.check_out_time AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as check_out_time,
+		       a.status, a.notes, 
+		       TO_CHAR(a.created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as created_at,
+		       TO_CHAR(a.updated_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD"T"HH24:MI:SS') as updated_at
+		FROM attendance a
+		WHERE 1=1
+	`
+	args := []interface{}{}
+	argIndex := 1
+
+	// Filter by user_id if provided
+	if requestedUserId != "" {
+		userIdInt, err := strconv.Atoi(requestedUserId)
+		if err == nil {
+			query += ` AND a.user_id = $` + strconv.Itoa(argIndex)
+			args = append(args, userIdInt)
+			argIndex++
+		}
+	} else {
+		// Only show Level 3 and Level 4 users' attendance
+		query += ` AND EXISTS (
+			SELECT 1 FROM users u WHERE u.id = a.user_id AND u.role IN ('Level 3', 'Level 4')
+		)`
+	}
+
+	if startDate != "" {
+		query += ` AND a.date >= $` + strconv.Itoa(argIndex)
+		args = append(args, startDate)
+		argIndex++
+	}
+	if endDate != "" {
+		query += ` AND a.date <= $` + strconv.Itoa(argIndex)
+		args = append(args, endDate)
+		argIndex++
+	}
+
+	query += ` ORDER BY a.date DESC, a.session, a.user_id`
+
+	rows, err := h.db.Query(query, args...)
+	if err != nil {
+		http.Error(w, "Failed to fetch attendances", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var attendances []Attendance
+	for rows.Next() {
+		var att Attendance
+		var checkInTime, createdAt, updatedAt sql.NullString
+		var checkOutTime, notes, backCameraImage, description sql.NullString
+		var latitude, longitude sql.NullFloat64
+
+		err := rows.Scan(
+			&att.ID, &att.UserID, &att.Date, &att.Session, &att.SelfieImage,
+			&backCameraImage, &att.HasIssue, &description, &latitude, &longitude,
+			&checkInTime, &checkOutTime, &att.Status, &notes, &createdAt, &updatedAt,
+		)
+		if err != nil {
+			continue
+		}
+
+		if backCameraImage.Valid {
+			att.BackCameraImage = &backCameraImage.String
+		}
+		if description.Valid {
+			att.Description = &description.String
+		}
+		if latitude.Valid {
+			att.Latitude = &latitude.Float64
+		}
+		if longitude.Valid {
+			att.Longitude = &longitude.Float64
+		}
+		if checkInTime.Valid {
+			att.CheckInTime = checkInTime.String
+		}
+		if checkOutTime.Valid {
+			att.CheckOutTime = &checkOutTime.String
+		}
+		if notes.Valid {
+			att.Notes = &notes.String
+		}
+		if createdAt.Valid {
+			att.CreatedAt = createdAt.String
+		}
+		if updatedAt.Valid {
+			att.UpdatedAt = updatedAt.String
+		}
+
+		attendances = append(attendances, att)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(attendances)
+}

@@ -586,6 +586,20 @@ export const attendanceAPI = {
     const response = await api.get<Attendance[]>(`/attendance?${queryParams.toString()}`)
     return Array.isArray(response.data) ? response.data : []
   },
+  listAllAttendances: async (params?: { start_date?: string; end_date?: string; user_id?: number }): Promise<Attendance[]> => {
+    const queryParams = new URLSearchParams()
+    if (params?.start_date) {
+      queryParams.append('start_date', params.start_date)
+    }
+    if (params?.end_date) {
+      queryParams.append('end_date', params.end_date)
+    }
+    if (params?.user_id) {
+      queryParams.append('user_id', params.user_id.toString())
+    }
+    const response = await api.get<Attendance[]>(`/attendance/all?${queryParams.toString()}`)
+    return Array.isArray(response.data) ? response.data : []
+  },
   getAttendance: async (id: number): Promise<Attendance> => {
     const response = await api.get<Attendance>(`/attendance/${id}`)
     return response.data
