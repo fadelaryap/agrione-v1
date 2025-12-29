@@ -30,6 +30,11 @@ export default function BatchCultivationDialog({ fields, onClose, onSuccess, use
   const [showTemplateSelect, setShowTemplateSelect] = useState(false)
   const [templates, setTemplates] = useState<CultivationTemplate[]>([])
   const [generating, setGenerating] = useState(false)
+  const [generationProgress, setGenerationProgress] = useState({
+    current: 0,
+    total: 0,
+    currentFieldName: '',
+  })
 
   useEffect(() => {
     if (plantingDate) {
@@ -139,16 +144,28 @@ export default function BatchCultivationDialog({ fields, onClose, onSuccess, use
     }
 
     setGenerating(true)
+    const selectedFields = fields.filter(f => selectedFieldIds.has(f.id))
+    setGenerationProgress({
+      current: 0,
+      total: selectedFields.length,
+      currentFieldName: '',
+    })
 
     try {
-      const selectedFields = fields.filter(f => selectedFieldIds.has(f.id))
       const plantingDateObj = new Date(plantingDate)
       const year = plantingDateObj.getFullYear()
 
       let successCount = 0
       let errorCount = 0
 
-      for (const field of selectedFields) {
+      for (let i = 0; i < selectedFields.length; i++) {
+        const field = selectedFields[i]
+        
+        setGenerationProgress({
+          current: i,
+          total: selectedFields.length,
+          currentFieldName: field.name,
+        })
         try {
           // Check if field has active season
           const existingSeasons = await cultivationSeasonsAPI.listCultivationSeasons({ field_id: field.id })
@@ -235,6 +252,13 @@ export default function BatchCultivationDialog({ fields, onClose, onSuccess, use
           console.error(`Failed to generate for field ${field.name}:`, err)
           errorCount++
         }
+        
+        // Update progress after each field
+        setGenerationProgress({
+          current: i + 1,
+          total: selectedFields.length,
+          currentFieldName: field.name,
+        })
       }
 
       if (successCount > 0) {
@@ -379,11 +403,39 @@ export default function BatchCultivationDialog({ fields, onClose, onSuccess, use
           </div>
         </div>
 
+        {/* Progress Bar */}
+        {generating && generationProgress.total > 0 && (
+          <div className="px-6 pt-4 pb-2 border-t border-gray-200 bg-gray-50">
+            <div className="mb-2 flex items-center justify-between text-sm">
+              <span className="text-gray-700 font-medium">
+                Generating cultivation...
+              </span>
+              <span className="text-gray-600">
+                {generationProgress.current} / {generationProgress.total}
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+              <div
+                className="bg-indigo-600 h-2.5 rounded-full transition-all duration-300 ease-out"
+                style={{
+                  width: `${(generationProgress.current / generationProgress.total) * 100}%`,
+                }}
+              />
+            </div>
+            {generationProgress.currentFieldName && (
+              <p className="text-xs text-gray-500">
+                Processing: <span className="font-medium">{generationProgress.currentFieldName}</span>
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Footer */}
         <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
           <button
             onClick={onClose}
-            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+            disabled={generating}
+            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
           >
             Cancel
           </button>
