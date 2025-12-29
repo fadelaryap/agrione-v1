@@ -40,11 +40,17 @@ export default function BatchCultivationDialog({ fields, onClose, onSuccess, use
   const loadTemplates = () => {
     try {
       const saved = localStorage.getItem('cultivation_templates')
-      if (saved) {
-        setTemplates(JSON.parse(saved))
+      const savedTemplates = saved ? JSON.parse(saved) : []
+      
+      if (plantingDate) {
+        const defaultTemplate = getDefaultCultivationTemplate(plantingDate)
+        setTemplates([defaultTemplate, ...savedTemplates])
+      } else {
+        setTemplates(savedTemplates)
       }
     } catch (err) {
       console.error('Failed to load templates:', err)
+      setTemplates([])
     }
   }
 
@@ -340,7 +346,12 @@ export default function BatchCultivationDialog({ fields, onClose, onSuccess, use
                 </label>
                 {activities.length === 0 ? (
                   <button
-                    onClick={() => setShowTemplateSelect(true)}
+                    onClick={() => {
+                      if (plantingDate) {
+                        loadTemplates()
+                      }
+                      setShowTemplateSelect(true)
+                    }}
                     disabled={!plantingDate}
                     className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center justify-center gap-2"
                   >
