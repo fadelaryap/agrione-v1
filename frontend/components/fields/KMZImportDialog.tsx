@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { fieldsAPI, User, usersAPI, plantTypesAPI, PlantType } from '@/lib/api'
-import { Upload, X, CheckCircle, Loader2 } from 'lucide-react'
+import { Upload, X, CheckCircle, Loader2, CheckSquare, Square, Users, Leaf } from 'lucide-react'
 import { toast } from 'sonner'
 import dynamic from 'next/dynamic'
 
@@ -39,6 +39,10 @@ export default function KMZImportDialog({ onClose, onSuccess }: KMZImportDialogP
   const [plantTypes, setPlantTypes] = useState<PlantType[]>([])
   const [editingPolygon, setEditingPolygon] = useState<TemporaryImportedPolygon | null>(null)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [selectedPolygonIds, setSelectedPolygonIds] = useState<Set<string>>(new Set())
+  const [showBatchSettings, setShowBatchSettings] = useState(false)
+  const [batchPlantTypeId, setBatchPlantTypeId] = useState<string>('')
+  const [batchUserId, setBatchUserId] = useState<string>('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Load users and types
@@ -109,10 +113,62 @@ export default function KMZImportDialog({ onClose, onSuccess }: KMZImportDialogP
     }
   }
 
+  // Handle double click for editing
+  const handlePolygonDoubleClick = (polygonId: string) => {
+    const tempPoly = temporaryPolygons.find(p => p.id === polygonId)
+    if (tempPoly) {
+      setEditingPolygon(tempPoly)
+      setIsEditDialogOpen(true)
+    }
+  }
+
   const handleUpdatePolygon = (updated: TemporaryImportedPolygon) => {
     setTemporaryPolygons(prev => prev.map(p => p.id === updated.id ? updated : p))
     setIsEditDialogOpen(false)
     setEditingPolygon(null)
+  }
+
+  const handleToggleSelect = (polygonId: string) => {
+    setSelectedPolygonIds(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(polygonId)) {
+        newSet.delete(polygonId)
+      } else {
+        newSet.add(polygonId)
+      }
+      return newSet
+    })
+  }
+
+  const handleSelectAll = () => {
+    setSelectedPolygonIds(new Set(temporaryPolygons.map(p => p.id)))
+  }
+
+  const handleDeselectAll = () => {
+    setSelectedPolygonIds(new Set())
+  }
+
+  const handleApplyBatchSettings = () => {
+    if (selectedPolygonIds.size === 0) {
+      toast.error('Pilih setidaknya satu field untuk apply batch settings')
+      return
+    }
+
+    setTemporaryPolygons(prev => prev.map(p => {
+      if (selectedPolygonIds.has(p.id)) {
+        return {
+          ...p,
+          plantTypeId: batchPlantTypeId || p.plantTypeId,
+          userId: batchUserId || p.userId,
+        }
+      }
+      return p
+    }))
+
+    toast.success(`Applied batch settings to ${selectedPolygonIds.size} field(s)`)
+    setShowBatchSettings(false)
+    setBatchPlantTypeId('')
+    setBatchUserId('')
   }
 
   const handleSubmit = async () => {
@@ -156,6 +212,11 @@ export default function KMZImportDialog({ onClose, onSuccess }: KMZImportDialogP
     name: p.name,
     coordinates: p.coordinates,
   }))
+
+  const handlePolygonClickForSelection = (polygon: { id: string; name: string; coordinates: number[][] }) => {
+    // Toggle selection instead of opening edit dialog
+    handleToggleSelect(polygon.id)
+  }
 
   return (
     <>
@@ -216,19 +277,102 @@ export default function KMZImportDialog({ onClose, onSuccess }: KMZImportDialogP
               <div className="space-y-4">
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
                   <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                  <div>
+                  <div className="flex-1">
                     <p className="font-medium text-green-900">Successfully parsed {parsedPolygons.length} field(s)</p>
-                    <p className="text-sm text-green-700 mt-1">Klik polygon di peta untuk mengisi detail (nama, assignee, plant type)</p>
+                    <p className="text-sm text-green-700 mt-1">Klik polygon di peta untuk select/deselect, atau double-click untuk edit detail</p>
                     <p className="text-xs text-green-600 mt-1">
-                      {temporaryPolygons.filter(p => p.name.trim() && p.name !== `Field ${temporaryPolygons.indexOf(p) + 1}`).length} dari {temporaryPolygons.length} sudah dikonfigurasi
+                      {selectedPolygonIds.size} selected • {temporaryPolygons.filter(p => p.name.trim() && p.name !== `Field ${temporaryPolygons.indexOf(p) + 1}`).length} dari {temporaryPolygons.length} sudah dikonfigurasi
                     </p>
                   </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleSelectAll}
+                      className="px-3 py-1.5 text-xs bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-1"
+                    >
+                      <CheckSquare className="w-3.5 h-3.5" />
+                      Select All
+                    </button>
+                    <button
+                      onClick={handleDeselectAll}
+                      className="px-3 py-1.5 text-xs bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors flex items-center gap-1"
+                    >
+                      <Square className="w-3.5 h-3.5" />
+                      Deselect
+                    </button>
+                  </div>
                 </div>
+
+                {/* Batch Settings Panel */}
+                {selectedPolygonIds.size > 0 && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <Users className="w-5 h-5 text-blue-600" />
+                        <h3 className="font-semibold text-blue-900">Batch Settings ({selectedPolygonIds.size} selected)</h3>
+                      </div>
+                      <button
+                        onClick={() => setShowBatchSettings(!showBatchSettings)}
+                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                      >
+                        {showBatchSettings ? 'Hide' : 'Show'} Settings
+                      </button>
+                    </div>
+                    {showBatchSettings && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                        <div>
+                          <label className="block text-sm font-medium mb-1 text-gray-700">
+                            <Leaf className="w-4 h-4 inline mr-1" />
+                            Plant Type
+                          </label>
+                          <select
+                            value={batchPlantTypeId}
+                            onChange={(e) => setBatchPlantTypeId(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          >
+                            <option value="">Keep existing</option>
+                            {Array.isArray(plantTypes) && plantTypes.map((pt) => (
+                              <option key={pt.id} value={pt.id}>
+                                {pt.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1 text-gray-700">
+                            <Users className="w-4 h-4 inline mr-1" />
+                            Assign to User
+                          </label>
+                          <select
+                            value={batchUserId}
+                            onChange={(e) => setBatchUserId(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          >
+                            <option value="">Keep existing</option>
+                            {Array.isArray(users) && users.map((user) => (
+                              <option key={user.id} value={user.id}>
+                                {user.first_name} {user.last_name} ({user.role})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    )}
+                    <button
+                      onClick={handleApplyBatchSettings}
+                      className="mt-3 w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium flex items-center justify-center gap-2"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      Apply to Selected Fields
+                    </button>
+                  </div>
+                )}
 
                 {/* Map Preview */}
                 <KMZImportMapPreview 
                   polygons={mapPreviewPolygons}
-                  onPolygonClick={handlePolygonClick}
+                  selectedPolygonIds={selectedPolygonIds}
+                  onPolygonClick={handlePolygonClickForSelection}
+                  onPolygonEdit={handlePolygonDoubleClick}
                 />
               </div>
             )}

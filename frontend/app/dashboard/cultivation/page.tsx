@@ -4,10 +4,11 @@ import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { authAPI, User, fieldsAPI, Field, workOrdersAPI, WorkOrder, cultivationSeasonsAPI, CultivationSeason } from '@/lib/api'
 import DashboardLayout from '@/components/layout/DashboardLayout'
-import { Plus, Calendar, FileText, Save, Download, Upload, GanttChart, Grid3x3, MapPin, Sparkles } from 'lucide-react'
+import { Plus, Calendar, FileText, Save, Download, Upload, GanttChart, Grid3x3, MapPin, Sparkles, Layers } from 'lucide-react'
 import { toast } from 'sonner'
 import CultivationGanttChart from '@/components/cultivation/CultivationGanttChart'
 import CultivationCardView from '@/components/cultivation/CultivationCardView'
+import BatchCultivationDialog from '@/components/cultivation/BatchCultivationDialog'
 import { 
   CultivationActivityItem, 
   CultivationTemplate, 
@@ -31,6 +32,7 @@ export default function CultivationPage() {
   const [showTemplateModal, setShowTemplateModal] = useState(false)
   const [showCustomModal, setShowCustomModal] = useState(false)
   const [showPlanningModal, setShowPlanningModal] = useState(false)
+  const [showBatchDialog, setShowBatchDialog] = useState(false)
   const [templates, setTemplates] = useState<CultivationTemplate[]>([])
   const [plantingDate, setPlantingDate] = useState<string>('')
   const [filter, setFilter] = useState<'all' | 'has-active' | 'no-active'>('all')
@@ -376,11 +378,18 @@ export default function CultivationPage() {
       <div className="min-h-screen bg-gray-50 pb-20 lg:pb-8">
         <div className="p-4 sm:p-6 lg:p-8">
           {/* Header */}
-          <div className="mb-6">
+          <div className="mb-6 flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Perencanaan Budidaya</h1>
               <p className="text-sm text-gray-500 mt-1">Buat work order untuk masa tanam baru</p>
             </div>
+            <button
+              onClick={() => setShowBatchDialog(true)}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium flex items-center gap-2"
+            >
+              <Layers className="w-4 h-4" />
+              Batch Generate
+            </button>
           </div>
 
           {/* Fields List */}
@@ -515,6 +524,20 @@ export default function CultivationPage() {
                 setShowCustomModal(false)
               }}
               onClose={() => setShowCustomModal(false)}
+            />
+          )}
+
+          {/* Batch Cultivation Dialog */}
+          {showBatchDialog && (
+            <BatchCultivationDialog
+              fields={fields.filter(f => !fieldHasActiveSeason(f.id))}
+              onClose={() => setShowBatchDialog(false)}
+              onSuccess={async () => {
+                await loadCultivationSeasons()
+                await loadWorkOrders()
+                router.push('/dashboard/work-orders')
+              }}
+              userEmail={user?.email}
             />
           )}
         </div>

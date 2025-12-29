@@ -23,7 +23,9 @@ interface ParsedPolygon {
 
 interface KMZImportMapPreviewProps {
   polygons: ParsedPolygon[]
+  selectedPolygonIds?: Set<string>
   onPolygonClick: (polygon: ParsedPolygon & { id: string }) => void
+  onPolygonEdit?: (polygonId: string) => void
 }
 
 function MapBounds({ polygons }: { polygons: ParsedPolygon[] }) {
@@ -53,22 +55,27 @@ function MapBounds({ polygons }: { polygons: ParsedPolygon[] }) {
   return null
 }
 
-function PolygonLayers({ polygons, onPolygonClick }: { polygons: ParsedPolygon[], onPolygonClick: (polygon: ParsedPolygon & { id: string }) => void }) {
+function PolygonLayers({ polygons, selectedPolygonIds, onPolygonClick, onPolygonEdit }: { polygons: ParsedPolygon[], selectedPolygonIds?: Set<string>, onPolygonClick: (polygon: ParsedPolygon & { id: string }) => void, onPolygonEdit?: (polygonId: string) => void }) {
   const featureGroupRef = useRef<L.FeatureGroup | null>(null)
   const layersRef = useRef<L.Polygon[]>([])
   const polygonsRef = useRef<ParsedPolygon[]>(polygons)
+  const selectedPolygonIdsRef = useRef<Set<string> | undefined>(selectedPolygonIds)
   const onPolygonClickRef = useRef(onPolygonClick)
+  const onPolygonEditRef = useRef(onPolygonEdit)
 
   // Update refs when props change
   useEffect(() => {
     polygonsRef.current = polygons
+    selectedPolygonIdsRef.current = selectedPolygonIds
     onPolygonClickRef.current = onPolygonClick
-  }, [polygons, onPolygonClick])
+    onPolygonEditRef.current = onPolygonEdit
+  }, [polygons, selectedPolygonIds, onPolygonClick, onPolygonEdit])
 
-  // Create a stable key for polygons to detect changes
+  // Create a stable key for polygons to detect changes (include selected state)
   const polygonsKey = useMemo(() => {
-    return polygons.map(p => `${p.id}-${p.coordinates.length}`).join(',')
-  }, [polygons])
+    const selectedIds = selectedPolygonIds ? Array.from(selectedPolygonIds).sort().join(',') : ''
+    return polygons.map(p => `${p.id}-${p.coordinates.length}`).join(',') + `|selected:${selectedIds}`
+  }, [polygons, selectedPolygonIds])
 
   useEffect(() => {
     if (!featureGroupRef.current) return
@@ -89,18 +96,24 @@ function PolygonLayers({ polygons, onPolygonClick }: { polygons: ParsedPolygon[]
         if (Array.isArray(poly.coordinates) && poly.coordinates.length > 0) {
           try {
             const latlngs = poly.coordinates.map((coord: any) => [coord[0], coord[1]] as LatLngExpression)
+            const isSelected = selectedPolygonIdsRef.current?.has(poly.id) || false
             const layer = L.polygon(latlngs, { 
-              color: '#f97316', // Orange color
-              weight: 3, 
-              fillOpacity: 0.25,
-              dashArray: '5, 5' // Dashed border to show it's temporary
+              color: isSelected ? '#3b82f6' : '#f97316', // Blue if selected, orange if not
+              weight: isSelected ? 4 : 3, 
+              fillOpacity: isSelected ? 0.35 : 0.25,
+              dashArray: isSelected ? undefined : '5, 5' // Solid border if selected, dashed if not
             })
             
-            ;(layer as any)._meta = { id: poly.id, type: 'temporary_polygon', name: poly.name }
+            ;(layer as any)._meta = { id: poly.id, type: 'temporary_polygon', name: poly.name, isSelected }
+            const statusText = isSelected ? '<span style="color:#3b82f6;font-weight:bold;">✓ Selected</span>' : '<span style="color:#f97316;">Not Selected</span>'
             layer.bindPopup(`
               <div>
-                <strong style="color: #f97316;">${poly.name || 'Unnamed'}</strong><br/>
-                <button onclick="window.clickKMZPolygon('${poly.id}')" style="margin-top:8px;padding:4px 8px;background:#f97316;color:white;border:none;border-radius:4px;cursor:pointer;">Edit Detail</button>
+                <strong style="color: ${isSelected ? '#3b82f6' : '#f97316'};"">${poly.name || 'Unnamed'}</strong><br/>
+                <div style="margin-top:4px;font-size:12px;">${statusText}</div>
+                <div style="margin-top:8px;display:flex;gap:4px;">
+                  <button onclick="window.clickKMZPolygon('${poly.id}')" style="padding:4px 8px;background:${isSelected ? '#3b82f6' : '#f97316'};color:white;border:none;border-radius:4px;cursor:pointer;font-size:12px;">${isSelected ? 'Deselect' : 'Select'}</button>
+                  <button onclick="window.editKMZPolygon('${poly.id}')" style="padding:4px 8px;background:#6b7280;color:white;border:none;border-radius:4px;cursor:pointer;font-size:12px;">Edit</button>
+                </div>
               </div>
             `)
             
@@ -128,6 +141,13 @@ function PolygonLayers({ polygons, onPolygonClick }: { polygons: ParsedPolygon[]
       }
     }
 
+    // Global function for editing polygon from popup
+    ;(window as any).editKMZPolygon = (polygonId: string) => {
+      if (onPolygonEditRef.current) {
+        onPolygonEditRef.current(polygonId)
+      }
+    }
+
     // Cleanup
     return () => {
       if (featureGroupRef.current) {
@@ -148,7 +168,7 @@ function PolygonLayers({ polygons, onPolygonClick }: { polygons: ParsedPolygon[]
   return <FeatureGroup ref={setFeatureGroupRef} />
 }
 
-export default function KMZImportMapPreview({ polygons, onPolygonClick }: KMZImportMapPreviewProps) {
+export default function KMZImportMapPreview({ polygons, selectedPolygonIds, onPolygonClick, onPolygonEdit }: KMZImportMapPreviewProps) {
   // Calculate center from polygons
   const getCenter = (): [number, number] => {
     if (polygons.length === 0) return [-4.079, 104.167] // Default center
@@ -183,7 +203,7 @@ export default function KMZImportMapPreview({ polygons, onPolygonClick }: KMZImp
           url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
           attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
         />
-        <PolygonLayers polygons={polygons} onPolygonClick={onPolygonClick} />
+        <PolygonLayers polygons={polygons} selectedPolygonIds={selectedPolygonIds} onPolygonClick={onPolygonClick} onPolygonEdit={onPolygonEdit} />
         <MapBounds polygons={polygons} />
       </MapContainer>
     </div>
