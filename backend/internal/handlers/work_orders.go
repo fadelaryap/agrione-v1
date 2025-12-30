@@ -102,6 +102,7 @@ func (h *WorkOrdersHandler) ListWorkOrders(w http.ResponseWriter, r *http.Reques
 	category := r.URL.Query().Get("category")
 	search := r.URL.Query().Get("search")
 	fieldIDStr := r.URL.Query().Get("field_id")
+	fieldIDsStr := r.URL.Query().Get("field_ids") // Support for multiple field IDs (comma-separated)
 	assignee := r.URL.Query().Get("assignee")
 
 	// Build query
@@ -132,7 +133,27 @@ func (h *WorkOrdersHandler) ListWorkOrders(w http.ResponseWriter, r *http.Reques
 		argPos++
 	}
 
-	if fieldIDStr != "" {
+	// Support for multiple field IDs (field_ids takes precedence over field_id)
+	if fieldIDsStr != "" {
+		fieldIDStrs := strings.Split(fieldIDsStr, ",")
+		var fieldIDs []int
+		for _, idStr := range fieldIDStrs {
+			id, err := strconv.Atoi(strings.TrimSpace(idStr))
+			if err == nil && id > 0 {
+				fieldIDs = append(fieldIDs, id)
+			}
+		}
+		if len(fieldIDs) > 0 {
+			placeholders := make([]string, len(fieldIDs))
+			for i, id := range fieldIDs {
+				placeholders[i] = "$" + strconv.Itoa(argPos)
+				args = append(args, id)
+				argPos++
+			}
+			query += " AND wo.field_id IN (" + strings.Join(placeholders, ",") + ")"
+		}
+	} else if fieldIDStr != "" {
+		// Backward compatibility: single field_id
 		fieldID, err := strconv.Atoi(fieldIDStr)
 		if err == nil {
 			query += " AND wo.field_id = $" + strconv.Itoa(argPos)

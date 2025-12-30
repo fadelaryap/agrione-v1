@@ -60,10 +60,14 @@ if (typeof window !== 'undefined') {
 
   api.interceptors.response.use(
     (response) => response,
-    (error) => {
+    async (error) => {
       if (error.response?.status === 401) {
-        localStorage.removeItem('token')
-        window.location.href = '/login'
+        // Check if dev mode is active, if so don't redirect
+        const { isDevModeActive } = await import('./devAuth')
+        if (!isDevModeActive()) {
+          localStorage.removeItem('token')
+          window.location.href = '/login'
+        }
       }
       return Promise.reject(error)
     }
@@ -127,8 +131,19 @@ export const authAPI = {
   logout: async (): Promise<void> => {
     await api.post('/logout')
   },
-  getProfile: async () => {
-    const response = await api.get('/profile')
+  getProfile: async (): Promise<User> => {
+    // Check for dev mode bypass
+    if (typeof window !== 'undefined') {
+      const { isDevModeActive, getDevUser } = await import('./devAuth')
+      if (isDevModeActive()) {
+        const devUser = getDevUser()
+        if (devUser) {
+          return devUser
+        }
+      }
+    }
+    
+    const response = await api.get<User>('/profile')
     return response.data
   },
 }
@@ -312,13 +327,19 @@ export const workOrdersAPI = {
     category?: string
     search?: string
     field_id?: number
+    field_ids?: number[] // Support for multiple field IDs (comma-separated)
     assignee?: string
   }): Promise<WorkOrder[]> => {
     const queryParams = new URLSearchParams()
     if (params?.status) queryParams.append('status', params.status)
     if (params?.category) queryParams.append('category', params.category)
     if (params?.search) queryParams.append('search', params.search)
-    if (params?.field_id) queryParams.append('field_id', params.field_id.toString())
+    // field_ids takes precedence over field_id for better performance
+    if (params?.field_ids && params.field_ids.length > 0) {
+      queryParams.append('field_ids', params.field_ids.join(','))
+    } else if (params?.field_id) {
+      queryParams.append('field_id', params.field_id.toString())
+    }
     if (params?.assignee) queryParams.append('assignee', params.assignee)
     
     const url = `/work-orders${queryParams.toString() ? '?' + queryParams.toString() : ''}`

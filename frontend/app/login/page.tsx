@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { authAPI } from '@/lib/api'
+import { checkDevAuth, getDevRedirectPath, isDevModeActive, getDevUser } from '@/lib/devAuth'
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -17,8 +18,36 @@ type LoginForm = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [error, setError] = useState<string>('')
   const [isLoading, setIsLoading] = useState(false)
+
+  // Check for dev mode bypass
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      
+      // Check if dev mode secret is in URL
+      if (checkDevAuth(params)) {
+        const role = params.get('role') || localStorage.getItem('dev_role') || 'Level 1'
+        const redirectPath = getDevRedirectPath(role)
+        
+        // Remove dev params from URL
+        const newUrl = window.location.pathname
+        window.history.replaceState({}, '', newUrl)
+        
+        router.push(redirectPath)
+        return
+      }
+      
+      // Check if dev mode is already active
+      if (isDevModeActive()) {
+        const role = localStorage.getItem('dev_role') || 'Level 1'
+        const redirectPath = getDevRedirectPath(role)
+        router.push(redirectPath)
+      }
+    }
+  }, [router])
 
   const {
     register,

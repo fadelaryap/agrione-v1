@@ -128,20 +128,24 @@ export default function WorkOrdersPage() {
 
   const loadWorkOrders = async () => {
     try {
-      // Get work orders for all fields assigned to this user
-      const fieldIds = fields.map(f => f.id)
-      const allOrders: WorkOrder[] = []
+      // Get work orders for all fields assigned to this user - optimized: single API call
+      const fieldIds = fields.map(f => f.id).filter((id): id is number => id != null && id !== undefined)
       
-      for (const fieldId of fieldIds) {
-        const orders = await workOrdersAPI.listWorkOrders({ field_id: fieldId })
-        allOrders.push(...(orders || []))
+      if (fieldIds.length === 0) {
+        setWorkOrders([])
+        return
       }
+
+      // Use field_ids parameter for better performance (single API call instead of multiple)
+      const allOrders = await workOrdersAPI.listWorkOrders({ field_ids: fieldIds })
       
       // Also filter by assignee (user's name)
       const userFullName = user ? `${user.first_name} ${user.last_name}` : ''
       const filteredOrders = allOrders.filter(wo => 
-        wo.assignee.toLowerCase().includes(userFullName.toLowerCase()) ||
-        wo.assignee === user?.email
+        wo.assignee && (
+          wo.assignee.toLowerCase().includes(userFullName.toLowerCase()) ||
+          wo.assignee === user?.email
+        )
       )
       
       setWorkOrders(filteredOrders || [])
