@@ -78,9 +78,9 @@ export default function ReportsPage() {
   }
 
   const getWorkOrderTitle = (workOrderId: number | null | undefined) => {
-    if (!workOrderId) return 'Tugas Tidak Diketahui'
+    if (!workOrderId) return 'Aktivitas Tidak Diketahui'
     const wo = workOrders.find(o => o.id === workOrderId)
-    return wo?.title || `Tugas #${workOrderId}`
+    return wo?.title || `Aktivitas #${workOrderId}`
   }
 
   const getFieldName = (workOrderId: number | null | undefined) => {
@@ -107,7 +107,7 @@ export default function ReportsPage() {
           key = formatDateIndonesian(report.created_at)
         }
       } else if (groupBy === 'work_order') {
-        key = report.work_order_id ? getWorkOrderTitle(report.work_order_id) : 'Tidak Ada Tugas'
+        key = report.work_order_id ? getWorkOrderTitle(report.work_order_id) : 'Tidak Ada Aktivitas'
       } else if (groupBy === 'field') {
         key = report.work_order_id ? getFieldName(report.work_order_id) : 'Tidak Ada Lahan'
       }
@@ -276,7 +276,7 @@ export default function ReportsPage() {
           className="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium flex items-center gap-2"
         >
           <Eye className="w-4 h-4" />
-          Lihat Detail Tugas
+          Lihat Detail Aktivitas
         </button>
       )}
     </div>
@@ -317,13 +317,13 @@ export default function ReportsPage() {
 
         {/* Filter by Work Order */}
         <div className="bg-white rounded-lg shadow-lg p-4 mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Filter berdasarkan Tugas</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Filter berdasarkan Aktivitas</label>
           <select
             value={selectedWorkOrder || ''}
             onChange={(e) => setSelectedWorkOrder(e.target.value ? parseInt(e.target.value) : null)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500"
           >
-            <option value="">Semua Tugas</option>
+            <option value="">Semua Aktivitas</option>
             {workOrders.map(wo => (
               <option key={wo.id} value={wo.id}>{wo.title}</option>
             ))}
@@ -364,7 +364,7 @@ export default function ReportsPage() {
               }`}
             >
               <FileText className="w-4 h-4 inline mr-1" />
-              Tugas
+              Aktivitas
             </button>
             <button
               onClick={() => setGroupBy('field')}
@@ -386,7 +386,7 @@ export default function ReportsPage() {
             <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Tidak Ada Laporan</h2>
             <p className="text-gray-600">
-              {selectedWorkOrder ? 'Tidak ada laporan untuk tugas ini.' : 'Anda belum mengirimkan laporan apapun.'}
+              {selectedWorkOrder ? 'Tidak ada laporan untuk aktivitas ini.' : 'Anda belum mengirimkan laporan apapun.'}
             </p>
           </div>
         ) : (

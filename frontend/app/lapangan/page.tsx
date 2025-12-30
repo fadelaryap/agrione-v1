@@ -248,7 +248,7 @@ export default function SPVDashboard() {
           <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-green-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Tugas Hari Ini</p>
+                <p className="text-sm text-gray-600">Aktivitas Hari Ini</p>
                 <p className="text-2xl font-bold text-gray-900">{workOrders.length}</p>
               </div>
               <ClipboardList className="w-8 h-8 text-green-500" />
@@ -441,7 +441,7 @@ export default function SPVDashboard() {
                       onClick={() => router.push(`/lapangan/work-orders?field=${field.id}`)}
                       className="text-sm text-green-600 hover:text-green-700 font-medium"
                     >
-                      Lihat Tugas →
+                      Lihat Aktivitas →
                     </button>
                   </div>
                 </div>
@@ -465,7 +465,7 @@ export default function SPVDashboard() {
           <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
             <MapPin className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Belum Ada Lahan</h3>
-            <p className="text-gray-500">Lahan Anda akan muncul di sini setelah ditugaskan</p>
+            <p className="text-gray-500">Lahan Anda akan muncul di sini setelah ditetapkan</p>
           </div>
         )}
       </div>

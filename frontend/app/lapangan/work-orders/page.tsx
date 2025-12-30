@@ -391,8 +391,8 @@ export default function WorkOrdersPage() {
               <div className="flex items-center gap-3">
                 <ClipboardList className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
                 <div>
-                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Tugas</h1>
-                  <p className="text-sm text-gray-600 mt-1">Tugas yang ditugaskan kepada Anda</p>
+                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Aktivitas</h1>
+                  <p className="text-sm text-gray-600 mt-1">Aktivitas yang ditetapkan kepada Anda</p>
                 </div>
               </div>
               
@@ -540,7 +540,7 @@ export default function WorkOrdersPage() {
                             <Calendar className="w-5 h-5 text-green-600" />
                             <div className="text-left">
                               <h3 className="font-semibold text-gray-900">{dateLabel}</h3>
-                              <p className="text-xs text-gray-500">{orders.length} tugas</p>
+                              <p className="text-xs text-gray-500">{orders.length} aktivitas</p>
                             </div>
                           </div>
                           {isExpanded ? (
@@ -679,7 +679,7 @@ export default function WorkOrdersPage() {
                             <Calendar className="w-5 h-5 text-red-600" />
                             <div className="text-left">
                               <h3 className="font-semibold text-red-700">Kadaluwarsa / Sudah Lewat</h3>
-                              <p className="text-xs text-gray-500">{pastDates.reduce((sum, [, orders]) => sum + orders.length, 0)} tugas</p>
+                              <p className="text-xs text-gray-500">{pastDates.reduce((sum, [, orders]) => sum + orders.length, 0)} aktivitas</p>
                             </div>
                           </div>
                           {isExpanded ? (
@@ -705,7 +705,7 @@ export default function WorkOrdersPage() {
                                     <div className="flex items-center gap-2">
                                       <Calendar className="w-4 h-4 text-red-600" />
                                       <span className="text-sm font-medium text-red-700">{dateLabel}</span>
-                                      <span className="text-xs text-red-600">({orders.length} tugas)</span>
+                                      <span className="text-xs text-red-600">({orders.length} aktivitas)</span>
                                     </div>
                                     {isDateExpanded ? (
                                       <ChevronUp className="w-4 h-4 text-red-600" />
@@ -762,9 +762,9 @@ export default function WorkOrdersPage() {
             })() : (
               <div className="bg-white rounded-lg shadow-lg p-8 text-center">
                 <ClipboardList className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Tidak Ada Tugas</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Tidak Ada Aktivitas</h3>
                 <p className="text-gray-600">
-                  Anda belum memiliki tugas yang ditugaskan.
+                  Anda belum memiliki aktivitas yang ditetapkan.
                 </p>
               </div>
             )}

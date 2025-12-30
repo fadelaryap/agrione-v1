@@ -320,7 +320,7 @@ export default function CreateReportPage() {
           </button>
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Buat Laporan Lapangan</h1>
-            <p className="text-sm text-gray-600 mt-1">Tugas: {workOrder.title}</p>
+            <p className="text-sm text-gray-600 mt-1">Aktivitas: {workOrder.title}</p>
           </div>
         </div>
 
@@ -518,7 +518,7 @@ export default function CreateReportPage() {
           {/* Progress */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Progress Tugas <span className="text-red-500">*</span>
+              Progress Aktivitas <span className="text-red-500">*</span>
             </label>
             <div className="space-y-2">
               <input
@@ -535,7 +535,7 @@ export default function CreateReportPage() {
                 <span className="text-xs text-gray-500">100%</span>
               </div>
               <p className="text-xs text-gray-500">
-                Tentukan progress penyelesaian tugas berdasarkan laporan ini.
+                Tentukan progress penyelesaian aktivitas berdasarkan laporan ini.
               </p>
             </div>
           </div>

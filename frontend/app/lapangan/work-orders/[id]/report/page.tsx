@@ -206,7 +206,7 @@ export default function WorkOrderReportPage() {
             onClick={() => router.back()}
             className="text-green-600 hover:text-green-700 mb-4 text-sm font-medium"
           >
-            ← Kembali ke Tugas
+            ← Kembali ke Aktivitas
           </button>
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4">
