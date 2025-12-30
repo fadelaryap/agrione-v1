@@ -398,7 +398,7 @@ export default function WorkOrderReportPage() {
                     </div>
                   )}
 
-                  {/* Form Tambah Komentar (hanya untuk Level 1/2) */}
+                  {/* Form Tambah Komentar (hanya untuk SM) */}
                   {user.role === 'Level 1' || user.role === 'Level 2' ? (
                     <div className="flex gap-2">
                       <input
@@ -427,7 +427,7 @@ export default function WorkOrderReportPage() {
                       </button>
                     </div>
                   ) : (
-                    <p className="text-xs text-gray-500">Hanya pengguna Level 1 dan Level 2 yang dapat menambahkan komentar</p>
+                    <p className="text-xs text-gray-500">Hanya pengguna SM yang dapat menambahkan komentar</p>
                   )}
                 </div>
               </div>

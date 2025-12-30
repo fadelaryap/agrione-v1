@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { authAPI, User } from '@/lib/api'
+import { getRoleDisplayLabel } from '@/lib/roleUtils'
 import { User as UserIcon, LogOut } from 'lucide-react'
 
 export default function ProfilePage() {
@@ -88,7 +89,7 @@ export default function ProfilePage() {
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">Role</label>
-              <p className="text-gray-900 mt-1">{user.role}</p>
+              <p className="text-gray-900 mt-1">{getRoleDisplayLabel(user.role)}</p>
             </div>
           </div>
         </div>
