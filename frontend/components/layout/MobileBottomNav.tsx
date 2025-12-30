@@ -10,7 +10,7 @@ export default function MobileBottomNav() {
 
   const navItems = [
     { href: '/lapangan', label: 'Beranda', icon: Home, exact: true },
-    { href: '/lapangan/work-orders', label: 'Tugas', icon: ClipboardList, exact: false },
+    { href: '/lapangan/work-orders', label: 'Aktivitas', icon: ClipboardList, exact: false },
     { href: '/lapangan/reports', label: 'Laporan', icon: FileText, exact: false },
     { href: '/lapangan/profile', label: 'Profil', icon: User, exact: false },
   ]
