@@ -98,7 +98,7 @@ export default function PMAIPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: '#2E4E2A' }}></div>
           <p className="mt-4 text-gray-600">Memuat...</p>
         </div>
       </div>
@@ -108,21 +108,21 @@ export default function PMAIPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl shadow-xl p-6 text-white">
+      <div className="rounded-2xl shadow-xl p-6 text-white" style={{ backgroundColor: '#2E4E2A' }}>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold mb-2">AI Predictions & Decision Support</h1>
-            <p className="text-purple-100">
+            <p className="text-white" style={{ opacity: 0.9 }}>
               Prediksi dan rekomendasi berbasis AI • {format(new Date(), 'EEEE, dd MMMM yyyy')}
             </p>
           </div>
-          <Brain className="w-12 h-12 text-purple-200" />
+          <Brain className="w-12 h-12 text-white" style={{ opacity: 0.9 }} />
         </div>
       </div>
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-purple-500">
+        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4" style={{ borderColor: '#2E4E2A' }}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Total Predictions</p>
@@ -166,7 +166,7 @@ export default function PMAIPage() {
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
-                  <Brain className="w-6 h-6 text-purple-600" />
+                  <Brain className="w-6 h-6" style={{ color: '#2E4E2A' }} />
                   <h3 className="font-bold text-gray-900 text-lg">{pred.prediction}</h3>
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                     pred.riskLevel === 'high' ? 'bg-red-200 text-red-800' :
@@ -200,7 +200,7 @@ export default function PMAIPage() {
                   <ul className="space-y-1">
                     {pred.recommendations.map((rec, i) => (
                       <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                        <span className="text-purple-600 mt-1">•</span>
+                        <span className="mt-1" style={{ color: '#2E4E2A' }}>•</span>
                         <span>{rec}</span>
                       </li>
                     ))}
@@ -211,7 +211,10 @@ export default function PMAIPage() {
             <div className="flex gap-2 mt-4 pt-4 border-t border-gray-300">
               <button
                 onClick={() => handleGenerateRecommendation(pred)}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium flex items-center gap-2"
+                className="px-4 py-2 text-white rounded-lg transition-colors text-sm font-medium flex items-center gap-2"
+                style={{ backgroundColor: '#2E4E2A' }}
+                onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
               >
                 <Send className="w-4 h-4" />
                 Kirim ke SM

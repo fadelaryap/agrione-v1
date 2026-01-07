@@ -280,7 +280,7 @@ export default function GMDashboard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Header */}
         <div className="mb-6">
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl shadow-xl p-6 text-white">
+          <div className="rounded-2xl shadow-xl p-6 text-white" style={{ backgroundColor: '#2E4E2A' }}>
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-bold mb-2">Executive Dashboard</h1>
@@ -354,23 +354,23 @@ export default function GMDashboard() {
               <p className="text-xs text-gray-600">Rata-rata per hektar</p>
             </div>
 
-            <div className="bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-200 rounded-xl p-6">
+            <div className="border-2 rounded-xl p-6" style={{ backgroundColor: 'rgba(46, 78, 42, 0.1)', borderColor: '#2E4E2A' }}>
               <div className="flex items-center justify-between mb-4">
                 <p className="text-sm text-gray-700 font-medium">Total Area</p>
-                <Target className="w-6 h-6 text-purple-600" />
+                <Target className="w-6 h-6" style={{ color: '#2E4E2A' }} />
               </div>
-              <p className="text-3xl font-bold text-purple-900 mb-2">
+              <p className="text-3xl font-bold mb-2" style={{ color: '#2E4E2A' }}>
                 {formatNumber(productionMetrics.totalArea, 2)} ha
               </p>
               <p className="text-xs text-gray-600">Lahan aktif</p>
             </div>
 
-            <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 border-2 border-indigo-200 rounded-xl p-6">
+            <div className="border-2 rounded-xl p-6" style={{ backgroundColor: 'rgba(46, 78, 42, 0.1)', borderColor: '#2E4E2A' }}>
               <div className="flex items-center justify-between mb-4">
                 <p className="text-sm text-gray-700 font-medium">Perbandingan</p>
-                <BarChart3 className="w-6 h-6 text-indigo-600" />
+                <BarChart3 className="w-6 h-6" style={{ color: '#2E4E2A' }} />
               </div>
-              <p className="text-lg font-bold text-indigo-900 mb-2">
+              <p className="text-lg font-bold mb-2" style={{ color: '#2E4E2A' }}>
                 Site A: {formatNumber(6.2, 1)} ton/ha
               </p>
               <p className="text-sm text-gray-600">Terbaik</p>
@@ -578,7 +578,7 @@ export default function GMDashboard() {
         {/* Site Comparison Chart */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
           <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <BarChart3 className="w-6 h-6 text-indigo-600" />
+            <BarChart3 className="w-6 h-6" style={{ color: '#2E4E2A' }} />
             Perbandingan Antar Site
           </h2>
           <div className="h-80">
@@ -684,7 +684,7 @@ export default function GMDashboard() {
         {/* Trend Comparison - Season */}
         <div className="bg-white rounded-xl shadow-lg p-6">
           <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <BarChart3 className="w-6 h-6 text-indigo-600" />
+            <BarChart3 className="w-6 h-6" style={{ color: '#2E4E2A' }} />
             Trend Produksi (Perbandingan Musim)
           </h2>
           <div className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl p-8 border-2 border-gray-200">

@@ -53,7 +53,7 @@ export default function SMInboxPage() {
             media: [
               {
                 type: 'photo',
-                url: '/api/placeholder/800/600',
+                url: 'https://images.unsplash.com/photo-1593113598332-cd288d649433?w=800&h=600&fit=crop',
                 filename: 'lahan-a1-001.jpg',
                 size: 2456789,
                 uploadedAt: new Date(Date.now() - 3600000).toISOString()
@@ -76,7 +76,7 @@ export default function SMInboxPage() {
             media: [
               {
                 type: 'photo',
-                url: '/api/placeholder/800/600',
+                url: 'https://images.unsplash.com/photo-1593113598332-cd288d649433?w=800&h=600&fit=crop',
                 filename: 'hama-wereng-b2.jpg',
                 size: 1890234,
                 uploadedAt: new Date(Date.now() - 7200000).toISOString()
@@ -114,7 +114,7 @@ export default function SMInboxPage() {
             media: [
               {
                 type: 'photo',
-                url: '/api/placeholder/800/600',
+                url: 'https://images.unsplash.com/photo-1593113598332-cd288d649433?w=800&h=600&fit=crop',
                 filename: 'saluran-irigasi-d4.jpg',
                 size: 2100567,
                 uploadedAt: new Date(Date.now() - 1800000).toISOString()
@@ -152,7 +152,7 @@ export default function SMInboxPage() {
             media: [
               {
                 type: 'photo',
-                url: '/api/placeholder/800/600',
+                url: 'https://images.unsplash.com/photo-1593113598332-cd288d649433?w=800&h=600&fit=crop',
                 filename: 'penyemprotan-f6.jpg',
                 size: 1987654,
                 uploadedAt: new Date(Date.now() - 5400000).toISOString()
@@ -175,7 +175,7 @@ export default function SMInboxPage() {
             media: [
               {
                 type: 'photo',
-                url: '/api/placeholder/800/600',
+                url: 'https://images.unsplash.com/photo-1593113598332-cd288d649433?w=800&h=600&fit=crop',
                 filename: 'gangguan-burung-g7.jpg',
                 size: 1765432,
                 uploadedAt: new Date(Date.now() - 9000000).toISOString()
@@ -198,14 +198,14 @@ export default function SMInboxPage() {
             media: [
               {
                 type: 'photo',
-                url: '/api/placeholder/800/600',
+                url: 'https://images.unsplash.com/photo-1593113598332-cd288d649433?w=800&h=600&fit=crop',
                 filename: 'panen-h8-001.jpg',
                 size: 2234567,
                 uploadedAt: new Date(Date.now() - 12600000).toISOString()
               },
               {
                 type: 'photo',
-                url: '/api/placeholder/800/600',
+                url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&h=600&fit=crop',
                 filename: 'panen-h8-002.jpg',
                 size: 2012345,
                 uploadedAt: new Date(Date.now() - 12600000).toISOString()
@@ -289,7 +289,7 @@ export default function SMInboxPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: '#2E4E2A' }}></div>
           <p className="mt-4 text-gray-600">Memuat...</p>
         </div>
       </div>
@@ -299,15 +299,15 @@ export default function SMInboxPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-600 to-blue-600 rounded-2xl shadow-xl p-6 text-white">
+      <div className="rounded-2xl shadow-xl p-6 text-white" style={{ backgroundColor: '#2E4E2A' }}>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold mb-2">Inbox Laporan SPV</h1>
-            <p className="text-indigo-100">
+            <p className="text-white" style={{ opacity: 0.9 }}>
               Validasi dan review laporan dari Supervisor • {format(new Date(), 'EEEE, dd MMMM yyyy')}
             </p>
           </div>
-          <Inbox className="w-12 h-12 text-indigo-200" />
+          <Inbox className="w-12 h-12 text-white" style={{ opacity: 0.9 }} />
         </div>
       </div>
 

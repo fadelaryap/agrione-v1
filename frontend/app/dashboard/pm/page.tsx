@@ -72,7 +72,7 @@ export default function PMMapPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: '#2E4E2A' }}></div>
           <p className="mt-4 text-gray-600">Memuat...</p>
         </div>
       </div>
@@ -82,11 +82,11 @@ export default function PMMapPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl shadow-xl p-6 text-white">
+      <div className="rounded-2xl shadow-xl p-6 text-white" style={{ backgroundColor: '#2E4E2A' }}>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold mb-2">Peta NDVI & Analisis Vegetasi</h1>
-            <p className="text-purple-100">
+            <p className="text-white" style={{ opacity: 0.9 }}>
               Visualisasi kesehatan tanaman berdasarkan NDVI • {format(new Date(), 'EEEE, dd MMMM yyyy')}
             </p>
           </div>
@@ -95,7 +95,7 @@ export default function PMMapPage() {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-purple-500">
+        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4" style={{ borderColor: '#2E4E2A' }}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Total Lahan</p>
@@ -141,7 +141,10 @@ export default function PMMapPage() {
           <h2 className="text-xl font-bold text-gray-900">Peta NDVI</h2>
           <button 
             onClick={loadFields}
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium flex items-center gap-2"
+            className="px-4 py-2 text-white rounded-lg transition-colors text-sm font-medium flex items-center gap-2"
+            style={{ backgroundColor: '#2E4E2A' }}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
           >
             <RefreshCw className="w-4 h-4" />
             Refresh Data

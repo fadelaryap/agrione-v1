@@ -175,7 +175,7 @@ export default function DroneMultispectralPage() {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: '#2E4E2A' }}></div>
           <p className="mt-4 text-gray-600">Memuat data...</p>
         </div>
       </div>
@@ -189,14 +189,17 @@ export default function DroneMultispectralPage() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-              <Camera className="w-8 h-8 text-purple-600" />
+              <Camera className="w-8 h-8" style={{ color: '#2E4E2A' }} />
               Drone Multispectral
             </h1>
             <p className="text-gray-600 mt-2">Kelola misi drone dan data citra multispectral</p>
           </div>
           <button
             onClick={loadMissions}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 text-white rounded-lg transition-colors shadow-sm"
+            style={{ backgroundColor: '#2E4E2A' }}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
           >
             <RefreshCw className="w-4 h-4" />
             Refresh
@@ -205,13 +208,13 @@ export default function DroneMultispectralPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200">
+          <div className="rounded-lg p-4 border" style={{ backgroundColor: 'rgba(46, 78, 42, 0.1)', borderColor: '#2E4E2A' }}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-purple-700 font-medium">Total Missions</p>
-                <p className="text-2xl font-bold text-purple-900 mt-1">{stats.totalMissions}</p>
+                <p className="text-sm font-medium" style={{ color: '#2E4E2A' }}>Total Missions</p>
+                <p className="text-2xl font-bold mt-1" style={{ color: '#2E4E2A' }}>{stats.totalMissions}</p>
               </div>
-              <Layers className="w-8 h-8 text-purple-600" />
+              <Layers className="w-8 h-8" style={{ color: '#2E4E2A' }} />
             </div>
           </div>
           <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
@@ -251,13 +254,15 @@ export default function DroneMultispectralPage() {
           <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-purple-600" />
+                <MapPin className="w-5 h-5" style={{ color: '#2E4E2A' }} />
                 Peta Lahan
               </h2>
               <select
                 value={selectedField || ''}
                 onChange={(e) => setSelectedField(e.target.value ? parseInt(e.target.value) : null)}
-                className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm"
+                onFocus={(e) => e.currentTarget.style.outline = '2px solid #2E4E2A'}
+                onBlur={(e) => e.currentTarget.style.outline = ''}
               >
                 <option value="">Semua Lahan</option>
                 {fields.map(field => (
@@ -357,7 +362,11 @@ export default function DroneMultispectralPage() {
                       </div>
                     )}
                     <div className="flex gap-2 pt-4 border-t">
-                      <button className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-2">
+                      <button className="flex-1 px-4 py-2 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
+                        style={{ backgroundColor: '#2E4E2A' }}
+                        onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                        onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                      >
                         <Download className="w-4 h-4" />
                         Download Data
                       </button>
@@ -383,7 +392,9 @@ export default function DroneMultispectralPage() {
                 <select
                   value={selectedField || ''}
                   onChange={(e) => setSelectedField(e.target.value ? parseInt(e.target.value) : null)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  onFocus={(e) => e.currentTarget.style.outline = '2px solid #2E4E2A'}
+                  onBlur={(e) => e.currentTarget.style.outline = ''}
                 >
                   <option value="">Semua Lahan</option>
                   {fields.map(field => (
@@ -397,7 +408,9 @@ export default function DroneMultispectralPage() {
                   type="date"
                   value={dateFilter}
                   onChange={(e) => setDateFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  onFocus={(e) => e.currentTarget.style.outline = '2px solid #2E4E2A'}
+                  onBlur={(e) => e.currentTarget.style.outline = ''}
                 />
               </div>
             </div>
@@ -407,7 +420,7 @@ export default function DroneMultispectralPage() {
           <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-purple-600" />
+                <Calendar className="w-5 h-5" style={{ color: '#2E4E2A' }} />
                 Missions ({filteredMissions.length})
               </h2>
             </div>
@@ -418,9 +431,10 @@ export default function DroneMultispectralPage() {
                   onClick={() => setSelectedMission(selectedMission === mission.id ? null : mission.id)}
                   className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
                     selectedMission === mission.id
-                      ? 'border-purple-500 bg-purple-50'
-                      : 'border-gray-200 hover:border-purple-300 hover:bg-gray-50'
+                      ? ''
+                      : 'border-gray-200 hover:bg-gray-50'
                   }`}
+                  style={selectedMission === mission.id ? { borderColor: '#2E4E2A', backgroundColor: 'rgba(46, 78, 42, 0.05)' } : {}}
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1">

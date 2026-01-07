@@ -85,15 +85,17 @@ export default function PMLayout({ children }: PMLayoutProps) {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-purple-50">
+    <div className="min-h-screen bg-white">
       {/* Top Navbar */}
-      <nav className="bg-gradient-to-r from-purple-600 to-indigo-600 shadow-lg fixed top-0 left-0 right-0 z-40">
+      <nav className="shadow-lg fixed top-0 left-0 right-0 z-40" style={{ backgroundColor: '#2E4E2A' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden p-2 rounded-md text-white hover:bg-purple-700 transition-colors"
+                className="lg:hidden p-2 rounded-md text-white transition-colors"
+                onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
               >
                 {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </button>
@@ -111,8 +113,8 @@ export default function PMLayout({ children }: PMLayoutProps) {
         {/* Sidebar - Desktop */}
         <aside className="hidden lg:flex lg:flex-shrink-0">
           <div className="w-64 bg-white shadow-xl border-r border-gray-200 min-h-[calc(100vh-4rem)]">
-            <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-indigo-50">
-              <p className="text-xs font-semibold text-purple-600 uppercase tracking-wider">Menu</p>
+            <div className="p-4 border-b border-gray-200" style={{ backgroundColor: 'rgba(46, 78, 42, 0.1)' }}>
+              <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#2E4E2A' }}>Menu</p>
             </div>
             <nav className="mt-4 px-3 space-y-1">
               {/* Field Management - Collapsible Menu */}
@@ -121,9 +123,12 @@ export default function PMLayout({ children }: PMLayoutProps) {
                   onClick={() => setFieldManagementOpen(!fieldManagementOpen)}
                   className={`w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
                     isFieldManagementActive
-                      ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-md'
-                      : 'text-gray-700 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 hover:text-purple-700'
+                      ? 'text-white shadow-md'
+                      : 'text-gray-700'
                   }`}
+                  style={isFieldManagementActive ? { backgroundColor: '#2E4E2A' } : {}}
+                  onMouseEnter={(e) => !isFieldManagementActive && (e.currentTarget.style.backgroundColor = 'rgba(46, 78, 42, 0.1)')}
+                  onMouseLeave={(e) => !isFieldManagementActive && (e.currentTarget.style.backgroundColor = '')}
                 >
                   <div className="flex items-center">
                     <LayoutDashboard className={`mr-3 h-5 w-5 ${isFieldManagementActive ? 'text-white' : 'text-gray-500'}`} />
@@ -136,7 +141,7 @@ export default function PMLayout({ children }: PMLayoutProps) {
                   )}
                 </button>
                 {fieldManagementOpen && (
-                  <div className="mt-1 ml-4 space-y-1 border-l-2 border-purple-200 pl-2">
+                  <div className="mt-1 ml-4 space-y-1 border-l-2 pl-2" style={{ borderColor: 'rgba(46, 78, 42, 0.3)' }}>
                     {fieldManagementSubmenu.map((subItem) => {
                       const SubIcon = subItem.icon
                       const isSubActive = pathname === subItem.href
@@ -146,11 +151,18 @@ export default function PMLayout({ children }: PMLayoutProps) {
                           href={subItem.href}
                           className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
                             isSubActive
-                              ? 'bg-purple-100 text-purple-700 border-l-2 border-purple-600'
-                              : 'text-gray-600 hover:bg-purple-50 hover:text-purple-700'
+                              ? 'border-l-2'
+                              : 'text-gray-600'
                           }`}
+                          style={isSubActive ? { 
+                            backgroundColor: 'rgba(46, 78, 42, 0.15)', 
+                            color: '#2E4E2A',
+                            borderColor: '#2E4E2A'
+                          } : {}}
+                          onMouseEnter={(e) => !isSubActive && (e.currentTarget.style.backgroundColor = 'rgba(46, 78, 42, 0.05)', e.currentTarget.style.color = '#2E4E2A')}
+                          onMouseLeave={(e) => !isSubActive && (e.currentTarget.style.backgroundColor = '', e.currentTarget.style.color = '')}
                         >
-                          <SubIcon className={`mr-2 h-4 w-4 ${isSubActive ? 'text-purple-600' : 'text-gray-400'}`} />
+                          <SubIcon className={`mr-2 h-4 w-4 ${isSubActive ? '' : 'text-gray-400'}`} style={isSubActive ? { color: '#2E4E2A' } : {}} />
                           {subItem.label}
                         </Link>
                       )
@@ -169,9 +181,12 @@ export default function PMLayout({ children }: PMLayoutProps) {
                     href={item.href}
                     className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
                       isActive
-                        ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-md'
-                        : 'text-gray-700 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 hover:text-purple-700'
+                        ? 'text-white shadow-md'
+                        : 'text-gray-700'
                     }`}
+                    style={isActive ? { backgroundColor: '#2E4E2A' } : {}}
+                    onMouseEnter={(e) => !isActive && (e.currentTarget.style.backgroundColor = 'rgba(46, 78, 42, 0.1)')}
+                    onMouseLeave={(e) => !isActive && (e.currentTarget.style.backgroundColor = '')}
                   >
                     <Icon className={`mr-3 h-5 w-5 ${isActive ? 'text-white' : 'text-gray-500'}`} />
                     {item.label}

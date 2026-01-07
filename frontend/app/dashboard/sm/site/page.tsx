@@ -59,7 +59,7 @@ export default function SMSitePage() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: '#2E4E2A' }}></div>
           <p className="mt-4 text-gray-600">Memuat...</p>
         </div>
       </div>
@@ -69,15 +69,15 @@ export default function SMSitePage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-600 to-blue-600 rounded-2xl shadow-xl p-6 text-white">
+      <div className="rounded-2xl shadow-xl p-6 text-white" style={{ backgroundColor: '#2E4E2A' }}>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold mb-2">Ringkasan Kondisi Site</h1>
-            <p className="text-indigo-100">
+            <p className="text-white" style={{ opacity: 0.9 }}>
               Overview kondisi site dan fase tanam • {format(new Date(), 'EEEE, dd MMMM yyyy')}
             </p>
           </div>
-          <MapPin className="w-12 h-12 text-indigo-200" />
+          <MapPin className="w-12 h-12 text-white" style={{ opacity: 0.9 }} />
         </div>
       </div>
 

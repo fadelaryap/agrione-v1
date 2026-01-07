@@ -75,7 +75,7 @@ export default function SMRecommendationsPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: '#2E4E2A' }}></div>
           <p className="mt-4 text-gray-600">Memuat...</p>
         </div>
       </div>
@@ -85,21 +85,21 @@ export default function SMRecommendationsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-600 to-blue-600 rounded-2xl shadow-xl p-6 text-white">
+      <div className="rounded-2xl shadow-xl p-6 text-white" style={{ backgroundColor: '#2E4E2A' }}>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold mb-2">Rekomendasi dari PM (via DSS)</h1>
-            <p className="text-indigo-100">
+            <p className="text-white" style={{ opacity: 0.9 }}>
               Rekomendasi berbasis AI untuk eksekusi • {format(new Date(), 'EEEE, dd MMMM yyyy')}
             </p>
           </div>
-          <Lightbulb className="w-12 h-12 text-indigo-200" />
+          <Lightbulb className="w-12 h-12 text-white" style={{ opacity: 0.9 }} />
         </div>
       </div>
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-indigo-500">
+        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4" style={{ borderColor: '#2E4E2A' }}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Total Rekomendasi</p>
@@ -143,7 +143,7 @@ export default function SMRecommendationsPage() {
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
-                  <Lightbulb className="w-5 h-5 text-purple-600" />
+                  <Lightbulb className="w-5 h-5" style={{ color: '#2E4E2A' }} />
                   <h3 className="font-bold text-gray-900 text-lg">{rec.title}</h3>
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                     rec.urgency === 'high' ? 'bg-red-200 text-red-800' :
@@ -177,7 +177,11 @@ export default function SMRecommendationsPage() {
               </div>
             </div>
             <div className="flex gap-2 mt-4 pt-4 border-t border-gray-300">
-              <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium">
+              <button className="px-4 py-2 text-white rounded-lg transition-colors text-sm font-medium"
+                style={{ backgroundColor: '#2E4E2A' }}
+                onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+              >
                 Buat Instruksi ke SPV
               </button>
               <button className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium">

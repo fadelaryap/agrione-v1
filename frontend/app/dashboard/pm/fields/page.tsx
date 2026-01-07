@@ -48,7 +48,10 @@ export default function PMFieldsPage() {
             {isEditMode && (
               <button
                 onClick={() => setIsKMZDialogOpen(true)}
-                className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-sm"
+                className="flex items-center space-x-2 px-4 py-2 text-white rounded-lg transition-colors shadow-sm"
+                style={{ backgroundColor: '#2E4E2A' }}
+                onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
               >
                 <Upload className="w-4 h-4" />
                 <span className="text-sm font-medium">Import KMZ</span>

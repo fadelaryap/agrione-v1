@@ -16,15 +16,15 @@ export default function SMTimelinePage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-600 to-blue-600 rounded-2xl shadow-xl p-6 text-white">
+      <div className="rounded-2xl shadow-xl p-6 text-white" style={{ backgroundColor: '#2E4E2A' }}>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold mb-2">Timeline Musim Tanam</h1>
-            <p className="text-indigo-100">
+            <p className="text-white" style={{ opacity: 0.9 }}>
               Timeline dan fase musim tanam • {format(new Date(), 'EEEE, dd MMMM yyyy')}
             </p>
           </div>
-          <Calendar className="w-12 h-12 text-indigo-200" />
+          <Calendar className="w-12 h-12 text-white" style={{ opacity: 0.9 }} />
         </div>
       </div>
 

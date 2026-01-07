@@ -105,10 +105,21 @@ export default function FieldImageryPage() {
                 }
               }
               
+              // Use realistic rice field images for mockup
+              const mockupImages = [
+                'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=800&h=600&fit=crop', // Rice field healthy
+                'https://images.unsplash.com/photo-1593113598332-cd288d649433?w=800&h=600&fit=crop', // Rice field
+                'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&h=600&fit=crop', // Rice field closeup
+                'https://images.unsplash.com/photo-1599759068001-41eb5e5e5227?w=800&h=600&fit=crop', // Rice plants
+                'https://images.unsplash.com/photo-1625246333149-78d9c38ad449?w=800&h=600&fit=crop', // Rice field aerial
+                'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=800&h=600&fit=crop', // Agricultural field
+              ]
+              const randomImage = mockupImages[Math.floor(Math.random() * mockupImages.length)]
+              
               mockDetections.push({
                 id: `${report.id}_${mediaIdx}`,
                 reportId: report.id,
-                imageUrl: media.url || '/api/placeholder/800/600',
+                imageUrl: media.url || randomImage,
                 fieldId: field?.id || 0,
                 fieldName: field?.name || 'Unknown Field',
                 detectedIssues,
@@ -212,7 +223,7 @@ export default function FieldImageryPage() {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: '#2E4E2A' }}></div>
           <p className="mt-4 text-gray-600">Memproses citra dengan AI...</p>
         </div>
       </div>
@@ -226,14 +237,17 @@ export default function FieldImageryPage() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-              <Brain className="w-8 h-8 text-purple-600" />
+              <Brain className="w-8 h-8" style={{ color: '#2E4E2A' }} />
               Citra Hasil Lapangan
             </h1>
             <p className="text-gray-600 mt-2">Analisis otomatis kondisi tanaman dari foto laporan lapangan menggunakan AI</p>
           </div>
           <button
             onClick={loadData}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 text-white rounded-lg transition-colors shadow-sm"
+            style={{ backgroundColor: '#2E4E2A' }}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
           >
             <RefreshCw className="w-4 h-4" />
             Refresh
@@ -242,13 +256,13 @@ export default function FieldImageryPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200">
+          <div className="rounded-lg p-4 border" style={{ backgroundColor: 'rgba(46, 78, 42, 0.1)', borderColor: '#2E4E2A' }}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-purple-700 font-medium">Total Citra</p>
-                <p className="text-2xl font-bold text-purple-900 mt-1">{stats.totalImages}</p>
+                <p className="text-sm font-medium" style={{ color: '#2E4E2A' }}>Total Citra</p>
+                <p className="text-2xl font-bold mt-1" style={{ color: '#2E4E2A' }}>{stats.totalImages}</p>
               </div>
-              <ImageIcon className="w-8 h-8 text-purple-600" />
+              <ImageIcon className="w-8 h-8" style={{ color: '#2E4E2A' }} />
             </div>
           </div>
           <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-lg p-4 border border-red-200">
@@ -295,9 +309,10 @@ export default function FieldImageryPage() {
                   onClick={() => setSelectedDetection(selectedDetection === detection.id ? null : detection.id)}
                   className={`rounded-lg border-2 overflow-hidden cursor-pointer transition-all ${
                     selectedDetection === detection.id
-                      ? 'border-purple-500 shadow-lg'
-                      : 'border-gray-200 hover:border-purple-300 hover:shadow-md'
+                      ? 'shadow-lg'
+                      : 'border-gray-200 hover:shadow-md'
                   }`}
+                  style={selectedDetection === detection.id ? { borderColor: '#2E4E2A' } : {}}
                 >
                   <div className="relative">
                     <img 
@@ -364,7 +379,7 @@ export default function FieldImageryPage() {
           {/* Filters */}
           <div className="bg-white rounded-xl shadow-lg p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <Filter className="w-5 h-5 text-purple-600" />
+              <Filter className="w-5 h-5" style={{ color: '#2E4E2A' }} />
               Filter
             </h2>
             <div className="space-y-4">
@@ -373,7 +388,9 @@ export default function FieldImageryPage() {
                 <select
                   value={filterField || ''}
                   onChange={(e) => setFilterField(e.target.value ? parseInt(e.target.value) : null)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  onFocus={(e) => e.currentTarget.style.outline = '2px solid #2E4E2A'}
+                  onBlur={(e) => e.currentTarget.style.outline = ''}
                 >
                   <option value="">Semua Lahan</option>
                   {fields.map(field => (
@@ -386,7 +403,9 @@ export default function FieldImageryPage() {
                 <select
                   value={filterSeverity}
                   onChange={(e) => setFilterSeverity(e.target.value as any)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  onFocus={(e) => e.currentTarget.style.outline = '2px solid #2E4E2A'}
+                  onBlur={(e) => e.currentTarget.style.outline = ''}
                 >
                   <option value="all">Semua</option>
                   <option value="high">High</option>
@@ -399,7 +418,9 @@ export default function FieldImageryPage() {
                 <select
                   value={filterIssue}
                   onChange={(e) => setFilterIssue(e.target.value as any)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  onFocus={(e) => e.currentTarget.style.outline = '2px solid #2E4E2A'}
+                  onBlur={(e) => e.currentTarget.style.outline = ''}
                 >
                   <option value="all">Semua</option>
                   <option value="pest">Hama</option>
@@ -482,14 +503,18 @@ export default function FieldImageryPage() {
                       <ul className="space-y-1">
                         {detection.aiRecommendations.map((rec, idx) => (
                           <li key={idx} className="text-sm text-gray-700 flex items-start gap-2">
-                            <span className="text-purple-600 mt-1">•</span>
+                            <span className="mt-1" style={{ color: '#2E4E2A' }}>•</span>
                             <span>{rec}</span>
                           </li>
                         ))}
                       </ul>
                     </div>
                     <div className="pt-4 border-t">
-                      <button className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-2">
+                      <button className="w-full px-4 py-2 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
+                        style={{ backgroundColor: '#2E4E2A' }}
+                        onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                        onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                      >
                         <Download className="w-4 h-4" />
                         Download Report
                       </button>

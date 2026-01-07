@@ -122,7 +122,7 @@ export default function PMRecommendationsPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: '#2E4E2A' }}></div>
           <p className="mt-4 text-gray-600">Memuat...</p>
         </div>
       </div>
@@ -132,15 +132,15 @@ export default function PMRecommendationsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl shadow-xl p-6 text-white">
+      <div className="rounded-2xl shadow-xl p-6 text-white" style={{ backgroundColor: '#2E4E2A' }}>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold mb-2">Generator Rekomendasi untuk SM</h1>
-            <p className="text-purple-100">
+            <p className="text-white" style={{ opacity: 0.9 }}>
               Generate dan kirim rekomendasi ke Site Manager • {format(new Date(), 'EEEE, dd MMMM yyyy')}
             </p>
           </div>
-          <Zap className="w-12 h-12 text-purple-200" />
+          <Zap className="w-12 h-12 text-white" style={{ opacity: 0.9 }} />
         </div>
       </div>
 
@@ -152,7 +152,10 @@ export default function PMRecommendationsPage() {
         </div>
         <button 
           onClick={handleGenerateAll}
-          className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium flex items-center gap-2"
+          className="px-4 py-2 text-white rounded-lg transition-colors text-sm font-medium flex items-center gap-2"
+          style={{ backgroundColor: '#2E4E2A' }}
+          onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+          onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
         >
           <Zap className="w-4 h-4" />
           Generate Semua

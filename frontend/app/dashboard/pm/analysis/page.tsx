@@ -51,11 +51,11 @@ export default function PMAnalysisPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl shadow-xl p-6 text-white">
+      <div className="rounded-2xl shadow-xl p-6 text-white" style={{ backgroundColor: '#2E4E2A' }}>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold mb-2">Analisis Korelasi Data</h1>
-            <p className="text-purple-100">
+            <p className="text-white" style={{ opacity: 0.9 }}>
               Analisis hubungan antar variabel • {format(new Date(), 'EEEE, dd MMMM yyyy')}
             </p>
           </div>
@@ -65,7 +65,7 @@ export default function PMAnalysisPage() {
       {/* Correlation Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {correlations.map((corr, idx) => (
-          <div key={idx} className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-6 hover:shadow-lg transition-shadow">
+          <div key={idx} className="bg-white border-2 border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-gray-900 text-lg">{corr.title}</h3>
               <div className={`px-4 py-2 rounded-lg font-bold text-lg ${

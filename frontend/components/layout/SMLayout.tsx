@@ -59,15 +59,17 @@ export default function SMLayout({ children }: SMLayoutProps) {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-indigo-50">
+    <div className="min-h-screen bg-white">
       {/* Top Navbar */}
-      <nav className="bg-gradient-to-r from-indigo-600 to-blue-600 shadow-lg fixed top-0 left-0 right-0 z-40">
+      <nav className="shadow-lg fixed top-0 left-0 right-0 z-40" style={{ backgroundColor: '#2E4E2A' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden p-2 rounded-md text-white hover:bg-indigo-700 transition-colors"
+                className="lg:hidden p-2 rounded-md text-white transition-colors"
+                onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
               >
                 {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </button>
@@ -85,8 +87,8 @@ export default function SMLayout({ children }: SMLayoutProps) {
         {/* Sidebar - Desktop */}
         <aside className="hidden lg:flex lg:flex-shrink-0">
           <div className="w-64 bg-white shadow-xl border-r border-gray-200 min-h-[calc(100vh-4rem)]">
-            <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-blue-50">
-              <p className="text-xs font-semibold text-indigo-600 uppercase tracking-wider">Menu</p>
+            <div className="p-4 border-b border-gray-200" style={{ backgroundColor: 'rgba(46, 78, 42, 0.1)' }}>
+              <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#2E4E2A' }}>Menu</p>
             </div>
             <nav className="mt-4 px-3 space-y-1">
               {navItems.map((item) => {
@@ -98,9 +100,12 @@ export default function SMLayout({ children }: SMLayoutProps) {
                     href={item.href}
                     className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
                       isActive
-                        ? 'bg-gradient-to-r from-indigo-500 to-blue-600 text-white shadow-md'
-                        : 'text-gray-700 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-blue-50 hover:text-indigo-700'
+                        ? 'text-white shadow-md'
+                        : 'text-gray-700'
                     }`}
+                    style={isActive ? { backgroundColor: '#2E4E2A' } : {}}
+                    onMouseEnter={(e) => !isActive && (e.currentTarget.style.backgroundColor = 'rgba(46, 78, 42, 0.1)')}
+                    onMouseLeave={(e) => !isActive && (e.currentTarget.style.backgroundColor = '')}
                   >
                     <Icon className={`mr-3 h-5 w-5 ${isActive ? 'text-white' : 'text-gray-500'}`} />
                     {item.label}
