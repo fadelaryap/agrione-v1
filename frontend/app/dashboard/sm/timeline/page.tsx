@@ -630,7 +630,6 @@ function PlanningModal({
                   }
                 }}
                 className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2"
-                style={{ focusRingColor: '#2E4E2A' }}
                 onFocus={(e) => e.currentTarget.style.outline = '2px solid #2E4E2A'}
                 onBlur={(e) => e.currentTarget.style.outline = ''}
                 required
