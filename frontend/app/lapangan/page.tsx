@@ -196,7 +196,7 @@ export default function SPVDashboard() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: '#2E4E2A' }}></div>
           <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
@@ -206,13 +206,13 @@ export default function SPVDashboard() {
   if (!user) return null
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-green-50 pb-20 lg:pb-8">
+    <div className="min-h-screen bg-white pb-20 lg:pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
         {/* Header */}
         <div className="mb-6">
-          <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl shadow-xl p-6 text-white">
+          <div className="rounded-2xl shadow-xl p-6 text-white" style={{ backgroundColor: '#2E4E2A' }}>
             <h1 className="text-2xl sm:text-3xl font-bold mb-2">Dashboard Supervisor</h1>
-            <p className="text-green-100 text-sm sm:text-base">
+            <p className="text-white text-sm sm:text-base" style={{ opacity: 0.9 }}>
               Selamat datang, {user.first_name}! • {format(new Date(), 'EEEE, dd MMMM yyyy')}
             </p>
           </div>
@@ -245,13 +245,13 @@ export default function SPVDashboard() {
               <Clock className="w-8 h-8 text-amber-500" />
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-green-500">
+          <div className="bg-white rounded-xl shadow-lg p-4 border-l-4" style={{ borderColor: '#2E4E2A' }}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Aktivitas Hari Ini</p>
                 <p className="text-2xl font-bold text-gray-900">{workOrders.length}</p>
               </div>
-              <ClipboardList className="w-8 h-8 text-green-500" />
+              <ClipboardList className="w-8 h-8" style={{ color: '#2E4E2A' }} />
             </div>
           </div>
           <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-indigo-500">
@@ -269,12 +269,15 @@ export default function SPVDashboard() {
         <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <FileText className="w-6 h-6 text-green-600" />
+              <FileText className="w-6 h-6" style={{ color: '#2E4E2A' }} />
               <h2 className="text-xl font-bold text-gray-900">Laporan Kondisi Lahan</h2>
             </div>
             <button
               onClick={() => router.push('/lapangan/reports')}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium flex items-center gap-2"
+              className="px-4 py-2 text-white rounded-lg transition-colors text-sm font-medium flex items-center gap-2"
+              style={{ backgroundColor: '#2E4E2A' }}
+              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
             >
               <Send className="w-4 h-4" />
               Buat Laporan
@@ -288,10 +291,10 @@ export default function SPVDashboard() {
               <p className="text-2xl font-bold text-amber-900">{reportStatusCounts.pending}</p>
               <p className="text-xs text-amber-700 mt-1">Menunggu Review</p>
             </div>
-            <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4 text-center">
-              <CheckCircle className="w-6 h-6 text-green-600 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-green-900">{reportStatusCounts.approved}</p>
-              <p className="text-xs text-green-700 mt-1">Disetujui</p>
+            <div className="border-2 rounded-lg p-4 text-center" style={{ backgroundColor: 'rgba(46, 78, 42, 0.1)', borderColor: '#2E4E2A' }}>
+              <CheckCircle className="w-6 h-6 mx-auto mb-2" style={{ color: '#2E4E2A' }} />
+              <p className="text-2xl font-bold" style={{ color: '#2E4E2A' }}>{reportStatusCounts.approved}</p>
+              <p className="text-xs mt-1" style={{ color: '#2E4E2A' }}>Disetujui</p>
             </div>
             <div className="bg-orange-50 border-2 border-orange-200 rounded-lg p-4 text-center">
               <XCircle className="w-6 h-6 text-orange-600 mx-auto mb-2" />
@@ -311,10 +314,12 @@ export default function SPVDashboard() {
                       <div className="flex items-center gap-2 mb-2">
                         <h4 className="font-semibold text-gray-900">{report.title}</h4>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          report.status === 'approved' ? 'bg-green-100 text-green-800' :
+                          report.status === 'approved' ? '' :
                           report.status === 'rejected' ? 'bg-orange-100 text-orange-800' :
                           'bg-amber-100 text-amber-800'
-                        }`}>
+                        }`}
+                        style={report.status === 'approved' ? { backgroundColor: 'rgba(46, 78, 42, 0.2)', color: '#2E4E2A' } : {}}
+                        >
                           {report.status === 'approved' ? 'Disetujui' :
                            report.status === 'rejected' ? 'Perlu Perbaikan' : 'Menunggu'}
                         </span>
@@ -340,7 +345,9 @@ export default function SPVDashboard() {
               return (
                 <div
                   key={field.id}
-                  className="border-2 border-gray-200 rounded-xl p-5 hover:border-green-400 hover:shadow-lg transition-all bg-gradient-to-br from-white to-gray-50"
+                  className="border-2 border-gray-200 rounded-xl p-5 hover:shadow-lg transition-all bg-white"
+                  onMouseEnter={(e) => e.currentTarget.style.borderColor = '#2E4E2A'}
+                  onMouseLeave={(e) => e.currentTarget.style.borderColor = '#E5E7EB'}
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
@@ -368,7 +375,10 @@ export default function SPVDashboard() {
                     </div>
                     <button
                       onClick={() => router.push(`/lapangan/work-orders?field=${field.id}`)}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+                      className="px-4 py-2 text-white rounded-lg transition-colors text-sm font-medium"
+                      style={{ backgroundColor: '#2E4E2A' }}
+                      onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                      onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                     >
                       Detail
                     </button>
@@ -380,7 +390,7 @@ export default function SPVDashboard() {
                       {/* Plant Height */}
                       {condition.plantHeight && (
                         <div className="flex items-center gap-2">
-                          <TrendingUp className="w-5 h-5 text-green-600" />
+                          <TrendingUp className="w-5 h-5" style={{ color: '#2E4E2A' }} />
                           <div>
                             <p className="text-xs text-gray-600">Tinggi Tanaman</p>
                             <p className="text-sm font-semibold text-gray-900">{condition.plantHeight} cm</p>
@@ -406,9 +416,11 @@ export default function SPVDashboard() {
                       {condition.leafColor && (
                         <div className="flex items-center gap-2">
                           <Leaf className={`w-5 h-5 ${
-                            condition.leafColor === 'hijau' ? 'text-green-600' :
+                            condition.leafColor === 'hijau' ? '' :
                             condition.leafColor === 'kuning' ? 'text-yellow-600' : 'text-amber-700'
-                          }`} />
+                          }`}
+                          style={condition.leafColor === 'hijau' ? { color: '#2E4E2A' } : {}}
+                          />
                           <div>
                             <p className="text-xs text-gray-600">Warna Daun</p>
                             <p className="text-sm font-semibold text-gray-900 capitalize">{condition.leafColor}</p>
@@ -439,7 +451,10 @@ export default function SPVDashboard() {
                     </div>
                     <button
                       onClick={() => router.push(`/lapangan/work-orders?field=${field.id}`)}
-                      className="text-sm text-green-600 hover:text-green-700 font-medium"
+                      className="text-sm font-medium"
+                      style={{ color: '#2E4E2A' }}
+                      onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                      onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                     >
                       Lihat Aktivitas →
                     </button>

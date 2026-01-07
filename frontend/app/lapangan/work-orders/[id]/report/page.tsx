@@ -139,7 +139,7 @@ export default function WorkOrderReportPage() {
     const styles: { [key: string]: { bg: string; text: string; icon: any } } = {
       'pending': { bg: 'bg-amber-100', text: 'text-amber-800', icon: AlertCircle },
       'in-progress': { bg: 'bg-blue-100', text: 'text-blue-800', icon: Clock },
-      'completed': { bg: 'bg-green-100', text: 'text-green-800', icon: CheckCircle },
+      'completed': { bg: '', text: '', icon: CheckCircle },
       'overdue': { bg: 'bg-red-100', text: 'text-red-800', icon: AlertCircle },
       'cancelled': { bg: 'bg-gray-100', text: 'text-gray-800', icon: AlertCircle },
     }
@@ -154,8 +154,12 @@ export default function WorkOrderReportPage() {
       'cancelled': 'Dibatalkan',
     }
     
+    const isCompleted = status === 'completed'
     return (
-      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${style.bg} ${style.text}`}>
+      <span 
+        className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${!isCompleted ? style.bg : ''} ${!isCompleted ? style.text : ''}`}
+        style={isCompleted ? { backgroundColor: 'rgba(46, 78, 42, 0.2)', color: '#2E4E2A' } : {}}
+      >
         <Icon className="w-3 h-3" />
         {statusLabels[status] || status}
       </span>
@@ -164,7 +168,7 @@ export default function WorkOrderReportPage() {
 
   const getConditionBadge = (condition: string) => {
     const styles: { [key: string]: string } = {
-      'excellent': 'bg-green-100 text-green-800 border-green-200',
+      'excellent': '',
       'good': 'bg-blue-100 text-blue-800 border-blue-200',
       'fair': 'bg-yellow-100 text-yellow-800 border-yellow-200',
       'poor': 'bg-red-100 text-red-800 border-red-200',
@@ -175,8 +179,12 @@ export default function WorkOrderReportPage() {
       'fair': 'Cukup',
       'poor': 'Buruk',
     }
+    const isExcellent = condition === 'excellent'
     return (
-      <span className={`px-2 py-1 rounded text-xs font-medium border ${styles[condition] || styles.fair}`}>
+      <span 
+        className={`px-2 py-1 rounded text-xs font-medium border ${!isExcellent ? styles[condition] || styles.fair : ''}`}
+        style={isExcellent ? { backgroundColor: 'rgba(46, 78, 42, 0.2)', color: '#2E4E2A', borderColor: '#2E4E2A' } : {}}
+      >
         {conditionLabels[condition] || condition}
       </span>
     )
@@ -186,7 +194,7 @@ export default function WorkOrderReportPage() {
     return (
       <div className="min-h-screen flex items-center justify-center pb-16">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: '#2E4E2A' }}></div>
           <p className="mt-4 text-gray-600">Memuat...</p>
         </div>
       </div>
@@ -204,7 +212,10 @@ export default function WorkOrderReportPage() {
         <div className="mb-6">
           <button
             onClick={() => router.back()}
-            className="text-green-600 hover:text-green-700 mb-4 text-sm font-medium"
+            className="mb-4 text-sm font-medium"
+            style={{ color: '#2E4E2A' }}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
           >
             ← Kembali ke Aktivitas
           </button>
@@ -241,7 +252,10 @@ export default function WorkOrderReportPage() {
               <div className="mb-4">
                 <button
                   onClick={openGoogleMaps}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors shadow-md font-medium"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 text-white rounded-lg transition-colors shadow-md font-medium"
+                  style={{ backgroundColor: '#2E4E2A' }}
+                  onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                  onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                 >
                   <Navigation className="w-5 h-5" />
                   Buka di Google Maps
@@ -263,7 +277,10 @@ export default function WorkOrderReportPage() {
             <h2 className="text-lg font-semibold text-gray-900">Laporan Lapangan ({fieldReports.length})</h2>
             <button
               onClick={() => router.push(`/lapangan/work-orders/${workOrderId}/report/create`)}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+              className="px-4 py-2 text-white rounded-lg transition-colors text-sm font-medium"
+              style={{ backgroundColor: '#2E4E2A' }}
+              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
             >
               + Tambah Laporan
             </button>
@@ -406,7 +423,9 @@ export default function WorkOrderReportPage() {
                         value={newComment[report.id] || ''}
                         onChange={(e) => setNewComment(prev => ({ ...prev, [report.id]: e.target.value }))}
                         placeholder="Tambah komentar..."
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        onFocus={(e) => e.currentTarget.style.outline = '2px solid #2E4E2A'}
+                        onBlur={(e) => e.currentTarget.style.outline = ''}
                         onKeyPress={(e) => {
                           if (e.key === 'Enter' && !e.shiftKey) {
                             e.preventDefault()
@@ -417,7 +436,10 @@ export default function WorkOrderReportPage() {
                       <button
                         onClick={() => handleAddComment(report.id)}
                         disabled={!newComment[report.id]?.trim() || submittingComment === report.id}
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-4 py-2 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        style={{ backgroundColor: '#2E4E2A' }}
+                        onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.opacity = '0.9')}
+                        onMouseLeave={(e) => !e.currentTarget.disabled && (e.currentTarget.style.opacity = '1')}
                       >
                         {submittingComment === report.id ? (
                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

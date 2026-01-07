@@ -39,9 +39,10 @@ export default function MobileBottomNav() {
               href={item.href}
               className={`flex flex-col items-center justify-center flex-1 h-full rounded-xl transition-all ${
                 isActive 
-                  ? 'bg-gradient-to-b from-green-500 to-emerald-600 text-white shadow-lg transform scale-105' 
+                  ? 'text-white shadow-lg transform scale-105' 
                   : 'text-gray-600 hover:bg-gray-50'
               }`}
+              style={isActive ? { backgroundColor: '#2E4E2A' } : {}}
             >
               <div className={`p-2 rounded-lg ${isActive ? 'bg-white bg-opacity-20' : ''}`}>
                 <Icon className={`h-6 w-6 ${isActive ? 'text-white' : 'text-gray-500'}`} />

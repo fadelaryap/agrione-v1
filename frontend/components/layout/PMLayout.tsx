@@ -9,7 +9,13 @@ import {
   Brain,
   Zap,
   Menu,
-  X
+  X,
+  LayoutDashboard,
+  ChevronDown,
+  ChevronRight,
+  Navigation,
+  Camera,
+  Image as ImageIcon
 } from 'lucide-react'
 import LogoutButton from '@/components/LogoutButton'
 import NotificationBell from '@/components/notifications/NotificationBell'
@@ -22,6 +28,7 @@ interface PMLayoutProps {
 export default function PMLayout({ children }: PMLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [user, setUser] = useState<User | null>(null)
+  const [fieldManagementOpen, setFieldManagementOpen] = useState(false)
   const pathname = usePathname()
 
   useEffect(() => {
@@ -51,11 +58,30 @@ export default function PMLayout({ children }: PMLayoutProps) {
     */
   }, [])
 
+  // Check if Field Management menu should be open (if any submenu is active)
+  const isFieldManagementActive = pathname?.startsWith('/dashboard/pm/fields') || 
+                                  pathname?.startsWith('/dashboard/pm/datayoo') ||
+                                  pathname?.startsWith('/dashboard/pm/drone') ||
+                                  pathname?.startsWith('/dashboard/pm/imagery')
+
+  useEffect(() => {
+    if (isFieldManagementActive) {
+      setFieldManagementOpen(true)
+    }
+  }, [isFieldManagementActive])
+
   const navItems = [
     { href: '/dashboard/pm', label: 'Peta & NDVI', icon: Map },
     { href: '/dashboard/pm/analysis', label: 'Analisis Korelasi', icon: BarChart3 },
     { href: '/dashboard/pm/ai', label: 'AI & DSS', icon: Brain },
     { href: '/dashboard/pm/recommendations', label: 'Generator Rekomendasi', icon: Zap },
+  ]
+
+  const fieldManagementSubmenu = [
+    { href: '/dashboard/pm/fields', label: 'Fields', icon: LayoutDashboard },
+    { href: '/dashboard/pm/datayoo', label: 'Datayoo Integration', icon: Navigation },
+    { href: '/dashboard/pm/drone', label: 'Drone Multispectral', icon: Camera },
+    { href: '/dashboard/pm/imagery', label: 'Citra Hasil Lapangan', icon: ImageIcon },
   ]
 
   return (
@@ -89,6 +115,51 @@ export default function PMLayout({ children }: PMLayoutProps) {
               <p className="text-xs font-semibold text-purple-600 uppercase tracking-wider">Menu</p>
             </div>
             <nav className="mt-4 px-3 space-y-1">
+              {/* Field Management - Collapsible Menu */}
+              <div>
+                <button
+                  onClick={() => setFieldManagementOpen(!fieldManagementOpen)}
+                  className={`w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
+                    isFieldManagementActive
+                      ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-md'
+                      : 'text-gray-700 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 hover:text-purple-700'
+                  }`}
+                >
+                  <div className="flex items-center">
+                    <LayoutDashboard className={`mr-3 h-5 w-5 ${isFieldManagementActive ? 'text-white' : 'text-gray-500'}`} />
+                    <span>Field Management</span>
+                  </div>
+                  {fieldManagementOpen ? (
+                    <ChevronDown className={`h-4 w-4 ${isFieldManagementActive ? 'text-white' : 'text-gray-500'}`} />
+                  ) : (
+                    <ChevronRight className={`h-4 w-4 ${isFieldManagementActive ? 'text-white' : 'text-gray-500'}`} />
+                  )}
+                </button>
+                {fieldManagementOpen && (
+                  <div className="mt-1 ml-4 space-y-1 border-l-2 border-purple-200 pl-2">
+                    {fieldManagementSubmenu.map((subItem) => {
+                      const SubIcon = subItem.icon
+                      const isSubActive = pathname === subItem.href
+                      return (
+                        <Link
+                          key={subItem.href}
+                          href={subItem.href}
+                          className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                            isSubActive
+                              ? 'bg-purple-100 text-purple-700 border-l-2 border-purple-600'
+                              : 'text-gray-600 hover:bg-purple-50 hover:text-purple-700'
+                          }`}
+                        >
+                          <SubIcon className={`mr-2 h-4 w-4 ${isSubActive ? 'text-purple-600' : 'text-gray-400'}`} />
+                          {subItem.label}
+                        </Link>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Other Menu Items */}
               {navItems.map((item) => {
                 const Icon = item.icon
                 const isActive = pathname === item.href
@@ -129,6 +200,52 @@ export default function PMLayout({ children }: PMLayoutProps) {
             <p className="text-xs font-semibold text-purple-600 uppercase tracking-wider">Menu</p>
           </div>
           <nav className="mt-4 px-3 space-y-1">
+            {/* Field Management - Collapsible Menu */}
+            <div>
+              <button
+                onClick={() => setFieldManagementOpen(!fieldManagementOpen)}
+                className={`w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
+                  isFieldManagementActive
+                    ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-md'
+                    : 'text-gray-700 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 hover:text-purple-700'
+                }`}
+              >
+                <div className="flex items-center">
+                  <LayoutDashboard className={`mr-3 h-5 w-5 ${isFieldManagementActive ? 'text-white' : 'text-gray-500'}`} />
+                  <span>Field Management</span>
+                </div>
+                {fieldManagementOpen ? (
+                  <ChevronDown className={`h-4 w-4 ${isFieldManagementActive ? 'text-white' : 'text-gray-500'}`} />
+                ) : (
+                  <ChevronRight className={`h-4 w-4 ${isFieldManagementActive ? 'text-white' : 'text-gray-500'}`} />
+                )}
+              </button>
+              {fieldManagementOpen && (
+                <div className="mt-1 ml-4 space-y-1 border-l-2 border-purple-200 pl-2">
+                  {fieldManagementSubmenu.map((subItem) => {
+                    const SubIcon = subItem.icon
+                    const isSubActive = pathname === subItem.href
+                    return (
+                      <Link
+                        key={subItem.href}
+                        href={subItem.href}
+                        onClick={() => setSidebarOpen(false)}
+                        className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                          isSubActive
+                            ? 'bg-purple-100 text-purple-700 border-l-2 border-purple-600'
+                            : 'text-gray-600 hover:bg-purple-50 hover:text-purple-700'
+                        }`}
+                      >
+                        <SubIcon className={`mr-2 h-4 w-4 ${isSubActive ? 'text-purple-600' : 'text-gray-400'}`} />
+                        {subItem.label}
+                      </Link>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Other Menu Items */}
             {navItems.map((item) => {
               const Icon = item.icon
               const isActive = pathname === item.href
@@ -161,4 +278,6 @@ export default function PMLayout({ children }: PMLayoutProps) {
     </div>
   )
 }
+
+
 

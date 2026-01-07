@@ -148,21 +148,25 @@ export default function ReportsPage() {
         <div className="flex flex-col gap-2 items-end">
           <span className={`px-3 py-1 rounded-full text-xs font-medium ${
             report.status === 'pending' ? 'bg-amber-100 text-amber-800' :
-            report.status === 'approved' ? 'bg-green-100 text-green-800' :
+            report.status === 'approved' ? '' :
             report.status === 'rejected' ? 'bg-red-100 text-red-800' :
             'bg-gray-100 text-gray-800'
-          }`}>
+          }`}
+          style={report.status === 'approved' ? { backgroundColor: 'rgba(46, 78, 42, 0.2)', color: '#2E4E2A' } : {}}
+          >
             {report.status === 'pending' ? 'Menunggu' : 
              report.status === 'approved' ? 'Disetujui' : 
              report.status === 'rejected' ? 'Ditolak' : 
              report.status}
           </span>
           <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-            report.condition === 'excellent' ? 'bg-green-100 text-green-800' :
+            report.condition === 'excellent' ? '' :
             report.condition === 'good' ? 'bg-blue-100 text-blue-800' :
             report.condition === 'fair' ? 'bg-yellow-100 text-yellow-800' :
             'bg-red-100 text-red-800'
-          }`}>
+          }`}
+          style={report.condition === 'excellent' ? { backgroundColor: 'rgba(46, 78, 42, 0.2)', color: '#2E4E2A' } : {}}
+          >
             {report.condition === 'excellent' ? 'Sangat Baik' :
              report.condition === 'good' ? 'Baik' :
              report.condition === 'fair' ? 'Cukup' :
@@ -273,7 +277,10 @@ export default function ReportsPage() {
       {report.work_order_id && (
         <button
           onClick={() => router.push(`/lapangan/work-orders/${report.work_order_id}/report`)}
-          className="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium flex items-center gap-2"
+          className="mt-4 px-4 py-2 text-white rounded-lg text-sm font-medium flex items-center gap-2"
+          style={{ backgroundColor: '#2E4E2A' }}
+          onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+          onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
         >
           <Eye className="w-4 h-4" />
           Lihat Detail Aktivitas
@@ -286,7 +293,7 @@ export default function ReportsPage() {
     return (
       <div className="min-h-screen flex items-center justify-center pb-16">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: '#2E4E2A' }}></div>
           <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
@@ -305,7 +312,7 @@ export default function ReportsPage() {
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <FileText className="h-8 w-8 text-green-600" />
+                <FileText className="h-8 w-8" style={{ color: '#2E4E2A' }} />
                 <div>
                   <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Laporan Lapangan</h1>
                   <p className="text-gray-600 mt-1">Lihat semua laporan lapangan yang telah Anda kirim</p>
@@ -321,7 +328,9 @@ export default function ReportsPage() {
           <select
             value={selectedWorkOrder || ''}
             onChange={(e) => setSelectedWorkOrder(e.target.value ? parseInt(e.target.value) : null)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            onFocus={(e) => e.currentTarget.style.outline = '2px solid #2E4E2A'}
+            onBlur={(e) => e.currentTarget.style.outline = ''}
           >
             <option value="">Semua Aktivitas</option>
             {workOrders.map(wo => (
@@ -338,9 +347,10 @@ export default function ReportsPage() {
               onClick={() => setGroupBy('none')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 groupBy === 'none'
-                  ? 'bg-green-600 text-white'
+                  ? 'text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
+              style={groupBy === 'none' ? { backgroundColor: '#2E4E2A' } : {}}
             >
               Semua
             </button>
@@ -348,9 +358,10 @@ export default function ReportsPage() {
               onClick={() => setGroupBy('date')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 groupBy === 'date'
-                  ? 'bg-green-600 text-white'
+                  ? 'text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
+              style={groupBy === 'date' ? { backgroundColor: '#2E4E2A' } : {}}
             >
               <Calendar className="w-4 h-4 inline mr-1" />
               Tanggal
@@ -359,9 +370,10 @@ export default function ReportsPage() {
               onClick={() => setGroupBy('work_order')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 groupBy === 'work_order'
-                  ? 'bg-green-600 text-white'
+                  ? 'text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
+              style={groupBy === 'work_order' ? { backgroundColor: '#2E4E2A' } : {}}
             >
               <FileText className="w-4 h-4 inline mr-1" />
               Aktivitas
@@ -370,9 +382,10 @@ export default function ReportsPage() {
               onClick={() => setGroupBy('field')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 groupBy === 'field'
-                  ? 'bg-green-600 text-white'
+                  ? 'text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
+              style={groupBy === 'field' ? { backgroundColor: '#2E4E2A' } : {}}
             >
               <MapPin className="w-4 h-4 inline mr-1" />
               Lahan
@@ -394,7 +407,7 @@ export default function ReportsPage() {
             {Object.entries(groupedReports()).map(([groupKey, groupReports]) => (
               groupBy !== 'none' ? (
                 <div key={groupKey} className="space-y-4">
-                  <div className="bg-green-50 border-l-4 border-green-600 p-3 rounded">
+                  <div className="border-l-4 p-3 rounded" style={{ backgroundColor: 'rgba(46, 78, 42, 0.1)', borderColor: '#2E4E2A' }}>
                     <h3 className="text-lg font-semibold text-gray-900">
                       {groupBy === 'date' && <Calendar className="w-5 h-5 inline mr-2" />}
                       {groupBy === 'work_order' && <FileText className="w-5 h-5 inline mr-2" />}

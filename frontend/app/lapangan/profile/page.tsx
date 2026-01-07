@@ -43,7 +43,7 @@ export default function ProfilePage() {
     return (
       <div className="min-h-screen flex items-center justify-center pb-16">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: '#2E4E2A' }}></div>
           <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
@@ -61,7 +61,7 @@ export default function ProfilePage() {
         <div className="mb-6">
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
             <div className="flex items-center gap-3">
-              <UserIcon className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
+              <UserIcon className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: '#2E4E2A' }} />
               <div>
                 <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Profile</h1>
                 <p className="text-sm text-gray-600 mt-1">Your account information</p>

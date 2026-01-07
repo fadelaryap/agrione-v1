@@ -325,7 +325,7 @@ export default function WorkOrdersPage() {
     const styles: { [key: string]: { bg: string; text: string; icon: any } } = {
       'pending': { bg: 'bg-amber-100', text: 'text-amber-800', icon: AlertCircle },
       'in-progress': { bg: 'bg-blue-100', text: 'text-blue-800', icon: Clock },
-      'completed': { bg: 'bg-green-100', text: 'text-green-800', icon: CheckCircle },
+      'completed': { bg: '', text: '', icon: CheckCircle },
       'overdue': { bg: 'bg-red-100', text: 'text-red-800', icon: XCircle },
       'cancelled': { bg: 'bg-gray-100', text: 'text-gray-800', icon: XCircle },
     }
@@ -340,8 +340,12 @@ export default function WorkOrdersPage() {
       'cancelled': 'Dibatalkan',
     }
     
+    const isCompleted = status === 'completed'
     return (
-      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${style.bg} ${style.text}`}>
+      <span 
+        className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${!isCompleted ? style.bg : ''} ${!isCompleted ? style.text : ''}`}
+        style={isCompleted ? { backgroundColor: 'rgba(46, 78, 42, 0.2)', color: '#2E4E2A' } : {}}
+      >
         <Icon className="w-3 h-3" />
         {statusLabels[status] || status}
       </span>
@@ -350,7 +354,7 @@ export default function WorkOrdersPage() {
 
   const getPriorityBadge = (priority: string) => {
     const styles: { [key: string]: string } = {
-      'low': 'bg-green-100 text-green-800',
+      'low': '',
       'medium': 'bg-yellow-100 text-yellow-800',
       'high': 'bg-red-100 text-red-800',
     }
@@ -359,8 +363,12 @@ export default function WorkOrdersPage() {
       'medium': 'Sedang',
       'high': 'Tinggi',
     }
+    const isLow = priority === 'low'
     return (
-      <span className={`px-2 py-1 rounded text-xs font-medium ${styles[priority] || styles.medium}`}>
+      <span 
+        className={`px-2 py-1 rounded text-xs font-medium ${!isLow ? styles[priority] || styles.medium : ''}`}
+        style={isLow ? { backgroundColor: 'rgba(46, 78, 42, 0.2)', color: '#2E4E2A' } : {}}
+      >
         {priorityLabels[priority] || priority}
       </span>
     )
@@ -370,7 +378,7 @@ export default function WorkOrdersPage() {
     return (
       <div className="min-h-screen flex items-center justify-center pb-16">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: '#2E4E2A' }}></div>
           <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
@@ -389,7 +397,7 @@ export default function WorkOrdersPage() {
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <ClipboardList className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
+                <ClipboardList className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: '#2E4E2A' }} />
                 <div>
                   <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Aktivitas</h1>
                   <p className="text-sm text-gray-600 mt-1">Aktivitas yang ditetapkan kepada Anda</p>
@@ -402,9 +410,10 @@ export default function WorkOrdersPage() {
                   onClick={() => setViewMode('accordion')}
                   className={`px-3 py-1 rounded text-xs font-medium ${
                     viewMode === 'accordion' 
-                      ? 'bg-green-600 text-white' 
+                      ? 'text-white' 
                       : 'bg-gray-100 text-gray-600'
                   }`}
+                  style={viewMode === 'accordion' ? { backgroundColor: '#2E4E2A' } : {}}
                 >
                   Daftar
                 </button>
@@ -412,9 +421,10 @@ export default function WorkOrdersPage() {
                   onClick={() => setViewMode('calendar')}
                   className={`px-3 py-1 rounded text-xs font-medium ${
                     viewMode === 'calendar' 
-                      ? 'bg-green-600 text-white' 
+                      ? 'text-white' 
                       : 'bg-gray-100 text-gray-600'
                   }`}
+                  style={viewMode === 'calendar' ? { backgroundColor: '#2E4E2A' } : {}}
                 >
                   <Calendar className="w-4 h-4" />
                 </button>
@@ -431,7 +441,9 @@ export default function WorkOrdersPage() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-green-500"
+                className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs"
+                onFocus={(e) => e.currentTarget.style.outline = '2px solid #2E4E2A'}
+                onBlur={(e) => e.currentTarget.style.outline = ''}
               >
                 <option value="all">Semua</option>
                 <option value="pending">Menunggu</option>
@@ -451,7 +463,9 @@ export default function WorkOrdersPage() {
                     type="date"
                     value={dateRangeFilter.start}
                     onChange={(e) => setDateRangeFilter({ ...dateRangeFilter, start: e.target.value })}
-                    className="w-full pl-5 pr-1 py-1 border border-gray-300 rounded text-[9px] sm:text-xs focus:ring-1 focus:ring-green-500 min-w-0"
+                    className="w-full pl-5 pr-1 py-1 border border-gray-300 rounded text-[9px] sm:text-xs min-w-0"
+                    onFocus={(e) => e.currentTarget.style.outline = '2px solid #2E4E2A'}
+                    onBlur={(e) => e.currentTarget.style.outline = ''}
                   />
                 </div>
               </div>
@@ -464,7 +478,9 @@ export default function WorkOrdersPage() {
                     type="date"
                     value={dateRangeFilter.end}
                     onChange={(e) => setDateRangeFilter({ ...dateRangeFilter, end: e.target.value })}
-                    className="w-full pl-5 pr-1 py-1 border border-gray-300 rounded text-[9px] sm:text-xs focus:ring-1 focus:ring-green-500 min-w-0"
+                    className="w-full pl-5 pr-1 py-1 border border-gray-300 rounded text-[9px] sm:text-xs min-w-0"
+                    onFocus={(e) => e.currentTarget.style.outline = '2px solid #2E4E2A'}
+                    onBlur={(e) => e.currentTarget.style.outline = ''}
                   />
                 </div>
               </div>
@@ -475,7 +491,9 @@ export default function WorkOrdersPage() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as 'date' | 'status' | 'priority')}
-                className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-green-500"
+                className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs"
+                onFocus={(e) => e.currentTarget.style.outline = '2px solid #2E4E2A'}
+                onBlur={(e) => e.currentTarget.style.outline = ''}
               >
                 <option value="date">Tanggal</option>
                 <option value="status">Status</option>
@@ -537,7 +555,7 @@ export default function WorkOrdersPage() {
                           className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
                         >
                           <div className="flex items-center gap-3">
-                            <Calendar className="w-5 h-5 text-green-600" />
+                            <Calendar className="w-5 h-5" style={{ color: '#2E4E2A' }} />
                             <div className="text-left">
                               <h3 className="font-semibold text-gray-900">{dateLabel}</h3>
                               <p className="text-xs text-gray-500">{orders.length} aktivitas</p>
@@ -610,8 +628,8 @@ export default function WorkOrdersPage() {
                                   </div>
                                   <div className="w-full bg-gray-200 rounded-full h-2">
                                     <div
-                                      className="bg-green-600 h-2 rounded-full transition-all"
-                                      style={{ width: `${wo.progress || 0}%` }}
+                                      className="h-2 rounded-full transition-all"
+                                      style={{ width: `${wo.progress || 0}%`, backgroundColor: '#2E4E2A' }}
                                     />
                                   </div>
                                   
@@ -648,7 +666,10 @@ export default function WorkOrdersPage() {
                                         e.stopPropagation()
                                         openGoogleMapsForField(wo.field_id!)
                                       }}
-                                      className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-xs font-medium"
+                                      className="w-full flex items-center justify-center gap-2 px-3 py-2 text-white rounded-lg transition-colors text-xs font-medium"
+                                      style={{ backgroundColor: '#2E4E2A' }}
+                                      onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                                      onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                                     >
                                       <Navigation className="w-4 h-4" />
                                       Buka di Google Maps

@@ -295,7 +295,7 @@ export default function CreateReportPage() {
     return (
       <div className="min-h-screen flex items-center justify-center pb-16">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: '#2E4E2A' }}></div>
           <p className="mt-4 text-gray-600">Memuat...</p>
         </div>
       </div>
@@ -313,7 +313,10 @@ export default function CreateReportPage() {
         <div className="mb-6">
           <button
             onClick={() => router.back()}
-            className="text-green-600 hover:text-green-700 mb-4 text-sm font-medium flex items-center gap-2"
+            className="mb-4 text-sm font-medium flex items-center gap-2"
+            style={{ color: '#2E4E2A' }}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
           >
             <ArrowLeft className="w-4 h-4" />
             Kembali
@@ -334,7 +337,9 @@ export default function CreateReportPage() {
               type="text"
               value={formData.title}
               onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-gray-50"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-gray-50"
+              onFocus={(e) => e.currentTarget.style.outline = '2px solid #2E4E2A'}
+              onBlur={(e) => e.currentTarget.style.outline = ''}
               required
               readOnly
               title="Judul tidak dapat diubah karena sudah terikat dengan work order"
@@ -350,7 +355,9 @@ export default function CreateReportPage() {
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              onFocus={(e) => e.currentTarget.style.outline = '2px solid #2E4E2A'}
+              onBlur={(e) => e.currentTarget.style.outline = ''}
               required
             />
           </div>
@@ -362,7 +369,9 @@ export default function CreateReportPage() {
             <select
               value={formData.condition}
               onChange={(e) => setFormData(prev => ({ ...prev, condition: e.target.value as any }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              onFocus={(e) => e.currentTarget.style.outline = '2px solid #2E4E2A'}
+              onBlur={(e) => e.currentTarget.style.outline = ''}
               required
             >
               <option value="excellent">Sangat Baik</option>
@@ -498,9 +507,9 @@ export default function CreateReportPage() {
               </div>
             )}
             {gpsPermission === 'granted' && (
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-green-50 border border-green-200">
-                <MapPin className="w-4 h-4 text-green-600" />
-                <p className="text-sm text-green-600">
+              <div className="flex items-center gap-2 p-3 rounded-lg border" style={{ backgroundColor: 'rgba(46, 78, 42, 0.1)', borderColor: '#2E4E2A' }}>
+                <MapPin className="w-4 h-4" style={{ color: '#2E4E2A' }} />
+                <p className="text-sm" style={{ color: '#2E4E2A' }}>
                   Akses GPS diberikan. Lokasi: {formData.coordinates.latitude.toFixed(6)}, {formData.coordinates.longitude.toFixed(6)}
                 </p>
               </div>
@@ -531,7 +540,7 @@ export default function CreateReportPage() {
               />
               <div className="flex justify-between items-center">
                 <span className="text-xs text-gray-500">0%</span>
-                <span className="text-sm font-semibold text-green-600">{formData.progress}%</span>
+                <span className="text-sm font-semibold" style={{ color: '#2E4E2A' }}>{formData.progress}%</span>
                 <span className="text-xs text-gray-500">100%</span>
               </div>
               <p className="text-xs text-gray-500">
@@ -590,7 +599,9 @@ export default function CreateReportPage() {
               value={formData.notes}
               onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              onFocus={(e) => e.currentTarget.style.outline = '2px solid #2E4E2A'}
+              onBlur={(e) => e.currentTarget.style.outline = ''}
               placeholder="Catatan tambahan..."
             />
           </div>
@@ -606,7 +617,10 @@ export default function CreateReportPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+              className="flex-1 px-4 py-2 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+              style={{ backgroundColor: '#2E4E2A' }}
+              onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.opacity = '0.9')}
+              onMouseLeave={(e) => !e.currentTarget.disabled && (e.currentTarget.style.opacity = '1')}
             >
               {submitting ? 'Mengirim...' : 'Kirim Laporan'}
             </button>
