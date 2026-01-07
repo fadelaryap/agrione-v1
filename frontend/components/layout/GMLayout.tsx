@@ -56,7 +56,7 @@ export default function GMLayout({ children }: GMLayoutProps) {
     <div className="min-h-screen bg-white">
       {/* Top Navbar */}
       <nav className="shadow-lg fixed top-0 left-0 right-0 z-40" style={{ backgroundColor: '#2E4E2A' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <button
