@@ -19,6 +19,17 @@ RUN mkdir -p ./public
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 
+# Build arguments for build optimization (optional - set in docker-compose if needed)
+ARG SKIP_TYPE_CHECK
+ARG SKIP_ESLINT
+ENV SKIP_TYPE_CHECK=${SKIP_TYPE_CHECK:-false}
+ENV SKIP_ESLINT=${SKIP_ESLINT:-false}
+
+# Set Node.js memory options to prevent OOM during build
+# Increase memory limit for TypeScript type checking (4GB)
+# If still OOM, increase to 6144 (6GB) or skip type checking with SKIP_TYPE_CHECK=true
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+
 # Build the application
 RUN npm run build
 

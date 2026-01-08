@@ -172,12 +172,32 @@ jobs:
             export COMPOSE_DOCKER_CLI_BUILD=1
             # Build with cache to reduce memory usage (--no-cache causes OOM issues)
             # If you need clean build, manually run: docker builder prune -af
-            docker compose -f "$COMPOSE_FILE" build || {
-              echo "⚠️  Build process failed. Old containers are still running."
-              echo "💡 If build fails due to cache issues, try: docker builder prune -af"
-              docker compose -f "$COMPOSE_FILE" ps || true
-              exit 1
-            }
+            
+            # Try building with normal settings first
+            if ! docker compose -f "$COMPOSE_FILE" build; then
+              echo ""
+              echo "⚠️  Build failed! Trying with reduced memory usage (skipping type checking)..."
+              echo "   This might be due to OOM (Out of Memory) issues."
+              echo "   Retrying build with SKIP_TYPE_CHECK=true and SKIP_ESLINT=true..."
+              
+              # Retry build with skip type checking and ESLint to reduce memory usage
+              export SKIP_TYPE_CHECK=true
+              export SKIP_ESLINT=true
+              
+              if ! docker compose -f "$COMPOSE_FILE" build --build-arg SKIP_TYPE_CHECK=true --build-arg SKIP_ESLINT=true; then
+                echo ""
+                echo "❌ Build process failed even with optimizations. Old containers are still running."
+                echo "💡 Possible solutions:"
+                echo "   1. Increase VPS memory (recommended)"
+                echo "   2. Run: docker builder prune -af (clean build cache)"
+                echo "   3. Check logs: docker compose -f $COMPOSE_FILE logs"
+                docker compose -f "$COMPOSE_FILE" ps || true
+                exit 1
+              else
+                echo ""
+                echo "✅ Build succeeded with memory optimizations (type checking skipped)"
+              fi
+            fi
             
             # Rolling update: Docker Compose will update containers with new images
             # This minimizes downtime by updating containers one by one

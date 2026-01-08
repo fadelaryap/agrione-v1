@@ -56,6 +56,12 @@ services:
         # NEXT_PUBLIC_API_URL harus di-set dengan domain HTTPS (include /api)
         # Ini adalah build-time variable, harus di-set saat build
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://agrione.agrihub.id/api}
+        # Optional: Set to true to skip type checking (reduces memory usage)
+        # Use only if OOM (Out of Memory) occurs during build
+        SKIP_TYPE_CHECK: ${SKIP_TYPE_CHECK:-false}
+        # Optional: Set to true to skip ESLint (reduces memory usage)
+        # Use only if OOM (Out of Memory) occurs during build
+        SKIP_ESLINT: ${SKIP_ESLINT:-false}
     container_name: agrione_frontend
     ports:
       - "3000:3000"
