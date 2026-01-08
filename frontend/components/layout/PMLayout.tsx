@@ -71,7 +71,8 @@ export default function PMLayout({ children }: PMLayoutProps) {
   }, [isFieldManagementActive])
 
   const navItems = [
-    { href: '/dashboard/pm', label: 'Peta & NDVI', icon: Map },
+    { href: '/dashboard/pm', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/dashboard/pm/ndvi', label: 'Peta & NDVI', icon: Map },
     { href: '/dashboard/pm/analysis', label: 'Analisis Korelasi', icon: BarChart3 },
     { href: '/dashboard/pm/ai', label: 'AI & DSS', icon: Brain },
     { href: '/dashboard/pm/recommendations', label: 'Generator Rekomendasi', icon: Zap },
