@@ -14,7 +14,7 @@ export default async function Home() {
       <div className="max-w-md w-full space-y-8 p-8">
         <div className="text-center">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Welcome to Agrione</h1>
-          <p className="text-gray-600">Full-stack application with authentication</p>
+          <p className="text-gray-600">Platform manajemen pertanian terintegrasi untuk pengelolaan lahan dan produksi yang efisien</p>
         </div>
         <div className="space-y-4">
           <Link
