@@ -15,7 +15,8 @@ import {
   ChevronRight,
   Navigation,
   Camera,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Folder
 } from 'lucide-react'
 import LogoutButton from '@/components/LogoutButton'
 import NotificationBell from '@/components/notifications/NotificationBell'
@@ -70,8 +71,10 @@ export default function PMLayout({ children }: PMLayoutProps) {
     }
   }, [isFieldManagementActive])
 
+  // Dashboard menu item (separate for positioning)
+  const dashboardItem = { href: '/dashboard/pm', label: 'Dashboard', icon: LayoutDashboard }
+  
   const navItems = [
-    { href: '/dashboard/pm', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/dashboard/pm/ndvi', label: 'Peta & NDVI', icon: Map },
     { href: '/dashboard/pm/analysis', label: 'Analisis Korelasi', icon: BarChart3 },
     { href: '/dashboard/pm/ai', label: 'AI & DSS', icon: Brain },
@@ -118,6 +121,22 @@ export default function PMLayout({ children }: PMLayoutProps) {
               <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#2E4E2A' }}>Menu</p>
             </div>
             <nav className="mt-4 px-3 space-y-1">
+              {/* Dashboard - First Item */}
+              <Link
+                href={dashboardItem.href}
+                className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
+                  pathname === dashboardItem.href
+                    ? 'text-white shadow-md'
+                    : 'text-gray-700'
+                }`}
+                style={pathname === dashboardItem.href ? { backgroundColor: '#2E4E2A' } : {}}
+                onMouseEnter={(e) => pathname !== dashboardItem.href && (e.currentTarget.style.backgroundColor = 'rgba(46, 78, 42, 0.1)')}
+                onMouseLeave={(e) => pathname !== dashboardItem.href && (e.currentTarget.style.backgroundColor = '')}
+              >
+                <LayoutDashboard className={`mr-3 h-5 w-5 ${pathname === dashboardItem.href ? 'text-white' : 'text-gray-500'}`} />
+                {dashboardItem.label}
+              </Link>
+
               {/* Field Management - Collapsible Menu */}
               <div>
                 <button
@@ -132,7 +151,7 @@ export default function PMLayout({ children }: PMLayoutProps) {
                   onMouseLeave={(e) => !isFieldManagementActive && (e.currentTarget.style.backgroundColor = '')}
                 >
                   <div className="flex items-center">
-                    <LayoutDashboard className={`mr-3 h-5 w-5 ${isFieldManagementActive ? 'text-white' : 'text-gray-500'}`} />
+                    <Folder className={`mr-3 h-5 w-5 ${isFieldManagementActive ? 'text-white' : 'text-gray-500'}`} />
                     <span>Field Management</span>
                   </div>
                   {fieldManagementOpen ? (
@@ -216,6 +235,20 @@ export default function PMLayout({ children }: PMLayoutProps) {
             <p className="text-xs font-semibold text-purple-600 uppercase tracking-wider">Menu</p>
           </div>
           <nav className="mt-4 px-3 space-y-1">
+            {/* Dashboard - First Item */}
+            <Link
+              href={dashboardItem.href}
+              onClick={() => setSidebarOpen(false)}
+              className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
+                pathname === dashboardItem.href
+                  ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-md'
+                  : 'text-gray-700 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 hover:text-purple-700'
+              }`}
+            >
+              <LayoutDashboard className={`mr-3 h-5 w-5 ${pathname === dashboardItem.href ? 'text-white' : 'text-gray-500'}`} />
+              {dashboardItem.label}
+            </Link>
+
             {/* Field Management - Collapsible Menu */}
             <div>
               <button
