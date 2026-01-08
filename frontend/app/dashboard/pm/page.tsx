@@ -104,6 +104,9 @@ export default function PMDashboardPage() {
           background: 'linear-gradient(135deg, #2E4E2A 0%, #3A6B35 100%)'
         }}
       >
+        <p className="text-white text-lg mb-2">
+          Selamat datang, Pak Andri Hermawan
+        </p>
         <h2 className="text-2xl font-bold text-white mb-2">
           Dashboard Project Manager
         </h2>
